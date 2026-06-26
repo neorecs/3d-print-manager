@@ -27,9 +27,9 @@ export default async function CatalogPage() {
             <a className="rounded-md border border-line bg-white px-4 py-2 text-sm font-bold text-slate-700" href="/">
               Terug naar dashboard
             </a>
-            <button className="rounded-md bg-brand px-4 py-2 text-sm font-bold text-white" type="button">
+            <a className="rounded-md bg-brand px-4 py-2 text-sm font-bold text-white" href="/catalogus/nieuw">
               Nieuw product maken
-            </button>
+            </a>
           </div>
         }
       />
