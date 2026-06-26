@@ -2,6 +2,8 @@ import {
   AIProductStatus,
   AnalyticsData,
   AnalyticsRow,
+  BambuPrinter,
+  BambuPrintersData,
   CostSetting,
   DashboardData,
   FilamentSpool,
@@ -203,6 +205,11 @@ export async function getInventoryData(): Promise<InventoryData> {
   ]);
 
   return { inventory, movements, products, variants };
+}
+
+export async function getBambuPrintersData(): Promise<BambuPrintersData> {
+  const printers = await apiGet<BambuPrinter[]>("/bambu/printers");
+  return { printers };
 }
 
 export async function getSalesChannelsData(): Promise<SalesChannelsData> {

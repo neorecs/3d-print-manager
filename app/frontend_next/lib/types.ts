@@ -117,6 +117,26 @@ export type FilamentSpool = {
   active: boolean;
 };
 
+export type BambuPrinter = {
+  id: number;
+  name: string;
+  model?: string | null;
+  serial_number?: string | null;
+  host: string;
+  mqtt_port: number;
+  has_access_code: boolean;
+  connection_mode: string;
+  location?: string | null;
+  active: boolean;
+  last_status?: string | null;
+  status_message?: string | null;
+  last_seen_at?: string | null;
+};
+
+export type BambuPrintersData = {
+  printers: BambuPrinter[];
+};
+
 export type FilamentData = {
   filament: FilamentSpool[];
   printJobs: PrintJob[];

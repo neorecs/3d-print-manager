@@ -13,6 +13,18 @@ class PlatformCredentialCreate(BaseModel):
     encrypted_value: str
 
 
+class BambuPrinterCreate(BaseModel):
+    name: str
+    model: str | None = None
+    serial_number: str | None = None
+    host: str
+    mqtt_port: int = 8883
+    access_code: str | None = None
+    connection_mode: str = "lan"
+    location: str | None = None
+    active: bool = True
+
+
 class ProductCreate(BaseModel):
     name: str
     internal_title: str | None = None

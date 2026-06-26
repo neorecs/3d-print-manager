@@ -1,4 +1,5 @@
 from models.analytics import StockRecommendation, TrendSnapshot
+from models.bambu import BambuPrinter
 from models.costs import CostSetting, OrderProfitCalculation
 from models.inventory import FilamentSpool, InventoryMovement, ProductInventory
 from models.orders import Order, OrderItem
@@ -16,6 +17,7 @@ from models.products import (
 
 __all__ = [
     "FilamentSpool",
+    "BambuPrinter",
     "CostSetting",
     "InventoryMovement",
     "Order",

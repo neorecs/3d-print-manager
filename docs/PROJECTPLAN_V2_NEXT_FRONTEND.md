@@ -43,6 +43,7 @@ Aanwezig:
 - PostgreSQL datamodel voor producten, platformen, orders, voorraad, filament, printplanning, kosten, trends en voorraadadvies.
 - Streamlit-dashboard met veel prototypefunctionaliteit.
 - Next.js frontend als nieuwe hoofdinterface met dashboard, catalogus, productdetail, orders, printplanning, filament, productvoorraad, verkoopkanalen, analyse en AI Product Assistent.
+- Eerste Bambu-printerregistratie en veilige LAN-bereikbaarheidstest.
 - Dummydata.
 - Voorraadregels en printplanning-businessregels.
 - Shopify/Etsy connectorbasis.
@@ -56,6 +57,7 @@ Nog belangrijk:
 - Streamlit-container is eerder handmatig gepatcht.
 - Echte AI is nog niet live geactiveerd.
 - Echte Etsy/Shopify liveflows zijn nog niet productiehard.
+- Bambu-koppeling is gestart als beheerlaag: printers registreren en netwerkbereik testen. Automatische printstart blijft buiten scope.
 
 ## Voortgang bijgewerkt op 2026-06-26
 
@@ -73,6 +75,7 @@ Next.js bevat nu de eerste werkbare versies van:
 - Verkoopkanalen/platformbeheer op `/verkoopkanalen`;
 - Orders en orderdetail;
 - Printplanning, printresultaten, batches en Bambu-exportknop;
+- Bambu-printers op `/bambu-printers` met printerregistratie en LAN-test;
 - Filamentbeheer;
 - Analyse, trends en voorraadadvies op `/analyse`;
 - AI Product Assistent op `/catalogus/ai-assistent` met gratis mockmodus, veilige echte-AI statuscontrole en concept opslaan als intern product.
@@ -380,6 +383,38 @@ Acceptatie:
 - Batchoverzicht toont kleur, materiaal, aantallen, printtijd en filament.
 - Export richting Bambu Studio blijft beschikbaar.
 - Printresultaten kunnen verwerkt worden.
+
+## Fase 8b - Bambu printerfarm
+
+Doel: Bambu-printers zichtbaar maken als farmoverzicht bovenop Bambu Studio/Bambu Farm Manager, zonder eigen slicer of automatische printstart.
+
+Inspiratie uit Bambu Farm Manager:
+
+- lokale/LAN-gerichte farmbediening;
+- meerdere printers centraal tonen;
+- real-time monitoring;
+- later batchbediening;
+- later slimme job queue;
+- later bestandsoverzicht;
+- later energiemanagement zodat printers niet tegelijk piekbelasting veroorzaken.
+
+Status 2026-06-27:
+
+- Eerste backendmodel `bambu_printers` aanwezig.
+- Printers kunnen worden aangemaakt en aangepast.
+- Access code wordt als secret opgeslagen en niet teruggetoond.
+- Next.js scherm aanwezig op `/bambu-printers`.
+- Veilige LAN-bereikbaarheidstest aanwezig via host en MQTT-poort.
+- Nog niet bouwen: automatische printstart, eigen slicer, cloudkoppeling of destructieve printercommando's.
+
+Nog verfijnen:
+
+- echte MQTT-statusfeed uitlezen;
+- serienummer/access-code validatie;
+- printerstatus koppelen aan printplanning;
+- farm-capaciteit tonen bij batchadvies;
+- optioneel waarschuwingen voor netwerk/offline printers;
+- pas later onderzoeken of batchcommando's wenselijk en veilig zijn.
 
 ## Fase 9 - Analyse en advies
 

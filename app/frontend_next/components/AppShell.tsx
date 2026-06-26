@@ -21,6 +21,7 @@ const navigation = [
       { label: "Voorraad", href: "/voorraad" },
       { label: "Filament", href: "/filament" },
       { label: "Printplanning", href: "/printplanning" },
+      { label: "Bambu printers", href: "/bambu-printers" },
     ],
   },
   {
