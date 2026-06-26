@@ -128,6 +128,25 @@ export type PrintJob = {
   estimated_print_time_minutes?: number | null;
   estimated_filament_grams?: number | null;
   status?: string | null;
+  planned_date?: string | null;
+};
+
+export type PrintBatch = {
+  id: number;
+  batch_name: string;
+  planned_date?: string | null;
+  material?: string | null;
+  color?: string | null;
+  estimated_total_print_time_minutes?: number | null;
+  estimated_total_filament_grams?: number | null;
+  status?: string | null;
+};
+
+export type PrintBatchItem = {
+  id: number;
+  print_batch_id: number;
+  print_job_id: number;
+  quantity_in_batch: number;
 };
 
 export type StockRecommendation = {
@@ -184,6 +203,15 @@ export type OrderDetailData = {
   products: Product[];
   variants: ProductVariant[];
   printJobs: PrintJob[];
+};
+
+export type PrintPlanningData = {
+  printJobs: PrintJob[];
+  printBatches: PrintBatch[];
+  products: Product[];
+  variants: ProductVariant[];
+  orders: Order[];
+  orderItems: OrderItem[];
 };
 
 export type ProductCatalogRow = {

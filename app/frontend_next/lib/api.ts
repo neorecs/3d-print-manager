@@ -7,7 +7,9 @@ import {
   OrderItem,
   OrdersData,
   Platform,
+  PrintBatch,
   PrintJob,
+  PrintPlanningData,
   Product,
   ProductCatalogData,
   ProductDetailData,
@@ -146,6 +148,26 @@ export async function getOrderDetailData(orderId: number): Promise<OrderDetailDa
     products,
     variants,
     printJobs: printJobs.filter((job) => order.items.some((item) => item.id === job.order_item_id)),
+  };
+}
+
+export async function getPrintPlanningData(): Promise<PrintPlanningData> {
+  const [printJobs, printBatches, products, variants, orders, orderItems] = await Promise.all([
+    apiGet<PrintJob[]>("/print-jobs"),
+    apiGet<PrintBatch[]>("/print-batches"),
+    apiGet<Product[]>("/products"),
+    apiGet<ProductVariant[]>("/product-variants"),
+    apiGet<Order[]>("/orders"),
+    apiGet<OrderItem[]>("/order-items"),
+  ]);
+
+  return {
+    printJobs,
+    printBatches,
+    products,
+    variants,
+    orders,
+    orderItems,
   };
 }
 
