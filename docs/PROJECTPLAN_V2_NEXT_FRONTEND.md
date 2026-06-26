@@ -75,7 +75,7 @@ Next.js bevat nu de eerste werkbare versies van:
 - Printplanning, printresultaten, batches en Bambu-exportknop;
 - Filamentbeheer;
 - Analyse, trends en voorraadadvies op `/analyse`;
-- AI Product Assistent op `/catalogus/ai-assistent` met gratis mockmodus en veilige echte-AI statuscontrole.
+- AI Product Assistent op `/catalogus/ai-assistent` met gratis mockmodus, veilige echte-AI statuscontrole en concept opslaan als intern product.
 
 Daarmee zijn de grootste UI-gaten uit de V2-migratie nu voorzien van een eerste Next.js-scherm. De resterende V2-focus verschuift naar verfijning, productiehardheid, echte connectoren, credentials, healthchecks, backups en het gecontroleerd uitfaseren van Streamlit.
 
@@ -444,7 +444,8 @@ Status 2026-06-26:
 - UI toont of echte AI klaarstaat of gratis mockmodus actief is.
 - Frontend praat niet rechtstreeks met OpenAI.
 - Mockmodus maakt gratis productconcepten zonder API-call.
-- Nog verfijnen: concept omzetten naar echt product, daglimiet/gebruiksregistratie, echte AI pas activeren na expliciete productieconfiguratie.
+- Concepten kunnen als intern conceptproduct worden opgeslagen met tags, varianten en concept-platformpublicaties.
+- Nog verfijnen: daglimiet/gebruiksregistratie, concept-preview bewerken voor opslaan, echte AI pas activeren na expliciete productieconfiguratie.
 
 ## Fase 11 - NAS en deploy verbeteren
 

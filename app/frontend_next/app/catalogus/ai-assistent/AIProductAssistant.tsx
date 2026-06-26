@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import { useRouter } from "next/navigation";
 import type { AIProductStatus } from "@/lib/types";
 
 type DraftInput = {
@@ -46,6 +47,21 @@ function mockDraft(input: DraftInput) {
     .map((item) => item.trim())
     .filter(Boolean)
     .slice(0, 12);
+  const platforms = input.platforms.split(",").map((item) => item.trim().toLowerCase()).filter(Boolean);
+  const platformPublications = Object.fromEntries(
+    platforms.map((platform) => [
+      platform,
+      {
+        platform_title: title,
+        platform_description: `Concept voor ${platform}: ${title}. Controleer platformcategorie, tags, prijs en foto's voordat je publiceert.`,
+        platform_category: input.category || "Nog te kiezen",
+        platform_tags: tags.join(", "),
+        platform_price_override: input.price ? Number(input.price.replace(",", ".")) : null,
+        publication_status: "concept",
+      },
+    ]),
+  );
+
   return {
     source: "gratis_mockmodus",
     product: {
@@ -74,14 +90,18 @@ function mockDraft(input: DraftInput) {
         active: true,
       },
     ],
+    platform_publications: platformPublications,
     checklist: ["Controleer printbestand", "Voeg echte foto's toe", "Controleer platformcategorie", "Controleer prijs en verzendprofiel"],
   };
 }
 
 export function AIProductAssistant({ status }: { status: AIProductStatus }) {
+  const router = useRouter();
   const [input, setInput] = useState<DraftInput>(() => emptyInput());
-  const [result, setResult] = useState<object | null>(null);
+  const [result, setResult] = useState<Record<string, unknown> | null>(null);
+  const [saveResult, setSaveResult] = useState<Record<string, unknown> | null>(null);
   const [busy, setBusy] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   function update(field: keyof DraftInput, value: string) {
@@ -92,6 +112,7 @@ export function AIProductAssistant({ status }: { status: AIProductStatus }) {
     event.preventDefault();
     setBusy(true);
     setError(null);
+    setSaveResult(null);
     try {
       if (!status.ready) {
         setResult(mockDraft(input));
@@ -117,6 +138,36 @@ export function AIProductAssistant({ status }: { status: AIProductStatus }) {
       setBusy(false);
     }
   }
+
+  async function saveConcept() {
+    if (!result) {
+      return;
+    }
+
+    setSaving(true);
+    setError(null);
+    setSaveResult(null);
+    try {
+      const response = await fetch("/api/ai/product-draft/save", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(result),
+      });
+      const data = await response.json().catch(() => null);
+      if (!response.ok) {
+        throw new Error(data?.detail || "Concept opslaan is mislukt");
+      }
+      setSaveResult(data);
+      router.refresh();
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Concept opslaan is mislukt");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const savedProductId = typeof saveResult?.product_id === "number" ? saveResult.product_id : null;
+  const warnings = Array.isArray(saveResult?.warnings) ? saveResult.warnings.map((item) => String(item)) : [];
 
   return (
     <div className="space-y-5">
@@ -152,9 +203,44 @@ export function AIProductAssistant({ status }: { status: AIProductStatus }) {
       </form>
 
       {result ? (
-        <div className="rounded-lg border border-line bg-slate-950 p-4 text-sm text-slate-50">
-          <div className="mb-2 font-bold">Concept JSON</div>
-          <pre className="max-h-[520px] overflow-auto whitespace-pre-wrap">{JSON.stringify(result, null, 2)}</pre>
+        <div className="space-y-4">
+          <div className="rounded-lg border border-line bg-white p-4">
+            <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+              <div>
+                <h3 className="font-bold text-ink">Concept klaar om op te slaan</h3>
+                <p className="mt-1 text-sm leading-6 text-muted">
+                  Opslaan maakt een intern conceptproduct met tags, varianten en concept-platformpublicaties. Er wordt niets gepubliceerd.
+                </p>
+              </div>
+              <button
+                className="rounded-md bg-brand px-4 py-2 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-60"
+                disabled={saving}
+                onClick={saveConcept}
+                type="button"
+              >
+                {saving ? "Opslaan..." : "Concept opslaan als product"}
+              </button>
+            </div>
+            {saveResult ? (
+              <div className="mt-4 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-3 text-sm text-emerald-800">
+                <div className="font-bold">Concept opgeslagen{savedProductId ? ` als product #${savedProductId}` : ""}.</div>
+                {savedProductId ? (
+                  <a className="mt-2 inline-block rounded-md border border-emerald-300 bg-white px-3 py-2 text-sm font-bold text-emerald-800" href={`/catalogus/${savedProductId}`}>
+                    Product openen
+                  </a>
+                ) : null}
+                {warnings.length ? (
+                  <ul className="mt-3 list-disc space-y-1 pl-5">
+                    {warnings.map((warning) => <li key={warning}>{warning}</li>)}
+                  </ul>
+                ) : null}
+              </div>
+            ) : null}
+          </div>
+          <div className="rounded-lg border border-line bg-slate-950 p-4 text-sm text-slate-50">
+            <div className="mb-2 font-bold">Concept JSON</div>
+            <pre className="max-h-[520px] overflow-auto whitespace-pre-wrap">{JSON.stringify(result, null, 2)}</pre>
+          </div>
         </div>
       ) : null}
     </div>
