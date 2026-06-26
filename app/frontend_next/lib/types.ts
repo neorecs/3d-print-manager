@@ -27,9 +27,17 @@ export type ProductVariant = {
   sku?: string | null;
   color?: string | null;
   material?: string | null;
+  size?: string | null;
+  finish?: string | null;
+  print_file_path?: string | null;
   estimated_print_time_minutes?: number | null;
   estimated_filament_grams?: number | null;
+  weight_grams?: number | null;
+  length_mm?: number | null;
+  width_mm?: number | null;
+  height_mm?: number | null;
   default_sale_price?: number | null;
+  action_sale_price?: number | null;
   cost_price?: number | null;
   active?: boolean;
 };

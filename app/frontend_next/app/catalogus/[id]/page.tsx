@@ -7,6 +7,7 @@ import { StatusBadge } from "@/components/StatusBadge";
 import { formatCurrency, formatMinutes, getProductDetailData } from "@/lib/api";
 import type { ProductDetailData, ProductPublication } from "@/lib/types";
 import { ProductEditForm } from "./ProductEditForm";
+import { VariantManager } from "./VariantManager";
 
 export default async function ProductDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -69,36 +70,9 @@ function DetailContent({ data }: { data: ProductDetailData }) {
       </SectionCard>
 
       <div className="grid gap-5 xl:grid-cols-2">
-        <SectionCard title="Varianten" description="Uitvoeringen met SKU, materiaal, kleur, printtijd en prijs.">
-          {data.variants.length ? (
-            <div className="table-scroll">
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th>Variant</th>
-                    <th>SKU</th>
-                    <th>Materiaal</th>
-                    <th>Kleur</th>
-                    <th className="text-right">Prijs</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {data.variants.map((variant) => (
-                    <tr key={variant.id}>
-                      <td className="font-semibold">{variant.variant_name || `Variant ${variant.id}`}</td>
-                      <td>{variant.sku || "-"}</td>
-                      <td>{variant.material || "-"}</td>
-                      <td>{variant.color || "-"}</td>
-                      <td className="text-right font-semibold">{formatCurrency(variant.default_sale_price)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              {printMinutes ? <p className="mt-3 text-sm text-muted">Totale bekende printtijd: {formatMinutes(printMinutes)}.</p> : null}
-            </div>
-          ) : (
-            <EmptyState title="Geen varianten" description="Voeg straks varianten toe om SKU's, printtijd, materiaal en prijzen vast te leggen." />
-          )}
+        <SectionCard title="Varianten beheren" description="Maak en wijzig SKU's, kleur, materiaal, printtijd, filamentverbruik, afmetingen en prijzen.">
+          <VariantManager product={data.product} variants={data.variants} />
+          {printMinutes ? <p className="mt-3 text-sm text-muted">Totale bekende printtijd: {formatMinutes(printMinutes)}.</p> : null}
         </SectionCard>
 
         <SectionCard title="Productvoorraad" description="Vrije voorraad is op voorraad min gereserveerd.">
