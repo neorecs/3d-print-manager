@@ -9,9 +9,28 @@ export type Product = {
   id: number;
   name: string;
   internal_title?: string | null;
+  short_description?: string | null;
+  long_description?: string | null;
+  sales_description?: string | null;
+  seo_title?: string | null;
+  seo_description?: string | null;
   internal_category?: string | null;
   product_type?: string | null;
   status?: string | null;
+  active?: boolean;
+};
+
+export type ProductVariant = {
+  id: number;
+  product_id: number;
+  variant_name?: string | null;
+  sku?: string | null;
+  color?: string | null;
+  material?: string | null;
+  estimated_print_time_minutes?: number | null;
+  estimated_filament_grams?: number | null;
+  default_sale_price?: number | null;
+  cost_price?: number | null;
   active?: boolean;
 };
 
@@ -88,4 +107,19 @@ export type DashboardData = {
   printJobs: PrintJob[];
   recommendations: StockRecommendation[];
   publications: ProductPublication[];
+};
+
+export type ProductCatalogRow = {
+  product: Product;
+  variants: ProductVariant[];
+  inventory: ProductInventory[];
+  publications: ProductPublication[];
+};
+
+export type ProductCatalogData = {
+  products: Product[];
+  variants: ProductVariant[];
+  inventory: ProductInventory[];
+  platforms: Platform[];
+  rows: ProductCatalogRow[];
 };

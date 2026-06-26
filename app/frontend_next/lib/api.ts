@@ -5,8 +5,10 @@ import {
   Platform,
   PrintJob,
   Product,
+  ProductCatalogData,
   ProductInventory,
   ProductPublication,
+  ProductVariant,
   StockRecommendation,
 } from "./types";
 
@@ -50,6 +52,33 @@ export async function getDashboardData(): Promise<DashboardData> {
     printJobs,
     recommendations,
     publications: publicationsNested.flat(),
+  };
+}
+
+export async function getProductCatalogData(): Promise<ProductCatalogData> {
+  const [products, variants, inventory, platforms] = await Promise.all([
+    apiGet<Product[]>("/products"),
+    apiGet<ProductVariant[]>("/product-variants"),
+    apiGet<ProductInventory[]>("/inventory/products"),
+    apiGet<Platform[]>("/platforms"),
+  ]);
+
+  const publicationsNested = await Promise.all(
+    products.map((product) => apiGet<ProductPublication[]>(`/products/${product.id}/publications`).catch(() => [])),
+  );
+  const publications = publicationsNested.flat();
+
+  return {
+    products,
+    variants,
+    inventory,
+    platforms,
+    rows: products.map((product) => ({
+      product,
+      variants: variants.filter((variant) => variant.product_id === product.id),
+      inventory: inventory.filter((item) => item.product_id === product.id),
+      publications: publications.filter((publication) => publication.product_id === product.id),
+    })),
   };
 }
 

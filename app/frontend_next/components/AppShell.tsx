@@ -2,10 +2,32 @@ import Link from "next/link";
 import { ReactNode } from "react";
 
 const navigation = [
-  { section: "Start", items: ["Dashboard"] },
-  { section: "Beheer", items: ["Catalogus", "Verkoopkanalen", "Orders"] },
-  { section: "Operatie", items: ["Voorraad", "Printplanning"] },
-  { section: "Inzicht", items: ["Analyse", "Instellingen"] },
+  {
+    section: "Start",
+    items: [{ label: "Dashboard", href: "/" }],
+  },
+  {
+    section: "Beheer",
+    items: [
+      { label: "Catalogus", href: "/catalogus" },
+      { label: "Verkoopkanalen", href: "/verkoopkanalen" },
+      { label: "Orders", href: "/orders" },
+    ],
+  },
+  {
+    section: "Operatie",
+    items: [
+      { label: "Voorraad", href: "/voorraad" },
+      { label: "Printplanning", href: "/printplanning" },
+    ],
+  },
+  {
+    section: "Inzicht",
+    items: [
+      { label: "Analyse", href: "/analyse" },
+      { label: "Instellingen", href: "/instellingen" },
+    ],
+  },
 ];
 
 export function AppShell({ children }: { children: ReactNode }) {
@@ -23,15 +45,11 @@ export function AppShell({ children }: { children: ReactNode }) {
               <div className="mt-2 space-y-1">
                 {group.items.map((item) => (
                   <Link
-                    className={`block rounded-md px-3 py-2 text-sm font-semibold ${
-                      item === "Dashboard"
-                        ? "bg-brandSoft text-brand"
-                        : "text-slate-700 hover:bg-slate-50"
-                    }`}
-                    href="/"
-                    key={item}
+                    className="block rounded-md px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                    href={item.href}
+                    key={item.href}
                   >
-                    {item}
+                    {item.label}
                   </Link>
                 ))}
               </div>
