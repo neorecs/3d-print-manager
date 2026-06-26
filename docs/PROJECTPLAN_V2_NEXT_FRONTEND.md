@@ -42,6 +42,7 @@ Aanwezig:
 - FastAPI-backend met gescheiden API.
 - PostgreSQL datamodel voor producten, platformen, orders, voorraad, filament, printplanning, kosten, trends en voorraadadvies.
 - Streamlit-dashboard met veel prototypefunctionaliteit.
+- Next.js frontend als nieuwe hoofdinterface met dashboard, catalogus, productdetail, orders, printplanning, filament, productvoorraad, verkoopkanalen, analyse en AI Product Assistent.
 - Dummydata.
 - Voorraadregels en printplanning-businessregels.
 - Shopify/Etsy connectorbasis.
@@ -51,10 +52,32 @@ Aanwezig:
 
 Nog belangrijk:
 
-- NAS-deployproces is nog niet betrouwbaar genoeg.
+- NAS-deployproces werkt via GitHub/Dockhand, maar moet nog verder worden gedocumenteerd en van healthchecks/backups worden voorzien.
 - Streamlit-container is eerder handmatig gepatcht.
 - Echte AI is nog niet live geactiveerd.
 - Echte Etsy/Shopify liveflows zijn nog niet productiehard.
+
+## Voortgang bijgewerkt op 2026-06-26
+
+Next.js bevat nu de eerste werkbare versies van:
+
+- Dashboard;
+- Productcatalogus;
+- Product aanmaken;
+- Productdetail;
+- Variantenbeheer;
+- Fotobeheer/media;
+- Productpublicaties;
+- Productvoorraad per product;
+- Centraal productvoorraad-overzicht op `/voorraad`;
+- Verkoopkanalen/platformbeheer op `/verkoopkanalen`;
+- Orders en orderdetail;
+- Printplanning, printresultaten, batches en Bambu-exportknop;
+- Filamentbeheer;
+- Analyse, trends en voorraadadvies op `/analyse`;
+- AI Product Assistent op `/catalogus/ai-assistent` met gratis mockmodus en veilige echte-AI statuscontrole.
+
+Daarmee zijn de grootste UI-gaten uit de V2-migratie nu voorzien van een eerste Next.js-scherm. De resterende V2-focus verschuift naar verfijning, productiehardheid, echte connectoren, credentials, healthchecks, backups en het gecontroleerd uitfaseren van Streamlit.
 
 ## Architectuurdoel
 
@@ -227,6 +250,11 @@ Acceptatie:
 - Productdetail is geen lange formulierpagina meer.
 - AI Product Assistent is duidelijk gescheiden in mockmodus en echte AI-modus.
 
+Status 2026-06-26:
+
+- Eerste Next.js versie aanwezig voor productoverzicht, product aanmaken, productdetail, varianten, media, publicaties, productvoorraad en AI Product Assistent.
+- Nog verfijnen: tags als eigen beheerblok, verkoopteksten als aparte sectie/tab, analyse per product en compactere tabnavigatie.
+
 ## Fase 5 - Verkoopkanalen
 
 Doel: multichannelbeheer overzichtelijk maken.
@@ -256,6 +284,13 @@ Acceptatie:
 - Per product is duidelijk wat klaar is voor Etsy/Shopify.
 - Synchronisatie nodig is visueel herkenbaar.
 - Fouten zijn duidelijk en niet verstopt.
+
+Status 2026-06-26:
+
+- Eerste Next.js versie aanwezig op `/verkoopkanalen`.
+- Platformen kunnen worden aangemaakt en aangepast.
+- Connectorstatus, ontbrekende credentials, sync-acties en publicatiefouten zijn zichtbaar.
+- Nog verfijnen: credentials invoeren/beheren vanuit de UI, platformdetailpagina, echte live testflows.
 
 ## Fase 6 - Orders
 
@@ -308,6 +343,14 @@ Acceptatie:
 - Vrije voorraad is direct zichtbaar.
 - Gereserveerd en op voorraad worden niet door elkaar gehaald.
 - Filament toont resterend gewicht en prijs per gram.
+
+Status 2026-06-26:
+
+- Eerste Next.js versie aanwezig voor productvoorraad op `/voorraad`.
+- Voorraadregels tonen op voorraad, gereserveerd, vrije voorraad, minimum, status en locatie.
+- Voorraadbewegingen zijn zichtbaar.
+- Filamentrollen zijn aanwezig op `/filament` met resterend gewicht, minimum en prijs per gram.
+- Nog verfijnen: centrale voorraadcorrecties vanuit `/voorraad`, filters, zoeken, voorraadbeweging-detail.
 
 ## Fase 8 - Printplanning
 
@@ -362,6 +405,13 @@ Acceptatie:
 - Voorraadadvies toont concrete reden.
 - Kosten/winst is begrijpelijk zonder technische velden.
 
+Status 2026-06-26:
+
+- Eerste Next.js versie aanwezig op `/analyse`.
+- Toont top producten, top kleuren, top materialen, omzet, geschatte winst, marge-indicatie, kosteninstellingen en voorraadadvies.
+- Voorraadadvies kan worden gegenereerd, geaccepteerd, genegeerd of omgezet naar printtaak.
+- Nog verfijnen: betere periodekeuze, grafieken, orderwinstdetail en marge per platform.
+
 ## Fase 10 - Echte AI Product Assistent
 
 Doel: OpenAI `gpt-5.4-mini` veilig activeren.
@@ -387,6 +437,14 @@ Acceptatie:
 - Mockmodus blijft gratis beschikbaar.
 - Echte AI werkt alleen na expliciete configuratie.
 - Geen OpenAI-key in GitHub.
+
+Status 2026-06-26:
+
+- Eerste Next.js versie aanwezig op `/catalogus/ai-assistent`.
+- UI toont of echte AI klaarstaat of gratis mockmodus actief is.
+- Frontend praat niet rechtstreeks met OpenAI.
+- Mockmodus maakt gratis productconcepten zonder API-call.
+- Nog verfijnen: concept omzetten naar echt product, daglimiet/gebruiksregistratie, echte AI pas activeren na expliciete productieconfiguratie.
 
 ## Fase 11 - NAS en deploy verbeteren
 
@@ -458,6 +516,15 @@ Aanbevolen volgorde:
 10. Analyse bouwen.
 11. Streamlit uitfaseren.
 12. Live connectoren afronden.
+
+Bijgewerkte eerstvolgende werkvolgorde vanaf 2026-06-26:
+
+1. UI-verfijning en filters voor `/voorraad`, `/verkoopkanalen`, `/analyse` en `/catalogus/ai-assistent`.
+2. Credentialsbeheer en secrets-scherm voor verkoopkanalen.
+3. Productconcept uit AI-assistent kunnen opslaan als conceptproduct.
+4. Winstberekening beter zichtbaar maken op orderdetail en analyse.
+5. NAS healthchecks, backupstrategie en deploydocumentatie afronden.
+6. Daarna pas echte Shopify/Etsy liveflows productiehard maken.
 
 ## Beslisregel Streamlit vs Next.js
 

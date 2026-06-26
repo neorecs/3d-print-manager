@@ -2,6 +2,7 @@ export type Platform = {
   id: number;
   name: string;
   type: string;
+  api_base_url?: string | null;
   active: boolean;
 };
 
@@ -162,8 +163,15 @@ export type StockRecommendation = {
   id: number;
   product_id: number;
   product_variant_id: number;
+  product?: string | null;
+  variant?: string | null;
+  sku?: string | null;
+  color?: string | null;
+  material?: string | null;
   current_free_stock: number;
   expected_sales: number;
+  safety_stock?: number | null;
+  recommended_stock_level?: number | null;
   recommended_print_quantity: number;
   reason?: string | null;
   status?: string | null;
@@ -246,4 +254,87 @@ export type ProductDetailData = {
   tags: ProductTag[];
   publications: ProductPublication[];
   platforms: Platform[];
+};
+
+export type PlatformConnectorStatus = {
+  platform_id: number;
+  platform: string;
+  platform_type: string;
+  mode: string;
+  required_credentials: string[];
+  configured_credentials: string[];
+  missing_credentials: string[];
+  ready_for_live: boolean;
+};
+
+export type InventoryMovement = {
+  id: number;
+  product_inventory_id: number;
+  movement_type: string;
+  quantity: number;
+  order_id?: number | null;
+  order_item_id?: number | null;
+  print_job_id?: number | null;
+  note?: string | null;
+  quantity_on_hand_before?: number | null;
+  quantity_on_hand_after?: number | null;
+  quantity_reserved_before?: number | null;
+  quantity_reserved_after?: number | null;
+  free_stock_before?: number | null;
+  free_stock_after?: number | null;
+  source?: string | null;
+  reason?: string | null;
+  performed_by?: string | null;
+  created_at?: string | null;
+};
+
+export type AnalyticsRow = {
+  product_id?: number;
+  product_variant_id?: number;
+  product?: string;
+  variant?: string;
+  color?: string;
+  material?: string;
+  period_days?: number;
+  quantity_sold: number;
+  average_weekly_sales?: number;
+  revenue: number;
+  estimated_profit: number;
+};
+
+export type CostSetting = {
+  id: number;
+  setting_name: string;
+  value: number;
+};
+
+export type AIProductStatus = {
+  enabled: boolean;
+  configured: boolean;
+  model: string;
+  ready: boolean;
+  note: string;
+};
+
+export type InventoryData = {
+  inventory: ProductInventory[];
+  movements: InventoryMovement[];
+  products: Product[];
+  variants: ProductVariant[];
+};
+
+export type SalesChannelsData = {
+  platforms: Platform[];
+  statuses: PlatformConnectorStatus[];
+  products: Product[];
+  publications: ProductPublication[];
+};
+
+export type AnalyticsData = {
+  salesTrends: AnalyticsRow[];
+  topProducts: AnalyticsRow[];
+  topColors: AnalyticsRow[];
+  topMaterials: AnalyticsRow[];
+  recommendations: StockRecommendation[];
+  costSettings: CostSetting[];
 };

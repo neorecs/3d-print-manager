@@ -10,6 +10,7 @@ const navigation = [
     section: "Beheer",
     items: [
       { label: "Catalogus", href: "/catalogus" },
+      { label: "AI assistent", href: "/catalogus/ai-assistent" },
       { label: "Verkoopkanalen", href: "/verkoopkanalen" },
       { label: "Orders", href: "/orders" },
     ],

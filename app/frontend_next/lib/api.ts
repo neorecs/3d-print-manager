@@ -1,13 +1,20 @@
 import {
+  AIProductStatus,
+  AnalyticsData,
+  AnalyticsRow,
+  CostSetting,
   DashboardData,
   FilamentSpool,
   FilamentData,
+  InventoryData,
+  InventoryMovement,
   Order,
   OrderDetail,
   OrderDetailData,
   OrderItem,
   OrdersData,
   Platform,
+  PlatformConnectorStatus,
   PrintBatch,
   PrintJob,
   PrintPlanningData,
@@ -19,6 +26,7 @@ import {
   ProductPublication,
   ProductTag,
   ProductVariant,
+  SalesChannelsData,
   StockRecommendation,
 } from "./types";
 
@@ -182,6 +190,53 @@ export async function getFilamentData(): Promise<FilamentData> {
     filament,
     printJobs,
   };
+}
+
+export async function getInventoryData(): Promise<InventoryData> {
+  const [inventory, movements, products, variants] = await Promise.all([
+    apiGet<ProductInventory[]>("/inventory/products"),
+    apiGet<InventoryMovement[]>("/inventory/movements"),
+    apiGet<Product[]>("/products"),
+    apiGet<ProductVariant[]>("/product-variants"),
+  ]);
+
+  return { inventory, movements, products, variants };
+}
+
+export async function getSalesChannelsData(): Promise<SalesChannelsData> {
+  const [platforms, products] = await Promise.all([
+    apiGet<Platform[]>("/platforms"),
+    apiGet<Product[]>("/products"),
+  ]);
+
+  const [statuses, publicationsNested] = await Promise.all([
+    Promise.all(platforms.map((platform) => apiGet<PlatformConnectorStatus>(`/platforms/${platform.id}/connector-status`).catch(() => null))),
+    Promise.all(products.map((product) => apiGet<ProductPublication[]>(`/products/${product.id}/publications`).catch(() => []))),
+  ]);
+
+  return {
+    platforms,
+    statuses: statuses.filter((status): status is PlatformConnectorStatus => Boolean(status)),
+    products,
+    publications: publicationsNested.flat(),
+  };
+}
+
+export async function getAnalyticsData(periodDays = 30): Promise<AnalyticsData> {
+  const [salesTrends, topProducts, topColors, topMaterials, recommendations, costSettings] = await Promise.all([
+    apiGet<AnalyticsRow[]>(`/analytics/sales-trends?period_days=${periodDays}`),
+    apiGet<AnalyticsRow[]>(`/analytics/top-products?period_days=${periodDays}`),
+    apiGet<AnalyticsRow[]>(`/analytics/top-colors?period_days=${periodDays}`),
+    apiGet<AnalyticsRow[]>(`/analytics/top-materials?period_days=${periodDays}`),
+    apiGet<StockRecommendation[]>("/stock-recommendations"),
+    apiGet<CostSetting[]>("/cost-settings"),
+  ]);
+
+  return { salesTrends, topProducts, topColors, topMaterials, recommendations, costSettings };
+}
+
+export async function getAIProductStatus(): Promise<AIProductStatus> {
+  return apiGet<AIProductStatus>("/ai/product-draft/status");
 }
 
 export function formatCurrency(value?: number | null) {
