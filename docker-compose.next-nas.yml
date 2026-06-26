@@ -1,0 +1,16 @@
+services:
+  frontend_next:
+    build: ./app/frontend_next
+    environment:
+      API_BASE_URL: ${FRONTEND_NEXT_API_BASE_URL:-http://3d-print-manager-backend-1:8000}
+      NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-http://10.5.1.150:38080}
+    ports:
+      - "38502:3000"
+    networks:
+      - print_manager
+    restart: unless-stopped
+
+networks:
+  print_manager:
+    external: true
+    name: 3d-print-manager_default
