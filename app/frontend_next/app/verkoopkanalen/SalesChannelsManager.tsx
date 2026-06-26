@@ -2,6 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import type { Platform } from "@/lib/types";
 
 type PlatformDraft = {
@@ -126,6 +127,9 @@ export function SalesChannelsManager({ platforms }: { platforms: Platform[] }) {
                     <div className="font-bold text-ink">{platform.name}</div>
                     <div className="mt-1 text-sm text-muted">{platform.type} - {platform.active ? "actief" : "inactief"}</div>
                   </div>
+                  <Link className="rounded-md border border-line px-3 py-2 text-sm font-bold text-ink hover:border-brand hover:text-brand" href={`/verkoopkanalen/${platform.id}`}>
+                    Credentials beheren
+                  </Link>
                 </div>
               </summary>
               <div className="mt-4 grid gap-4 border-t border-line pt-4 md:grid-cols-2">

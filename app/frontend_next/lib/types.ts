@@ -267,6 +267,16 @@ export type PlatformConnectorStatus = {
   ready_for_live: boolean;
 };
 
+export type PlatformCredential = {
+  id: number;
+  platform_id: number;
+  key_name: string;
+  has_value: boolean;
+  encrypted: boolean;
+  created_at?: string | null;
+  updated_at?: string | null;
+};
+
 export type InventoryMovement = {
   id: number;
   product_inventory_id: number;
@@ -326,6 +336,14 @@ export type InventoryData = {
 export type SalesChannelsData = {
   platforms: Platform[];
   statuses: PlatformConnectorStatus[];
+  products: Product[];
+  publications: ProductPublication[];
+};
+
+export type SalesChannelDetailData = {
+  platform: Platform;
+  status: PlatformConnectorStatus | null;
+  credentials: PlatformCredential[];
   products: Product[];
   publications: ProductPublication[];
 };

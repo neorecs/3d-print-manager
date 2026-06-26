@@ -290,7 +290,9 @@ Status 2026-06-26:
 - Eerste Next.js versie aanwezig op `/verkoopkanalen`.
 - Platformen kunnen worden aangemaakt en aangepast.
 - Connectorstatus, ontbrekende credentials, sync-acties en publicatiefouten zijn zichtbaar.
-- Nog verfijnen: credentials invoeren/beheren vanuit de UI, platformdetailpagina, echte live testflows.
+- Platformdetailpagina aanwezig op `/verkoopkanalen/{id}`.
+- Credentials kunnen per verkoopkanaal worden opgeslagen en verwijderd vanuit de UI; geheime waarden worden niet teruggetoond.
+- Nog verfijnen: echte live testflows, verbindingstest per platform, laatste import/sync-log en duidelijkere platform-specifieke instructies.
 
 ## Fase 6 - Orders
 
@@ -445,7 +447,8 @@ Status 2026-06-26:
 - Frontend praat niet rechtstreeks met OpenAI.
 - Mockmodus maakt gratis productconcepten zonder API-call.
 - Concepten kunnen als intern conceptproduct worden opgeslagen met tags, varianten en concept-platformpublicaties.
-- Nog verfijnen: daglimiet/gebruiksregistratie, concept-preview bewerken voor opslaan, echte AI pas activeren na expliciete productieconfiguratie.
+- Later verfijnen: minimale invoer verder versimpelen, slimmere tags/varianten/SKU's, concept-preview bewerken voor opslaan en betere kwaliteitscontrole op titels, SEO en platformteksten.
+- Nog technisch afronden voor echte AI: daglimiet/gebruiksregistratie, echte AI pas activeren na expliciete productieconfiguratie.
 
 ## Fase 11 - NAS en deploy verbeteren
 
@@ -521,7 +524,7 @@ Aanbevolen volgorde:
 Bijgewerkte eerstvolgende werkvolgorde vanaf 2026-06-26:
 
 1. UI-verfijning en filters voor `/voorraad`, `/verkoopkanalen`, `/analyse` en `/catalogus/ai-assistent`.
-2. Credentialsbeheer en secrets-scherm voor verkoopkanalen.
+2. Credentialsbeheer en secrets-scherm voor verkoopkanalen. Status: eerste versie aanwezig.
 3. Productconcept uit AI-assistent kunnen opslaan als conceptproduct.
 4. Winstberekening beter zichtbaar maken op orderdetail en analyse.
 5. NAS healthchecks, backupstrategie en deploydocumentatie afronden.

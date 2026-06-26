@@ -15,6 +15,7 @@ import {
   OrdersData,
   Platform,
   PlatformConnectorStatus,
+  PlatformCredential,
   PrintBatch,
   PrintJob,
   PrintPlanningData,
@@ -26,6 +27,7 @@ import {
   ProductPublication,
   ProductTag,
   ProductVariant,
+  SalesChannelDetailData,
   SalesChannelsData,
   StockRecommendation,
 } from "./types";
@@ -219,6 +221,32 @@ export async function getSalesChannelsData(): Promise<SalesChannelsData> {
     statuses: statuses.filter((status): status is PlatformConnectorStatus => Boolean(status)),
     products,
     publications: publicationsNested.flat(),
+  };
+}
+
+export async function getSalesChannelDetailData(platformId: number): Promise<SalesChannelDetailData> {
+  const [platforms, status, credentials, products] = await Promise.all([
+    apiGet<Platform[]>("/platforms"),
+    apiGet<PlatformConnectorStatus>(`/platforms/${platformId}/connector-status`).catch(() => null),
+    apiGet<PlatformCredential[]>(`/platforms/${platformId}/credentials`).catch(() => []),
+    apiGet<Product[]>("/products"),
+  ]);
+
+  const platform = platforms.find((item) => item.id === platformId);
+  if (!platform) {
+    throw new Error(`Verkoopkanaal ${platformId} niet gevonden`);
+  }
+
+  const publicationsNested = await Promise.all(
+    products.map((product) => apiGet<ProductPublication[]>(`/products/${product.id}/publications`).catch(() => [])),
+  );
+
+  return {
+    platform,
+    status,
+    credentials,
+    products,
+    publications: publicationsNested.flat().filter((publication) => publication.platform_id === platformId),
   };
 }
 

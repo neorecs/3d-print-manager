@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { AppShell } from "@/components/AppShell";
 import { EmptyState } from "@/components/EmptyState";
 import { MetricCard } from "@/components/MetricCard";
@@ -48,7 +49,7 @@ function SalesChannelsContent({ data }: { data: SalesChannelsData }) {
         {data.statuses.length ? (
           <div className="table-scroll">
             <table className="data-table">
-              <thead><tr><th>Kanaal</th><th>Type</th><th>Modus</th><th>Status</th><th>Ontbreekt</th></tr></thead>
+              <thead><tr><th>Kanaal</th><th>Type</th><th>Modus</th><th>Status</th><th>Ontbreekt</th><th>Actie</th></tr></thead>
               <tbody>
                 {data.statuses.map((status) => (
                   <tr key={status.platform_id}>
@@ -57,6 +58,7 @@ function SalesChannelsContent({ data }: { data: SalesChannelsData }) {
                     <td>{status.mode}</td>
                     <td><StatusBadge status={status.ready_for_live ? "live klaar" : "configuratie nodig"} /></td>
                     <td>{status.missing_credentials.length ? status.missing_credentials.join(", ") : "-"}</td>
+                    <td><Link className="font-bold text-brand hover:text-ink" href={`/verkoopkanalen/${status.platform_id}`}>Openen</Link></td>
                   </tr>
                 ))}
               </tbody>
