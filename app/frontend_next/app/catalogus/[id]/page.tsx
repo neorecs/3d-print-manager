@@ -3,8 +3,9 @@ import { EmptyState } from "@/components/EmptyState";
 import { MetricCard } from "@/components/MetricCard";
 import { PageHeader } from "@/components/PageHeader";
 import { SectionCard } from "@/components/SectionCard";
-import { formatCurrency, formatMinutes, getProductDetailData } from "@/lib/api";
+import { formatMinutes, getProductDetailData } from "@/lib/api";
 import type { ProductDetailData } from "@/lib/types";
+import { InventoryManager } from "./InventoryManager";
 import { MediaManager } from "./MediaManager";
 import { PublicationManager } from "./PublicationManager";
 import { ProductEditForm } from "./ProductEditForm";
@@ -76,35 +77,8 @@ function DetailContent({ data }: { data: ProductDetailData }) {
           {printMinutes ? <p className="mt-3 text-sm text-muted">Totale bekende printtijd: {formatMinutes(printMinutes)}.</p> : null}
         </SectionCard>
 
-        <SectionCard title="Productvoorraad" description="Vrije voorraad is op voorraad min gereserveerd.">
-          {data.inventory.length ? (
-            <div className="table-scroll">
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th>Variant</th>
-                    <th>Materiaal</th>
-                    <th>Kleur</th>
-                    <th className="text-right">Vrij</th>
-                    <th>Locatie</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {data.inventory.map((item) => (
-                    <tr key={item.id}>
-                      <td>{item.product_variant_id}</td>
-                      <td>{item.material || "-"}</td>
-                      <td>{item.color || "-"}</td>
-                      <td className="text-right font-semibold">{Math.max(item.quantity_on_hand - item.quantity_reserved, 0)}</td>
-                      <td>{item.location || "-"}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <EmptyState title="Geen productvoorraad" description="Voorraadregels verschijnen hier zodra voorraad voor varianten wordt aangemaakt." />
-          )}
+        <SectionCard title="Productvoorraad beheren" description="Leg voorraad, reserveringen, minimumvoorraad en opslaglocatie per variant vast.">
+          <InventoryManager product={data.product} variants={data.variants} inventory={data.inventory} />
         </SectionCard>
 
         <SectionCard title="Foto's beheren" description="Upload productfoto's, kies een hoofdfoto, bepaal volgorde en vul alt-tekst in.">
