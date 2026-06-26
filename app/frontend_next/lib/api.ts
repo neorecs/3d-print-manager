@@ -1,6 +1,7 @@
 import {
   DashboardData,
   FilamentSpool,
+  FilamentData,
   Order,
   OrderDetail,
   OrderDetailData,
@@ -168,6 +169,18 @@ export async function getPrintPlanningData(): Promise<PrintPlanningData> {
     variants,
     orders,
     orderItems,
+  };
+}
+
+export async function getFilamentData(): Promise<FilamentData> {
+  const [filament, printJobs] = await Promise.all([
+    apiGet<FilamentSpool[]>("/filament"),
+    apiGet<PrintJob[]>("/print-jobs"),
+  ]);
+
+  return {
+    filament,
+    printJobs,
   };
 }
 

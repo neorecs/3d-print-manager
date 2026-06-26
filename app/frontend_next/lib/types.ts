@@ -107,9 +107,18 @@ export type FilamentSpool = {
   brand: string;
   material: string;
   color: string;
+  initial_weight_grams: number;
   remaining_weight_grams: number;
+  purchase_price: number;
+  price_per_gram?: number | null;
   minimum_remaining_grams: number;
+  location?: string | null;
   active: boolean;
+};
+
+export type FilamentData = {
+  filament: FilamentSpool[];
+  printJobs: PrintJob[];
 };
 
 export type PrintJob = {

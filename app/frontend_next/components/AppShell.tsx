@@ -18,6 +18,7 @@ const navigation = [
     section: "Operatie",
     items: [
       { label: "Voorraad", href: "/voorraad" },
+      { label: "Filament", href: "/filament" },
       { label: "Printplanning", href: "/printplanning" },
     ],
   },
