@@ -1,0 +1,45 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-print_manager}
+      POSTGRES_USER: ${POSTGRES_USER:-print_manager}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me}
+    ports:
+      - "35432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-print_manager} -d ${POSTGRES_DB:-print_manager}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build: ./app/backend
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://print_manager:change-me@db:5432/print_manager}
+      BACKEND_CORS_ORIGINS: ${BACKEND_CORS_ORIGINS:-http://localhost:8501}
+      CREDENTIAL_ENCRYPTION_KEY: ${CREDENTIAL_ENCRYPTION_KEY:-MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=}
+      SHOPIFY_API_VERSION: ${SHOPIFY_API_VERSION:-2026-04}
+    ports:
+      - "38080:8000"
+    volumes:
+      - ./app/backend:/app
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    build: ./app/frontend_streamlit
+    environment:
+      API_BASE_URL: ${API_BASE_URL:-http://backend:8000}
+    ports:
+      - "38501:8501"
+    volumes:
+      - ./app/frontend_streamlit:/app
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
