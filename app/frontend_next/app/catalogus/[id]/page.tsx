@@ -6,6 +6,7 @@ import { SectionCard } from "@/components/SectionCard";
 import { StatusBadge } from "@/components/StatusBadge";
 import { formatCurrency, formatMinutes, getProductDetailData } from "@/lib/api";
 import type { ProductDetailData, ProductPublication } from "@/lib/types";
+import { MediaManager } from "./MediaManager";
 import { ProductEditForm } from "./ProductEditForm";
 import { VariantManager } from "./VariantManager";
 
@@ -106,23 +107,8 @@ function DetailContent({ data }: { data: ProductDetailData }) {
           )}
         </SectionCard>
 
-        <SectionCard title="Foto's" description="Controleer of er media is en of een hoofdfoto is gekozen.">
-          {data.media.length ? (
-            <div className="grid gap-3 sm:grid-cols-2">
-              {data.media.map((item) => (
-                <div className="rounded-md border border-line bg-slate-50 p-3" key={item.id}>
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="font-semibold">Foto {item.sort_order ?? item.id}</div>
-                    {item.is_primary ? <StatusBadge status="hoofdfoto" /> : null}
-                  </div>
-                  <p className="mt-2 break-all text-sm text-muted">{item.file_path || "Geen pad"}</p>
-                  <p className="mt-1 text-sm text-slate-700">{item.alt_text || "Geen alt-tekst"}</p>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <EmptyState title="Geen foto's" description="Foto-upload komt als volgende beheeractie op deze productdetailpagina." />
-          )}
+        <SectionCard title="Foto's beheren" description="Upload productfoto's, kies een hoofdfoto, bepaal volgorde en vul alt-tekst in.">
+          <MediaManager productId={data.product.id} media={data.media} />
         </SectionCard>
 
         <SectionCard title="Platformpublicaties" description="Per platform zie je publicatiestatus, sync-status en eventuele foutmelding.">
