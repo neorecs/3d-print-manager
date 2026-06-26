@@ -62,10 +62,32 @@ export type Order = {
   id: number;
   internal_order_number: string;
   platform_id: number;
+  external_order_id?: string | null;
   customer_name?: string | null;
+  customer_email?: string | null;
   order_date?: string | null;
   total_amount?: number | null;
+  currency?: string | null;
   status?: string | null;
+};
+
+export type OrderItem = {
+  id: number;
+  order_id: number;
+  product_id?: number | null;
+  product_variant_id?: number | null;
+  external_order_item_id?: string | null;
+  sku?: string | null;
+  quantity_ordered: number;
+  quantity_from_inventory: number;
+  quantity_to_print: number;
+  unit_sale_price?: number | null;
+  inventory_status?: string | null;
+  print_job_id?: number | null;
+};
+
+export type OrderDetail = Order & {
+  items: OrderItem[];
 };
 
 export type ProductInventory = {
@@ -92,13 +114,19 @@ export type FilamentSpool = {
 
 export type PrintJob = {
   id: number;
+  order_item_id?: number | null;
   product_id: number;
   product_variant_id: number;
   color?: string | null;
   material?: string | null;
   quantity_needed: number;
   quantity_planned: number;
+  quantity_succeeded?: number | null;
+  quantity_failed?: number | null;
+  quantity_to_order?: number | null;
+  quantity_to_inventory?: number | null;
   estimated_print_time_minutes?: number | null;
+  estimated_filament_grams?: number | null;
   status?: string | null;
 };
 
@@ -139,6 +167,23 @@ export type DashboardData = {
   printJobs: PrintJob[];
   recommendations: StockRecommendation[];
   publications: ProductPublication[];
+};
+
+export type OrdersData = {
+  orders: Order[];
+  orderItems: OrderItem[];
+  platforms: Platform[];
+  products: Product[];
+  variants: ProductVariant[];
+  printJobs: PrintJob[];
+};
+
+export type OrderDetailData = {
+  order: OrderDetail;
+  platform?: Platform | null;
+  products: Product[];
+  variants: ProductVariant[];
+  printJobs: PrintJob[];
 };
 
 export type ProductCatalogRow = {

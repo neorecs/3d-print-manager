@@ -2,6 +2,10 @@ import {
   DashboardData,
   FilamentSpool,
   Order,
+  OrderDetail,
+  OrderDetailData,
+  OrderItem,
+  OrdersData,
   Platform,
   PrintJob,
   Product,
@@ -104,6 +108,44 @@ export async function getProductDetailData(productId: number): Promise<ProductDe
     tags,
     publications,
     platforms,
+  };
+}
+
+export async function getOrdersData(): Promise<OrdersData> {
+  const [orders, orderItems, platforms, products, variants, printJobs] = await Promise.all([
+    apiGet<Order[]>("/orders"),
+    apiGet<OrderItem[]>("/order-items"),
+    apiGet<Platform[]>("/platforms"),
+    apiGet<Product[]>("/products"),
+    apiGet<ProductVariant[]>("/product-variants"),
+    apiGet<PrintJob[]>("/print-jobs"),
+  ]);
+
+  return {
+    orders,
+    orderItems,
+    platforms,
+    products,
+    variants,
+    printJobs,
+  };
+}
+
+export async function getOrderDetailData(orderId: number): Promise<OrderDetailData> {
+  const [order, platforms, products, variants, printJobs] = await Promise.all([
+    apiGet<OrderDetail>(`/orders/${orderId}`),
+    apiGet<Platform[]>("/platforms"),
+    apiGet<Product[]>("/products"),
+    apiGet<ProductVariant[]>("/product-variants"),
+    apiGet<PrintJob[]>("/print-jobs"),
+  ]);
+
+  return {
+    order,
+    platform: platforms.find((platform) => platform.id === order.platform_id) || null,
+    products,
+    variants,
+    printJobs: printJobs.filter((job) => order.items.some((item) => item.id === job.order_item_id)),
   };
 }
 
