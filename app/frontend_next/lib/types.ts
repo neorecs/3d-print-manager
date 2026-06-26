@@ -117,12 +117,15 @@ export type ProductPublication = {
   id: number;
   product_id: number;
   platform_id: number;
+  external_product_id?: string | null;
+  external_listing_id?: string | null;
   publication_status?: string | null;
   platform_title?: string | null;
   platform_description?: string | null;
   platform_category?: string | null;
   platform_tags?: string | null;
   platform_price_override?: number | null;
+  platform_shipping_profile_id?: string | null;
   last_synced_at?: string | null;
   last_error?: string | null;
 };

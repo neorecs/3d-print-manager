@@ -3,10 +3,10 @@ import { EmptyState } from "@/components/EmptyState";
 import { MetricCard } from "@/components/MetricCard";
 import { PageHeader } from "@/components/PageHeader";
 import { SectionCard } from "@/components/SectionCard";
-import { StatusBadge } from "@/components/StatusBadge";
 import { formatCurrency, formatMinutes, getProductDetailData } from "@/lib/api";
-import type { ProductDetailData, ProductPublication } from "@/lib/types";
+import type { ProductDetailData } from "@/lib/types";
 import { MediaManager } from "./MediaManager";
+import { PublicationManager } from "./PublicationManager";
 import { ProductEditForm } from "./ProductEditForm";
 import { VariantManager } from "./VariantManager";
 
@@ -111,39 +111,10 @@ function DetailContent({ data }: { data: ProductDetailData }) {
           <MediaManager productId={data.product.id} media={data.media} />
         </SectionCard>
 
-        <SectionCard title="Platformpublicaties" description="Per platform zie je publicatiestatus, sync-status en eventuele foutmelding.">
-          {data.publications.length ? (
-            <div className="space-y-3">
-              {data.publications.map((publication) => (
-                <PublicationCard publication={publication} key={publication.id} />
-              ))}
-            </div>
-          ) : (
-            <EmptyState title="Nog geen platformpublicaties" description="Koppel dit product later aan Etsy, Shopify of andere verkoopkanalen." />
-          )}
+        <SectionCard title="Platformpublicaties beheren" description="Leg per platform afwijkende titel, omschrijving, categorie, tags, prijs en status vast.">
+          <PublicationManager product={data.product} platforms={data.platforms} publications={data.publications} />
         </SectionCard>
       </div>
-    </div>
-  );
-}
-
-function PublicationCard({ publication }: { publication: ProductPublication }) {
-  return (
-    <div className="rounded-md border border-line bg-white p-3">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <div className="font-semibold">Platform {publication.platform_id}</div>
-          <div className="mt-1 text-sm text-muted">{publication.platform_title || "Geen afwijkende titel"}</div>
-        </div>
-        <StatusBadge status={publication.publication_status} />
-      </div>
-      <div className="mt-3 grid gap-2 text-sm sm:grid-cols-2">
-        <div><span className="font-semibold">Categorie:</span> {publication.platform_category || "-"}</div>
-        <div><span className="font-semibold">Prijs:</span> {publication.platform_price_override ? formatCurrency(publication.platform_price_override) : "-"}</div>
-        <div><span className="font-semibold">Laatste sync:</span> {publication.last_synced_at || "-"}</div>
-        <div><span className="font-semibold">Tags:</span> {publication.platform_tags || "-"}</div>
-      </div>
-      {publication.last_error ? <p className="mt-3 text-sm font-semibold text-red-700">{publication.last_error}</p> : null}
     </div>
   );
 }
