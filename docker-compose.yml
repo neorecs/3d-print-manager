@@ -19,7 +19,7 @@ services:
     build: ./app/backend
     environment:
       DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://print_manager:change-me@db:5432/print_manager}
-      BACKEND_CORS_ORIGINS: ${BACKEND_CORS_ORIGINS:-http://localhost:8501}
+      BACKEND_CORS_ORIGINS: ${BACKEND_CORS_ORIGINS:-http://localhost:8501,http://localhost:3000,http://localhost:38502}
       CREDENTIAL_ENCRYPTION_KEY: ${CREDENTIAL_ENCRYPTION_KEY:-MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=}
       SHOPIFY_API_VERSION: ${SHOPIFY_API_VERSION:-2026-04}
     ports:
@@ -38,6 +38,16 @@ services:
       - "38501:8501"
     volumes:
       - ./app/frontend_streamlit:/app
+    depends_on:
+      - backend
+
+  frontend_next:
+    build: ./app/frontend_next
+    environment:
+      API_BASE_URL: ${FRONTEND_NEXT_API_BASE_URL:-http://backend:8000}
+      NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-http://localhost:38080}
+    ports:
+      - "38502:3000"
     depends_on:
       - backend
 

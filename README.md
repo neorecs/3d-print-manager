@@ -11,6 +11,7 @@ Versie 0.12 prototype:
 - SQLAlchemy modellen
 - Alembic migration
 - Streamlit dashboard/prototype
+- Next.js frontend in opbouw onder `app/frontend_next`
 - Docker Compose
 - Dummydata voor testen zonder Etsy- of Shopify-koppelingen
 - Producten aanmaken en bewerken via Streamlit
@@ -88,11 +89,27 @@ docker compose up --build
 
 3. Open:
 
-- Streamlit dashboard: http://localhost:38501
+- Next.js dashboard: http://localhost:38502
+- Streamlit dashboard/fallback: http://localhost:38501
 - FastAPI docs: http://localhost:38080/docs
 - Healthcheck: http://localhost:38080/health
 
 De backend voert bij het starten automatisch `alembic upgrade head` uit.
+
+## Frontends
+
+Er zijn tijdelijk twee frontends:
+
+- `app/frontend_streamlit`: bestaande prototype/fallback UI.
+- `app/frontend_next`: nieuwe officiële React/Next.js frontend.
+
+De Next.js frontend gebruikt de FastAPI backend via:
+
+```env
+NEXT_PUBLIC_API_BASE_URL=http://localhost:38080
+```
+
+Streamlit blijft beschikbaar tot de belangrijkste schermen zijn gemigreerd naar Next.js.
 
 ## Platformconnectors
 
@@ -179,6 +196,7 @@ app/
     exports/
     publishing/
   frontend_streamlit/
+  frontend_next/
   database/
 docs/
 docker-compose.yml
@@ -188,7 +206,8 @@ docker-compose.yml
 ## Belangrijke uitgangspunten
 
 - De backend staat los van de frontend.
-- Streamlit is alleen het eerste dashboard/prototype.
+- Streamlit is tijdelijk prototype/fallback.
+- Next.js wordt de officiële frontend voor productiewaardige workflows.
 - De interne productcatalogus is leidend.
 - Platformproducten zijn gekoppelde publicaties.
 - Bambu Studio blijft verantwoordelijk voor slicing en printvoorbereiding.
