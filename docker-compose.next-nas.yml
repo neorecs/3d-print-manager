@@ -1,13 +1,32 @@
 services:
+  backend:
+    build: ./app/backend
+    environment:
+      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
+      BACKEND_CORS_ORIGINS: ${BACKEND_CORS_ORIGINS:-http://10.5.1.150:38502,http://localhost:38502}
+      CREDENTIAL_ENCRYPTION_KEY: ${CREDENTIAL_ENCRYPTION_KEY:?CREDENTIAL_ENCRYPTION_KEY is required}
+      SHOPIFY_API_VERSION: ${SHOPIFY_API_VERSION:-2026-04}
+      CONNECTORS_LIVE_MODE: ${CONNECTORS_LIVE_MODE:-false}
+      AI_OPENAI_ENABLED: ${AI_OPENAI_ENABLED:-false}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_PRODUCT_MODEL: ${OPENAI_PRODUCT_MODEL:-gpt-5.4-mini}
+      OPENAI_API_BASE_URL: ${OPENAI_API_BASE_URL:-https://api.openai.com/v1}
+      AI_PRODUCT_MAX_OUTPUT_TOKENS: ${AI_PRODUCT_MAX_OUTPUT_TOKENS:-2500}
+    networks:
+      - print_manager
+    restart: unless-stopped
+
   frontend_next:
     build: ./app/frontend_next
     environment:
-      API_BASE_URL: ${FRONTEND_NEXT_API_BASE_URL:-http://3d-print-manager-backend-1:8000}
+      API_BASE_URL: ${FRONTEND_NEXT_API_BASE_URL:-http://backend:8000}
       NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-http://10.5.1.150:38080}
     ports:
       - "38502:3000"
     networks:
       - print_manager
+    depends_on:
+      - backend
     restart: unless-stopped
 
 networks:

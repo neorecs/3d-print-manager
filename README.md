@@ -111,6 +111,19 @@ NEXT_PUBLIC_API_BASE_URL=http://localhost:38080
 
 Streamlit blijft beschikbaar tot de belangrijkste schermen zijn gemigreerd naar Next.js.
 
+## NAS Next.js stack
+
+`docker-compose.next-nas.yml` draait de Next.js frontend samen met een private Git-managed backendservice. Die backend publiceert geen eigen poort en is bedoeld voor de nieuwe Next.js UI. De oudere publieke backend op poort `38080` kan tijdelijk blijven bestaan voor bestaande links en fallback-schermen.
+
+Voor NAS-deploy zijn minimaal deze environment variables nodig in Dockhand:
+
+```env
+DATABASE_URL=
+CREDENTIAL_ENCRYPTION_KEY=
+```
+
+Zet secrets niet in Git. De Next.js service gebruikt intern standaard `http://backend:8000`.
+
 ## Platformconnectors
 
 De connectorlaag draait standaard in mockmodus:

@@ -54,6 +54,7 @@ Aanwezig:
 Nog belangrijk:
 
 - NAS-deployproces werkt via GitHub/Dockhand, maar moet nog verder worden gedocumenteerd en van healthchecks/backups worden voorzien.
+- Next.js NAS-stack bevat nu een Git-managed private backendservice voor de nieuwe UI; de oudere publieke backendstack kan tijdelijk blijven bestaan.
 - Streamlit-container is eerder handmatig gepatcht.
 - Echte AI is nog niet live geactiveerd.
 - Echte Etsy/Shopify liveflows zijn nog niet productiehard.
@@ -405,6 +406,7 @@ Status 2026-06-27:
 - Access code wordt als secret opgeslagen en niet teruggetoond.
 - Next.js scherm aanwezig op `/bambu-printers`.
 - Veilige LAN-bereikbaarheidstest aanwezig via host en MQTT-poort.
+- NAS-route loopt via de Git-managed private backend in de Next.js stack, zodat nieuwe backendroutes zonder handmatige containerpatches beschikbaar kunnen worden.
 - Nog niet bouwen: automatische printstart, eigen slicer, cloudkoppeling of destructieve printercommando's.
 
 Nog verfijnen:
