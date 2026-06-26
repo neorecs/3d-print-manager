@@ -134,7 +134,9 @@ function ProductRow({ row }: { row: ProductCatalogRow }) {
       <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <h3 className="text-lg font-bold text-ink">{row.product.internal_title || row.product.name}</h3>
+            <a className="text-lg font-bold text-ink hover:text-brand" href={`/catalogus/${row.product.id}`}>
+              {row.product.internal_title || row.product.name}
+            </a>
             <StatusBadge status={row.product.status} />
           </div>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-muted">
@@ -173,6 +175,11 @@ function ProductRow({ row }: { row: ProductCatalogRow }) {
         </div>
 
         <PublicationSummary publications={row.publications} />
+      </div>
+      <div className="mt-4 flex justify-end">
+        <a className="rounded-md border border-line bg-white px-3 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50" href={`/catalogus/${row.product.id}`}>
+          Product openen
+        </a>
       </div>
     </article>
   );

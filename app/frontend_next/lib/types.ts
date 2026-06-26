@@ -34,6 +34,22 @@ export type ProductVariant = {
   active?: boolean;
 };
 
+export type ProductMedia = {
+  id: number;
+  product_id: number;
+  file_path?: string | null;
+  media_type?: string | null;
+  alt_text?: string | null;
+  sort_order?: number | null;
+  is_primary?: boolean | null;
+};
+
+export type ProductTag = {
+  id: number;
+  product_id: number;
+  tag: string;
+};
+
 export type Order = {
   id: number;
   internal_order_number: string;
@@ -94,6 +110,11 @@ export type ProductPublication = {
   product_id: number;
   platform_id: number;
   publication_status?: string | null;
+  platform_title?: string | null;
+  platform_description?: string | null;
+  platform_category?: string | null;
+  platform_tags?: string | null;
+  platform_price_override?: number | null;
   last_synced_at?: string | null;
   last_error?: string | null;
 };
@@ -122,4 +143,14 @@ export type ProductCatalogData = {
   inventory: ProductInventory[];
   platforms: Platform[];
   rows: ProductCatalogRow[];
+};
+
+export type ProductDetailData = {
+  product: Product;
+  variants: ProductVariant[];
+  inventory: ProductInventory[];
+  media: ProductMedia[];
+  tags: ProductTag[];
+  publications: ProductPublication[];
+  platforms: Platform[];
 };

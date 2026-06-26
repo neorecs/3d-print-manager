@@ -6,8 +6,11 @@ import {
   PrintJob,
   Product,
   ProductCatalogData,
+  ProductDetailData,
   ProductInventory,
+  ProductMedia,
   ProductPublication,
+  ProductTag,
   ProductVariant,
   StockRecommendation,
 } from "./types";
@@ -79,6 +82,28 @@ export async function getProductCatalogData(): Promise<ProductCatalogData> {
       inventory: inventory.filter((item) => item.product_id === product.id),
       publications: publications.filter((publication) => publication.product_id === product.id),
     })),
+  };
+}
+
+export async function getProductDetailData(productId: number): Promise<ProductDetailData> {
+  const [product, variants, inventory, media, tags, publications, platforms] = await Promise.all([
+    apiGet<Product>(`/products/${productId}`),
+    apiGet<ProductVariant[]>("/product-variants"),
+    apiGet<ProductInventory[]>("/inventory/products"),
+    apiGet<ProductMedia[]>(`/products/${productId}/media`).catch(() => []),
+    apiGet<ProductTag[]>(`/products/${productId}/tags`).catch(() => []),
+    apiGet<ProductPublication[]>(`/products/${productId}/publications`).catch(() => []),
+    apiGet<Platform[]>("/platforms"),
+  ]);
+
+  return {
+    product,
+    variants: variants.filter((variant) => variant.product_id === productId),
+    inventory: inventory.filter((item) => item.product_id === productId),
+    media,
+    tags,
+    publications,
+    platforms,
   };
 }
 
