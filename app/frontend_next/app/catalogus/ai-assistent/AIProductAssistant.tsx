@@ -177,24 +177,56 @@ export function AIProductAssistant({ status }: { status: AIProductStatus }) {
       {error ? <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm font-semibold text-red-700">{error}</div> : null}
 
       <form className="rounded-lg border border-line bg-white p-4" onSubmit={generate}>
+        <div className="mb-5 rounded-lg border border-line bg-slate-50 p-4">
+          <h3 className="font-bold text-ink">Snel product maken</h3>
+          <p className="mt-1 text-sm leading-6 text-muted">
+            Vul alleen in wat jij zeker weet. De assistent bedenkt daarna titel, omschrijvingen, tags, SKU en conceptpublicaties.
+          </p>
+        </div>
+
         <div className="grid gap-4 md:grid-cols-2">
           <label className="space-y-2 md:col-span-2">
             <span className="text-sm font-bold text-slate-700">Productidee</span>
-            <textarea className="min-h-28 w-full rounded-md border border-line px-3 py-2 text-sm outline-none focus:border-brand" onChange={(event) => update("idea", event.target.value)} value={input.idea} />
+            <textarea
+              className="min-h-32 w-full rounded-md border border-line px-3 py-2 text-sm leading-6 outline-none focus:border-brand"
+              onChange={(event) => update("idea", event.target.value)}
+              placeholder="Bijv. wandhouder voor Bambu scraper, organizer voor nozzle doosjes, sleutelhanger met naam..."
+              value={input.idea}
+            />
           </label>
-          <Field label="Doelgroep" value={input.audience} onChange={(value) => update("audience", value)} />
-          <Field label="Stijl" value={input.style} onChange={(value) => update("style", value)} />
-          <Field label="Materiaal" value={input.material} onChange={(value) => update("material", value)} />
-          <Field label="Kleuren" value={input.colors} onChange={(value) => update("colors", value)} />
-          <Field label="Producttype" value={input.product_type} onChange={(value) => update("product_type", value)} />
-          <Field label="Categorie" value={input.category} onChange={(value) => update("category", value)} />
-          <Field label="Prijs" value={input.price} onChange={(value) => update("price", value)} />
-          <Field label="Printtijd minuten" value={input.print_time} onChange={(value) => update("print_time", value)} />
-          <Field label="Filament gram" value={input.filament} onChange={(value) => update("filament", value)} />
-          <Field label="Afmetingen" value={input.dimensions} onChange={(value) => update("dimensions", value)} />
-          <Field label="Zoekwoorden" value={input.keywords} onChange={(value) => update("keywords", value)} />
-          <Field label="Platformen" value={input.platforms} onChange={(value) => update("platforms", value)} />
+          <Field label="Voor wie of waarvoor?" value={input.audience} onChange={(value) => update("audience", value)} placeholder="Bijv. Bambu Lab gebruikers, bureau, cadeau, kinderen" />
+          <SelectField
+            label="Stijl"
+            value={input.style}
+            onChange={(value) => update("style", value)}
+            options={["functioneel", "modern", "minimalistisch", "kawaii", "grappig", "premium", "stoer"]}
+          />
+          <Field label="Materiaal" value={input.material} onChange={(value) => update("material", value)} placeholder="Bijv. PLA, PETG, TPU" />
+          <Field label="Kleuren" value={input.colors} onChange={(value) => update("colors", value)} placeholder="Bijv. zwart, rood, wit" />
+          <Field label="Prijsrichting" value={input.price} onChange={(value) => update("price", value)} placeholder="Bijv. 9,95 of 15-20" />
         </div>
+
+        <details className="mt-5 rounded-lg border border-line bg-slate-50 p-4">
+          <summary className="cursor-pointer list-none">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h3 className="font-bold text-ink">Geavanceerd</h3>
+                <p className="mt-1 text-sm text-muted">Alleen invullen als je deze print- of platformgegevens al weet.</p>
+              </div>
+              <span className="rounded-full bg-white px-3 py-1 text-xs font-bold text-slate-700">optioneel</span>
+            </div>
+          </summary>
+          <div className="mt-4 grid gap-4 border-t border-line pt-4 md:grid-cols-2">
+            <Field label="Producttype" value={input.product_type} onChange={(value) => update("product_type", value)} placeholder="Bijv. houder, organizer, decoratie" />
+            <Field label="Categorie" value={input.category} onChange={(value) => update("category", value)} placeholder="Bijv. werkplaats, bureau, cadeau" />
+            <Field label="Printtijd minuten" value={input.print_time} onChange={(value) => update("print_time", value)} placeholder="Bijv. 45" />
+            <Field label="Filament gram" value={input.filament} onChange={(value) => update("filament", value)} placeholder="Bijv. 38" />
+            <Field label="Afmetingen" value={input.dimensions} onChange={(value) => update("dimensions", value)} placeholder="Bijv. 120 x 80 x 30 mm" />
+            <Field label="Zoekwoorden" value={input.keywords} onChange={(value) => update("keywords", value)} placeholder="Komma-gescheiden extra tags" />
+            <Field label="Platformen" value={input.platforms} onChange={(value) => update("platforms", value)} placeholder="etsy, shopify" />
+          </div>
+        </details>
+
         <div className="mt-4 flex justify-end">
           <button className="rounded-md bg-brand px-4 py-2 text-sm font-bold text-white disabled:opacity-60" disabled={busy || !input.idea.trim()} type="submit">
             {busy ? "Genereren..." : status.ready ? "Concept met echte AI maken" : "Gratis concept maken"}
@@ -247,11 +279,54 @@ export function AIProductAssistant({ status }: { status: AIProductStatus }) {
   );
 }
 
-function Field({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
+function Field({
+  label,
+  value,
+  onChange,
+  placeholder,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+}) {
   return (
     <label className="space-y-2">
       <span className="text-sm font-bold text-slate-700">{label}</span>
-      <input className="w-full rounded-md border border-line px-3 py-2 text-sm outline-none focus:border-brand" onChange={(event) => onChange(event.target.value)} value={value} />
+      <input
+        className="w-full rounded-md border border-line px-3 py-2 text-sm outline-none focus:border-brand"
+        onChange={(event) => onChange(event.target.value)}
+        placeholder={placeholder}
+        value={value}
+      />
+    </label>
+  );
+}
+
+function SelectField({
+  label,
+  value,
+  onChange,
+  options,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  options: string[];
+}) {
+  return (
+    <label className="space-y-2">
+      <span className="text-sm font-bold text-slate-700">{label}</span>
+      <select
+        className="w-full rounded-md border border-line px-3 py-2 text-sm outline-none focus:border-brand"
+        onChange={(event) => onChange(event.target.value)}
+        value={value}
+      >
+        <option value="">Kies een stijl</option>
+        {options.map((option) => (
+          <option key={option} value={option}>{option}</option>
+        ))}
+      </select>
     </label>
   );
 }
