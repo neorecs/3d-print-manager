@@ -236,7 +236,17 @@ export async function getAnalyticsData(periodDays = 30): Promise<AnalyticsData> 
 }
 
 export async function getAIProductStatus(): Promise<AIProductStatus> {
-  return apiGet<AIProductStatus>("/ai/product-draft/status");
+  try {
+    return await apiGet<AIProductStatus>("/ai/product-draft/status");
+  } catch {
+    return {
+      enabled: false,
+      configured: false,
+      model: "mockmodus",
+      ready: false,
+      note: "AI-status is niet bereikbaar. De frontend gebruikt gratis mockmodus zonder OpenAI API-call.",
+    };
+  }
 }
 
 export function formatCurrency(value?: number | null) {
