@@ -19,7 +19,7 @@ services:
   frontend_next:
     build: ./app/frontend_next
     environment:
-      API_BASE_URL: ${FRONTEND_NEXT_API_BASE_URL:-http://backend:8000}
+      API_BASE_URL: ${FRONTEND_NEXT_API_BASE_URL:-http://3d-print-manager-next-backend-1:8000}
       NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-http://10.5.1.150:38080}
     ports:
       - "38502:3000"
