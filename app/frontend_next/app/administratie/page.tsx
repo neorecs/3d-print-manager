@@ -11,12 +11,17 @@ import { AccountingSaleForm } from "./AccountingSaleForm";
 
 export const dynamic = "force-dynamic";
 
-export default async function AccountingPage() {
+export default async function AccountingPage({ searchParams }: { searchParams: Promise<{ start_date?: string; end_date?: string }> }) {
+  const params = await searchParams;
+  const filters = {
+    startDate: normalizeDateParam(params.start_date),
+    endDate: normalizeDateParam(params.end_date),
+  };
   let data: AccountingData | null = null;
   let error: string | null = null;
 
   try {
-    data = await getAccountingData();
+    data = await getAccountingData(filters);
   } catch (caught) {
     error = caught instanceof Error ? caught.message : "Backend niet bereikbaar";
   }
@@ -27,7 +32,7 @@ export default async function AccountingPage() {
         title="Administratie"
         description="Verzamel verkoop, inkoop, bonnetjes en btw-controles op een plek. Dit is een hulpmiddel voor je administratie, geen vervanging van fiscaal advies."
       />
-      {error || !data ? <AccountingError message={error || "Geen administratiedata beschikbaar"} /> : <AccountingContent data={data} />}
+      {error || !data ? <AccountingError message={error || "Geen administratiedata beschikbaar"} /> : <AccountingContent data={data} filters={filters} />}
     </AppShell>
   );
 }
@@ -40,9 +45,10 @@ function AccountingError({ message }: { message: string }) {
   );
 }
 
-function AccountingContent({ data }: { data: AccountingData }) {
+function AccountingContent({ data, filters }: { data: AccountingData; filters: { startDate?: string; endDate?: string } }) {
   const missingDocs = data.vatSummary.missing_document_count;
   const vatTone = data.vatSummary.vat_due >= 0 ? "warning" : "good";
+  const exportQuery = buildAccountingQuery(filters);
 
   return (
     <div className="space-y-6">
@@ -52,6 +58,25 @@ function AccountingContent({ data }: { data: AccountingData }) {
           <Step title="2. Inkoopboek" text="Filament, verpakking, onderdelen en verzendkosten worden kostenregels met bon/factuur." />
           <Step title="3. Btw-controle" text="De app telt verkoop-btw en voorbelasting op en signaleert ontbrekende documenten." />
         </div>
+      </SectionCard>
+
+      <SectionCard title="Periodefilter" description="Filter verkoopboek, inkoopboek, btw-cijfers en CSV-exports op factuurdatum. Laat leeg om alles te tonen.">
+        <form className="grid gap-4 md:grid-cols-[1fr_1fr_auto_auto]" action="/administratie">
+          <label className="space-y-2">
+            <span className="text-sm font-bold text-slate-700">Vanaf</span>
+            <input className="w-full rounded-md border border-line bg-white px-3 py-2 text-sm outline-none focus:border-brand" defaultValue={filters.startDate || ""} name="start_date" type="date" />
+          </label>
+          <label className="space-y-2">
+            <span className="text-sm font-bold text-slate-700">Tot en met</span>
+            <input className="w-full rounded-md border border-line bg-white px-3 py-2 text-sm outline-none focus:border-brand" defaultValue={filters.endDate || ""} name="end_date" type="date" />
+          </label>
+          <div className="flex items-end">
+            <button className="w-full rounded-md bg-brand px-4 py-2 text-sm font-bold text-white" type="submit">Filter toepassen</button>
+          </div>
+          <div className="flex items-end">
+            <a className="w-full rounded-md border border-line bg-white px-4 py-2 text-center text-sm font-bold text-slate-700 hover:bg-slate-50" href="/administratie">Alles tonen</a>
+          </div>
+        </form>
       </SectionCard>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
@@ -72,9 +97,9 @@ function AccountingContent({ data }: { data: AccountingData }) {
 
       <SectionCard title="Export voor boekhouder" description="Download CSV-bestanden met de huidige verkoopregels, inkoopregels en btw-samenvatting. Controleer fiscale keuzes voordat je dit gebruikt voor aangifte.">
         <div className="flex flex-wrap gap-3">
-          <ExportLink href="/api/accounting/export/sales" label="Verkoopboek CSV" />
-          <ExportLink href="/api/accounting/export/purchases" label="Inkoopboek CSV" />
-          <ExportLink href="/api/accounting/export/vat-summary" label="Btw-samenvatting CSV" />
+          <ExportLink href={`/api/accounting/export/sales${exportQuery}`} label="Verkoopboek CSV" />
+          <ExportLink href={`/api/accounting/export/purchases${exportQuery}`} label="Inkoopboek CSV" />
+          <ExportLink href={`/api/accounting/export/vat-summary${exportQuery}`} label="Btw-samenvatting CSV" />
         </div>
       </SectionCard>
 
@@ -245,4 +270,16 @@ function formatDate(value?: string | null) {
   if (!value) return "-";
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString("nl-NL");
+}
+
+function normalizeDateParam(value?: string) {
+  return value && /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : undefined;
+}
+
+function buildAccountingQuery(filters: { startDate?: string; endDate?: string }) {
+  const params = new URLSearchParams();
+  if (filters.startDate) params.set("start_date", filters.startDate);
+  if (filters.endDate) params.set("end_date", filters.endDate);
+  const query = params.toString();
+  return query ? `?${query}` : "";
 }

@@ -490,6 +490,7 @@ Status 2026-06-27:
 - Orderdetail toont een verkoopboekingoverzicht met bedragen, status en link naar `/administratie`.
 - Handmatige verkoopboeking met optionele factuur-upload toegevoegd voor verkopen of correcties buiten de automatische orderflow.
 - CSV-export toegevoegd voor verkoopboek, inkoopboek en btw-samenvatting.
+- Periodefilter toegevoegd voor administratie-overzicht en CSV-exports op basis van factuurdatum.
 - Nog verfijnen: documentverwijdering/correcties, btw-periode afsluiten en fiscale instellingen zoals KOR/EU-verkoop.
 
 ## Fase 10 - Echte AI Product Assistent

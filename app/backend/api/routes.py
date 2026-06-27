@@ -6,7 +6,7 @@ import uuid
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, Response, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Response, UploadFile
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -146,9 +146,35 @@ def csv_download(filename: str, fieldnames: list[str], rows: list[dict]) -> Resp
     )
 
 
-def accounting_vat_summary_data(db: Session) -> dict:
-    sales = db.scalars(select(AccountingSale)).all()
-    purchases = db.scalars(select(AccountingPurchase)).all()
+def parse_date_range(start_date: str | None = None, end_date: str | None = None) -> tuple[date | None, date | None]:
+    start = parse_optional_date(start_date)
+    end = parse_optional_date(end_date)
+    if start and end and start > end:
+        raise HTTPException(status_code=400, detail="Startdatum mag niet na einddatum liggen")
+    return start, end
+
+
+def accounting_sales_query(start: date | None = None, end: date | None = None):
+    query = select(AccountingSale)
+    if start:
+        query = query.where(AccountingSale.invoice_date >= start)
+    if end:
+        query = query.where(AccountingSale.invoice_date <= end)
+    return query
+
+
+def accounting_purchases_query(start: date | None = None, end: date | None = None):
+    query = select(AccountingPurchase)
+    if start:
+        query = query.where(AccountingPurchase.invoice_date >= start)
+    if end:
+        query = query.where(AccountingPurchase.invoice_date <= end)
+    return query
+
+
+def accounting_vat_summary_data(db: Session, start: date | None = None, end: date | None = None) -> dict:
+    sales = db.scalars(accounting_sales_query(start, end)).all()
+    purchases = db.scalars(accounting_purchases_query(start, end)).all()
     sales_net = sum(float(item.net_amount or 0) for item in sales)
     sales_vat = sum(float(item.vat_amount or 0) for item in sales)
     purchase_net = sum(float(item.net_amount or 0) for item in purchases)
@@ -257,8 +283,13 @@ def seed(db: Session = Depends(get_db)) -> dict[str, str]:
 
 
 @router.get("/accounting/sales")
-def list_accounting_sales(db: Session = Depends(get_db)):
-    rows = db.scalars(select(AccountingSale).order_by(AccountingSale.invoice_date.desc().nullslast(), AccountingSale.id.desc())).all()
+def list_accounting_sales(
+    start_date: str | None = Query(None),
+    end_date: str | None = Query(None),
+    db: Session = Depends(get_db),
+):
+    start, end = parse_date_range(start_date, end_date)
+    rows = db.scalars(accounting_sales_query(start, end).order_by(AccountingSale.invoice_date.desc().nullslast(), AccountingSale.id.desc())).all()
     return list_rows(rows)
 
 
@@ -274,8 +305,13 @@ def create_accounting_sale(payload: AccountingSaleCreate, db: Session = Depends(
 
 
 @router.get("/accounting/purchases")
-def list_accounting_purchases(db: Session = Depends(get_db)):
-    rows = db.scalars(select(AccountingPurchase).order_by(AccountingPurchase.invoice_date.desc().nullslast(), AccountingPurchase.id.desc())).all()
+def list_accounting_purchases(
+    start_date: str | None = Query(None),
+    end_date: str | None = Query(None),
+    db: Session = Depends(get_db),
+):
+    start, end = parse_date_range(start_date, end_date)
+    rows = db.scalars(accounting_purchases_query(start, end).order_by(AccountingPurchase.invoice_date.desc().nullslast(), AccountingPurchase.id.desc())).all()
     return list_rows(rows)
 
 
@@ -345,13 +381,23 @@ def upload_accounting_document(
 
 
 @router.get("/accounting/vat-summary")
-def accounting_vat_summary(db: Session = Depends(get_db)):
-    return accounting_vat_summary_data(db)
+def accounting_vat_summary(
+    start_date: str | None = Query(None),
+    end_date: str | None = Query(None),
+    db: Session = Depends(get_db),
+):
+    start, end = parse_date_range(start_date, end_date)
+    return accounting_vat_summary_data(db, start, end)
 
 
 @router.get("/accounting/sales/export.csv")
-def export_accounting_sales(db: Session = Depends(get_db)):
-    rows = db.scalars(select(AccountingSale).order_by(AccountingSale.invoice_date, AccountingSale.id)).all()
+def export_accounting_sales(
+    start_date: str | None = Query(None),
+    end_date: str | None = Query(None),
+    db: Session = Depends(get_db),
+):
+    start, end = parse_date_range(start_date, end_date)
+    rows = db.scalars(accounting_sales_query(start, end).order_by(AccountingSale.invoice_date, AccountingSale.id)).all()
     fieldnames = [
         "id",
         "order_id",
@@ -374,8 +420,13 @@ def export_accounting_sales(db: Session = Depends(get_db)):
 
 
 @router.get("/accounting/purchases/export.csv")
-def export_accounting_purchases(db: Session = Depends(get_db)):
-    rows = db.scalars(select(AccountingPurchase).order_by(AccountingPurchase.invoice_date, AccountingPurchase.id)).all()
+def export_accounting_purchases(
+    start_date: str | None = Query(None),
+    end_date: str | None = Query(None),
+    db: Session = Depends(get_db),
+):
+    start, end = parse_date_range(start_date, end_date)
+    rows = db.scalars(accounting_purchases_query(start, end).order_by(AccountingPurchase.invoice_date, AccountingPurchase.id)).all()
     fieldnames = [
         "id",
         "supplier_name",
@@ -396,9 +447,14 @@ def export_accounting_purchases(db: Session = Depends(get_db)):
 
 
 @router.get("/accounting/vat-summary/export.csv")
-def export_accounting_vat_summary(db: Session = Depends(get_db)):
+def export_accounting_vat_summary(
+    start_date: str | None = Query(None),
+    end_date: str | None = Query(None),
+    db: Session = Depends(get_db),
+):
+    start, end = parse_date_range(start_date, end_date)
     fieldnames = ["sales_net", "sales_vat", "purchase_net", "purchase_vat", "vat_due", "sales_count", "purchase_count", "missing_document_count", "note"]
-    return csv_download("btw-samenvatting.csv", fieldnames, [accounting_vat_summary_data(db)])
+    return csv_download("btw-samenvatting.csv", fieldnames, [accounting_vat_summary_data(db, start, end)])
 
 
 @router.get("/accounting/vat-periods")

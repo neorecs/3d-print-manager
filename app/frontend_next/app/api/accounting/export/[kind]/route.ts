@@ -10,7 +10,7 @@ const exportPaths: Record<string, { path: string; filename: string }> = {
   "vat-summary": { path: "/accounting/vat-summary/export.csv", filename: "btw-samenvatting.csv" },
 };
 
-export async function GET(_request: Request, { params }: { params: Promise<{ kind: string }> }) {
+export async function GET(request: Request, { params }: { params: Promise<{ kind: string }> }) {
   const { kind } = await params;
   const target = exportPaths[kind];
 
@@ -18,7 +18,9 @@ export async function GET(_request: Request, { params }: { params: Promise<{ kin
     return NextResponse.json({ detail: "Onbekende administratie-export" }, { status: 404 });
   }
 
-  const response = await fetch(`${API_BASE_URL}${target.path}`, { cache: "no-store" });
+  const incomingUrl = new URL(request.url);
+  const query = incomingUrl.searchParams.toString();
+  const response = await fetch(`${API_BASE_URL}${target.path}${query ? `?${query}` : ""}`, { cache: "no-store" });
   const content = await response.text();
 
   return new NextResponse(content, {

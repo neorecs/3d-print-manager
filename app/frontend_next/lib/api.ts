@@ -222,12 +222,22 @@ export async function getBambuPrintersData(): Promise<BambuPrintersData> {
   return { printers };
 }
 
-export async function getAccountingData(): Promise<AccountingData> {
+function buildQuery(params: Record<string, string | undefined | null>) {
+  const searchParams = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value) searchParams.set(key, value);
+  });
+  const query = searchParams.toString();
+  return query ? `?${query}` : "";
+}
+
+export async function getAccountingData(filters: { startDate?: string; endDate?: string } = {}): Promise<AccountingData> {
+  const query = buildQuery({ start_date: filters.startDate, end_date: filters.endDate });
   const [sales, purchases, documents, vatSummary, vatPeriods] = await Promise.all([
-    apiGet<AccountingSale[]>("/accounting/sales"),
-    apiGet<AccountingPurchase[]>("/accounting/purchases"),
+    apiGet<AccountingSale[]>(`/accounting/sales${query}`),
+    apiGet<AccountingPurchase[]>(`/accounting/purchases${query}`),
     apiGet<AccountingDocument[]>("/accounting/documents"),
-    apiGet<VatSummary>("/accounting/vat-summary"),
+    apiGet<VatSummary>(`/accounting/vat-summary${query}`),
     apiGet<VatPeriod[]>("/accounting/vat-periods"),
   ]);
 
