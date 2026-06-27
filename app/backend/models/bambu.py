@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import DateTime, Integer, String
+from sqlalchemy import DateTime, Float, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from database import Base
@@ -23,3 +23,9 @@ class BambuPrinter(TimestampMixin, Base):
     last_status: Mapped[str] = mapped_column(String(50), default="onbekend")
     status_message: Mapped[str | None] = mapped_column(String(1000), nullable=True)
     last_seen_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    printer_state: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    print_progress: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    nozzle_temperature: Mapped[float | None] = mapped_column(Float, nullable=True)
+    bed_temperature: Mapped[float | None] = mapped_column(Float, nullable=True)
+    chamber_temperature: Mapped[float | None] = mapped_column(Float, nullable=True)
+    current_task: Mapped[str | None] = mapped_column(String(255), nullable=True)

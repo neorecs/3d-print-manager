@@ -49,6 +49,20 @@ function numberOrDefault(value: string, fallback: number) {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
 }
 
+function formatPercent(value?: number | null) {
+  return typeof value === "number" ? `${value}%` : "onbekend";
+}
+
+function formatTemperature(value?: number | null) {
+  return typeof value === "number" ? `${value.toFixed(1)} °C` : "onbekend";
+}
+
+function formatDateTime(value?: string | null) {
+  if (!value) return "nog niet gezien";
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? value : date.toLocaleString("nl-NL");
+}
+
 function toPayload(draft: PrinterDraft) {
   const payload: Record<string, string | number | boolean | null> = {
     name: draft.name.trim(),
@@ -157,6 +171,23 @@ export function BambuPrinterManager({ printers }: { printers: BambuPrinter[] }) 
     }
   }
 
+  async function refreshStatus(id: number) {
+    setBusyKey(`status-${id}`);
+    setMessage(null);
+    setError(null);
+    try {
+      const response = await fetch(`/api/bambu/printers/${id}/refresh-status`, { method: "POST" });
+      const data = await response.json().catch(() => null);
+      if (!response.ok) throw new Error(data?.detail || "Status ophalen is mislukt");
+      setMessage(data?.status_message || "Printerstatus opgehaald.");
+      await loadPrinters();
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Status ophalen is mislukt");
+    } finally {
+      setBusyKey(null);
+    }
+  }
+
   return (
     <div className="space-y-5">
       {message ? <div className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-700">{message}</div> : null}
@@ -186,6 +217,14 @@ export function BambuPrinterManager({ printers }: { printers: BambuPrinter[] }) 
                       {printer.model || "model onbekend"} - {printer.host}:{printer.mqtt_port} - {printer.location || "geen locatie"}
                     </p>
                     {printer.status_message ? <p className="mt-2 text-sm text-muted">{printer.status_message}</p> : null}
+                    <div className="mt-3 grid gap-2 text-sm sm:grid-cols-2 lg:grid-cols-3">
+                      <StatusValue label="Status" value={printer.printer_state || "onbekend"} />
+                      <StatusValue label="Voortgang" value={formatPercent(printer.print_progress)} />
+                      <StatusValue label="Taak" value={printer.current_task || "geen actieve taak"} />
+                      <StatusValue label="Nozzle" value={formatTemperature(printer.nozzle_temperature)} />
+                      <StatusValue label="Bed" value={formatTemperature(printer.bed_temperature)} />
+                      <StatusValue label="Laatst gezien" value={formatDateTime(printer.last_seen_at)} />
+                    </div>
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
                     <StatusBadge status={printer.last_status || "onbekend"} />
@@ -198,6 +237,9 @@ export function BambuPrinterManager({ printers }: { printers: BambuPrinter[] }) 
                 <div className="mt-4 flex flex-wrap justify-end gap-3">
                   <button className="rounded-md border border-line bg-white px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50 disabled:opacity-60" disabled={busyKey !== null} onClick={() => testConnection(printer.id)} type="button">
                     {busyKey === `test-${printer.id}` ? "Testen..." : "Verbinding testen"}
+                  </button>
+                  <button className="rounded-md border border-line bg-white px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50 disabled:opacity-60" disabled={busyKey !== null} onClick={() => refreshStatus(printer.id)} type="button">
+                    {busyKey === `status-${printer.id}` ? "Ophalen..." : "Status ophalen"}
                   </button>
                   <button className="rounded-md bg-brand px-4 py-2 text-sm font-bold text-white disabled:opacity-60" disabled={busyKey !== null} onClick={() => savePrinter(printer.id)} type="button">
                     {busyKey === `save-${printer.id}` ? "Opslaan..." : "Printer opslaan"}
@@ -223,13 +265,22 @@ function PrinterFields({ draft, onChange }: { draft: PrinterDraft; onChange: (fi
       <TextField label="Model" value={draft.model} onChange={(value) => onChange("model", value)} placeholder="X1C, P1S, A1 mini" />
       <TextField label="IP-adres / host" value={draft.host} onChange={(value) => onChange("host", value)} placeholder="Bijv. 10.5.1.42" />
       <TextField label="MQTT-poort" value={draft.mqtt_port} onChange={(value) => onChange("mqtt_port", value)} inputMode="numeric" />
-      <TextField label="Serienummer" value={draft.serial_number} onChange={(value) => onChange("serial_number", value)} placeholder="Optioneel" />
+      <TextField label="Serienummer voor status" value={draft.serial_number} onChange={(value) => onChange("serial_number", value)} placeholder="Nodig voor MQTT-status" />
       <TextField label="Locatie" value={draft.location} onChange={(value) => onChange("location", value)} placeholder="Bijv. Rek printerfarm" />
       <TextField label="Access code" value={draft.access_code} onChange={(value) => onChange("access_code", value)} placeholder="Leeg laten om bestaande code te behouden" type="password" />
       <label className="flex items-center gap-3 rounded-md border border-line bg-white px-3 py-2 text-sm font-semibold">
         <input checked={draft.active} onChange={(event) => onChange("active", event.target.checked)} type="checkbox" />
         Printer actief
       </label>
+    </div>
+  );
+}
+
+function StatusValue({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-md border border-line bg-slate-50 px-3 py-2">
+      <div className="text-[11px] font-bold uppercase tracking-wide text-muted">{label}</div>
+      <div className="mt-1 truncate font-semibold text-ink">{value}</div>
     </div>
   );
 }

@@ -6,3 +6,4 @@ alembic==1.14.0
 pydantic-settings==2.7.1
 python-multipart==0.0.20
 cryptography==42.0.8
+paho-mqtt==2.1.0

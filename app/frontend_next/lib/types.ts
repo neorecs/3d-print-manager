@@ -131,6 +131,12 @@ export type BambuPrinter = {
   last_status?: string | null;
   status_message?: string | null;
   last_seen_at?: string | null;
+  printer_state?: string | null;
+  print_progress?: number | null;
+  nozzle_temperature?: number | null;
+  bed_temperature?: number | null;
+  chamber_temperature?: number | null;
+  current_task?: string | null;
 };
 
 export type BambuPrintersData = {

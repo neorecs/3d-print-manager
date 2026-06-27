@@ -60,7 +60,7 @@ from schemas.common import (
     StockRecommendationUpdate,
 )
 from services.ai_product_assistant import generate_ai_product_draft
-from services.bambu_printers import public_bambu_printer_dict, test_bambu_lan_connection
+from services.bambu_printers import public_bambu_printer_dict, refresh_bambu_mqtt_status, test_bambu_lan_connection
 from publishing.service import (
     mark_product_publications_sync_needed,
     publish_publication,
@@ -170,6 +170,12 @@ def update_bambu_printer(item_id: int, payload: BambuPrinterCreate, db: Session 
 def test_bambu_printer_connection(item_id: int, db: Session = Depends(get_db)):
     item = get_or_404(db, BambuPrinter, item_id)
     return test_bambu_lan_connection(db, item)
+
+
+@router.post("/bambu/printers/{item_id}/refresh-status")
+def refresh_bambu_printer_status(item_id: int, db: Session = Depends(get_db)):
+    item = get_or_404(db, BambuPrinter, item_id)
+    return refresh_bambu_mqtt_status(db, item)
 
 
 @router.get("/platforms")
