@@ -35,7 +35,7 @@ import {
 } from "./types";
 
 function getApiBaseUrl() {
-  return process.env.API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:38080";
+  return process.env.FRONTEND_NEXT_API_BASE_URL || process.env.API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:38080";
 }
 
 async function apiGet<T>(path: string): Promise<T> {
