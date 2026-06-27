@@ -2,16 +2,18 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import type { AccountingSale } from "@/lib/types";
 
-type OrderAction = "link-items" | "process-inventory" | "create-print-jobs";
+type OrderAction = "link-items" | "process-inventory" | "create-print-jobs" | "create-accounting-sale";
 
 const actionLabels: Record<OrderAction, string> = {
   "link-items": "Orderregels koppelen",
   "process-inventory": "Voorraad controleren",
   "create-print-jobs": "Printtaken maken",
+  "create-accounting-sale": "Verkoopboeking maken",
 };
 
-export function OrderActions({ orderId }: { orderId: number }) {
+export function OrderActions({ orderId, accountingSale }: { orderId: number; accountingSale?: AccountingSale | null }) {
   const router = useRouter();
   const [busyAction, setBusyAction] = useState<OrderAction | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -23,7 +25,7 @@ export function OrderActions({ orderId }: { orderId: number }) {
     setError(null);
 
     try {
-      const response = await fetch(`/api/orders/${orderId}/action`, {
+      const response = await fetch(action === "create-accounting-sale" ? `/api/orders/${orderId}/create-accounting-sale` : `/api/orders/${orderId}/action`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action }),
@@ -34,7 +36,15 @@ export function OrderActions({ orderId }: { orderId: number }) {
         throw new Error(data?.detail || "Orderactie is mislukt");
       }
 
-      setMessage(action === "link-items" ? "Orderregels opnieuw gekoppeld." : action === "process-inventory" ? "Voorraadcontrole uitgevoerd." : "Printtaken aangemaakt of bijgewerkt.");
+      setMessage(
+        action === "link-items"
+          ? "Orderregels opnieuw gekoppeld."
+          : action === "process-inventory"
+            ? "Voorraadcontrole uitgevoerd."
+            : action === "create-print-jobs"
+              ? "Printtaken aangemaakt of bijgewerkt."
+              : data?.message || "Verkoopboeking aangemaakt of gevonden.",
+      );
       router.refresh();
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Orderactie is mislukt");
@@ -47,11 +57,16 @@ export function OrderActions({ orderId }: { orderId: number }) {
     <div className="space-y-3">
       {message ? <div className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-700">{message}</div> : null}
       {error ? <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm font-semibold text-red-700">{error}</div> : null}
+      {accountingSale ? (
+        <div className="rounded-md border border-sky-200 bg-sky-50 px-3 py-2 text-sm font-semibold text-sky-800">
+          Verkoopboeking #{accountingSale.id} bestaat al: {accountingSale.invoice_number || "zonder factuurnummer"}.
+        </div>
+      ) : null}
       <div className="flex flex-wrap gap-2">
         {(Object.keys(actionLabels) as OrderAction[]).map((action) => (
           <button
             className="rounded-md border border-line bg-white px-3 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
-            disabled={busyAction !== null}
+            disabled={busyAction !== null || (action === "create-accounting-sale" && Boolean(accountingSale))}
             key={action}
             onClick={() => runAction(action)}
             type="button"
@@ -61,7 +76,10 @@ export function OrderActions({ orderId }: { orderId: number }) {
         ))}
       </div>
       <p className="text-sm leading-6 text-muted">
-        Volgorde: eerst koppelen op SKU, daarna voorraad controleren, daarna alleen tekorten als printtaken aanmaken.
+        Volgorde: eerst koppelen op SKU, daarna voorraad controleren, daarna alleen tekorten als printtaken aanmaken. Maak daarna de verkoopboeking voor de administratie.
+      </p>
+      <p className="text-xs leading-5 text-muted">
+        Administratie: de automatische boeking gebruikt voorlopig 21% btw inclusief orderbedrag. Controleer dit later per platform, land en btw-regime.
       </p>
     </div>
   );

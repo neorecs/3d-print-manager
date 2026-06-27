@@ -133,6 +133,61 @@ def fill_vat_amounts(data: dict) -> dict:
     return data
 
 
+def calculate_order_gross_amount(db: Session, order: Order) -> float:
+    if order.total_amount is not None:
+        return round(float(order.total_amount), 2)
+
+    items = db.scalars(select(OrderItem).where(OrderItem.order_id == order.id)).all()
+    return round(sum(float(item.unit_sale_price or 0) * int(item.quantity_ordered or 0) for item in items), 2)
+
+
+def create_accounting_sale_from_order(db: Session, order: Order) -> dict:
+    existing = db.scalar(select(AccountingSale).where(AccountingSale.order_id == order.id))
+    if existing:
+        data = to_dict(existing)
+        data["created"] = False
+        data["message"] = "Verkoopboeking bestond al voor deze order."
+        return data
+
+    gross_amount = calculate_order_gross_amount(db, order)
+    if gross_amount <= 0:
+        raise HTTPException(status_code=400, detail="Order heeft geen positief bedrag om te boeken")
+
+    vat_rate = 21.0
+    net_amount = round(gross_amount / (1 + vat_rate / 100), 2)
+    vat_amount = round(gross_amount - net_amount, 2)
+    invoice_number = order.internal_order_number
+    if db.scalar(select(AccountingSale.id).where(AccountingSale.invoice_number == invoice_number)):
+        invoice_number = f"{order.internal_order_number}-{order.id}"
+
+    item = AccountingSale(
+        order_id=order.id,
+        platform_id=order.platform_id,
+        invoice_number=invoice_number,
+        invoice_date=order.order_date.date() if order.order_date else date.today(),
+        customer_name=order.customer_name,
+        description=f"Verkooporder {order.internal_order_number}",
+        net_amount=net_amount,
+        vat_rate=vat_rate,
+        vat_amount=vat_amount,
+        gross_amount=round(gross_amount, 2),
+        currency=order.currency or "EUR",
+        status="concept",
+        source="order_import",
+        note=(
+            "Automatisch gemaakt vanuit order. Btw voorlopig berekend met standaardtarief 21%; "
+            "controleer platform, land en btw-regime voordat je dit gebruikt voor aangifte."
+        ),
+    )
+    db.add(item)
+    db.commit()
+    db.refresh(item)
+    data = to_dict(item)
+    data["created"] = True
+    data["message"] = "Verkoopboeking aangemaakt vanuit order."
+    return data
+
+
 @router.get("/health")
 def health() -> dict[str, str]:
     return {"status": "ok"}
@@ -909,6 +964,12 @@ def create_print_jobs_for_order(item_id: int, db: Session = Depends(get_db)):
         order.status = "ingepland"
     db.commit()
     return {"status": "created", "created": created, "updated": updated}
+
+
+@router.post("/orders/{item_id}/create-accounting-sale")
+def create_order_accounting_sale(item_id: int, db: Session = Depends(get_db)):
+    order = get_or_404(db, Order, item_id)
+    return create_accounting_sale_from_order(db, order)
 
 
 @router.get("/inventory/products")

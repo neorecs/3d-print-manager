@@ -326,6 +326,7 @@ export type OrdersData = {
 export type OrderDetailData = {
   order: OrderDetail;
   platform?: Platform | null;
+  accountingSale?: AccountingSale | null;
   products: Product[];
   variants: ProductVariant[];
   printJobs: PrintJob[];

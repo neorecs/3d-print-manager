@@ -485,7 +485,9 @@ Status 2026-06-27:
 - Eerste Next.js scherm aanwezig op `/administratie`.
 - Handmatige inkoopboeking met bon/factuur-upload toegevoegd als eerste administratieworkflow.
 - Documentoverzicht met open/download-link toegevoegd voor gekoppelde bonnen en facturen.
-- Nog verfijnen: verkoopboekingformulier, order-naar-verkoopboeking, documentverwijdering/correcties, btw-periode afsluiten en CSV-export voor boekhouder.
+- Orderdetail kan nu automatisch een verkoopboeking maken vanuit een order. De actie is idempotent en voorkomt dubbele boekingen per order.
+- De automatische verkoopboeking gebruikt voorlopig het orderbedrag inclusief 21% btw met een duidelijke controle-notitie; btw-regime per land/platform moet later worden verfijnd.
+- Nog verfijnen: verkoopboekingformulier, documentverwijdering/correcties, btw-periode afsluiten, CSV-export voor boekhouder en fiscale instellingen zoals KOR/EU-verkoop.
 
 ## Fase 10 - Echte AI Product Assistent
 

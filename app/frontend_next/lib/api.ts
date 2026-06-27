@@ -155,17 +155,19 @@ export async function getOrdersData(): Promise<OrdersData> {
 }
 
 export async function getOrderDetailData(orderId: number): Promise<OrderDetailData> {
-  const [order, platforms, products, variants, printJobs] = await Promise.all([
+  const [order, platforms, products, variants, printJobs, sales] = await Promise.all([
     apiGet<OrderDetail>(`/orders/${orderId}`),
     apiGet<Platform[]>("/platforms"),
     apiGet<Product[]>("/products"),
     apiGet<ProductVariant[]>("/product-variants"),
     apiGet<PrintJob[]>("/print-jobs"),
+    apiGet<AccountingSale[]>("/accounting/sales").catch(() => []),
   ]);
 
   return {
     order,
     platform: platforms.find((platform) => platform.id === order.platform_id) || null,
+    accountingSale: sales.find((sale) => sale.order_id === order.id) || null,
     products,
     variants,
     printJobs: printJobs.filter((job) => order.items.some((item) => item.id === job.order_item_id)),
