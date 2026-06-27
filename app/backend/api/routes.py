@@ -88,7 +88,14 @@ from services.dummy_data import seed_dummy_data
 router = APIRouter()
 
 UPLOAD_ROOT = Path("uploads/product_media")
+ACCOUNTING_UPLOAD_ROOT = Path("uploads/accounting_documents")
 ALLOWED_IMAGE_CONTENT_TYPES = {"image/jpeg", "image/png", "image/webp", "image/gif"}
+ALLOWED_ACCOUNTING_CONTENT_TYPES = {
+    "application/pdf",
+    "image/jpeg",
+    "image/png",
+    "image/webp",
+}
 
 
 def get_or_404(db: Session, model: type, item_id: int):
@@ -197,6 +204,54 @@ def create_accounting_purchase(payload: AccountingPurchaseCreate, db: Session = 
 def list_accounting_documents(db: Session = Depends(get_db)):
     rows = db.scalars(select(AccountingDocument).order_by(AccountingDocument.created_at.desc(), AccountingDocument.id.desc())).all()
     return list_rows(rows)
+
+
+@router.post("/accounting/documents/upload")
+def upload_accounting_document(
+    file: UploadFile = File(...),
+    document_type: str = Form("bon"),
+    sale_id: int | None = Form(None),
+    purchase_id: int | None = Form(None),
+    note: str | None = Form(None),
+    db: Session = Depends(get_db),
+):
+    if sale_id:
+        get_or_404(db, AccountingSale, sale_id)
+    if purchase_id:
+        get_or_404(db, AccountingPurchase, purchase_id)
+    if not sale_id and not purchase_id:
+        raise HTTPException(status_code=400, detail="Koppel het document aan een verkoop- of inkoopboeking")
+    if file.content_type not in ALLOWED_ACCOUNTING_CONTENT_TYPES:
+        raise HTTPException(status_code=400, detail="Alleen PDF, JPG, PNG en WEBP zijn toegestaan")
+
+    original_name = Path(file.filename or "upload").name
+    extension = Path(original_name).suffix.lower()
+    if extension not in {".pdf", ".jpg", ".jpeg", ".png", ".webp"}:
+        raise HTTPException(status_code=400, detail="Bestandstype wordt niet ondersteund")
+
+    target_group = "purchase" if purchase_id else "sale"
+    target_id = purchase_id or sale_id
+    target_dir = ACCOUNTING_UPLOAD_ROOT / target_group / str(target_id)
+    target_dir.mkdir(parents=True, exist_ok=True)
+    filename = f"{uuid.uuid4().hex}{extension}"
+    target_path = target_dir / filename
+    with target_path.open("wb") as output:
+        shutil.copyfileobj(file.file, output)
+
+    item = AccountingDocument(
+        document_type=document_type,
+        sale_id=sale_id,
+        purchase_id=purchase_id,
+        file_path=f"/uploads/accounting_documents/{target_group}/{target_id}/{filename}",
+        original_filename=original_name,
+        mime_type=file.content_type,
+        status="bewaard",
+        note=note,
+    )
+    db.add(item)
+    db.commit()
+    db.refresh(item)
+    return to_dict(item)
 
 
 @router.get("/accounting/vat-summary")

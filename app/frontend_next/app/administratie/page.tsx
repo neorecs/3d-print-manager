@@ -6,6 +6,7 @@ import { SectionCard } from "@/components/SectionCard";
 import { StatusBadge } from "@/components/StatusBadge";
 import { formatCurrency, getAccountingData } from "@/lib/api";
 import type { AccountingData } from "@/lib/types";
+import { AccountingPurchaseForm } from "./AccountingPurchaseForm";
 
 export const dynamic = "force-dynamic";
 
@@ -66,6 +67,10 @@ function AccountingContent({ data }: { data: AccountingData }) {
           <Check title="Ontbrekende documenten" text={`${missingDocs} boeking(en) hebben nog geen gekoppeld document.`} status={missingDocs ? "actie nodig" : "op orde"} />
           <Check title="Audit trail" text="Correcties horen als nieuwe correctieregel of creditfactuur, niet als stille wijziging." status="ontwerpregel" />
         </div>
+      </SectionCard>
+
+      <SectionCard title="Inkoopboeking toevoegen" description="Leg filament, verpakking, printeronderdelen, software of verzendkosten vast met bon of factuur.">
+        <AccountingPurchaseForm />
       </SectionCard>
 
       <SectionCard title="Verkoopboek" description="Verkoopregels uit orders, platformen of handmatige facturen.">

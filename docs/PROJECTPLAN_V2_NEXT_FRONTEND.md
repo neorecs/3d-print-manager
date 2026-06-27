@@ -483,7 +483,8 @@ Status 2026-06-27:
 - Alembic-migratie toegevoegd.
 - API-endpoints toegevoegd voor verkoopboek, inkoopboek, documenten, btw-samenvatting en btw-perioden.
 - Eerste Next.js scherm aanwezig op `/administratie`.
-- Nog verfijnen: handmatige invoerformulieren, documentupload, order-naar-verkoopboeking, inkoopbon upload, btw-periode afsluiten en CSV-export voor boekhouder.
+- Handmatige inkoopboeking met bon/factuur-upload toegevoegd als eerste administratieworkflow.
+- Nog verfijnen: verkoopboekingformulier, order-naar-verkoopboeking, documentoverzicht/download, btw-periode afsluiten en CSV-export voor boekhouder.
 
 ## Fase 10 - Echte AI Product Assistent
 
