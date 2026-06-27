@@ -195,7 +195,9 @@ export function BambuPrinterManager({ printers }: { printers: BambuPrinter[] }) 
 
       <form className="rounded-lg border border-line bg-slate-50 p-4" onSubmit={createPrinter}>
         <h3 className="font-bold text-ink">Bambu-printer toevoegen</h3>
-        <p className="mt-1 text-sm text-muted">Gebruik het lokale IP-adres van de printer. De access code wordt opgeslagen, maar niet teruggetoond.</p>
+        <p className="mt-1 text-sm text-muted">
+          Gebruik het lokale IP-adres van de printer. De access code wordt versleuteld opgeslagen en niet teruggetoond. Deze app leest alleen mee en wijzigt geen Bambu-instellingen.
+        </p>
         <PrinterFields draft={newDraft} onChange={updateNew} />
         <div className="mt-4 flex justify-end">
           <button className="rounded-md bg-brand px-4 py-2 text-sm font-bold text-white disabled:opacity-60" disabled={busyKey === "new"} type="submit">
@@ -239,7 +241,7 @@ export function BambuPrinterManager({ printers }: { printers: BambuPrinter[] }) 
                     {busyKey === `test-${printer.id}` ? "Testen..." : "Verbinding testen"}
                   </button>
                   <button className="rounded-md border border-line bg-white px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50 disabled:opacity-60" disabled={busyKey !== null} onClick={() => refreshStatus(printer.id)} type="button">
-                    {busyKey === `status-${printer.id}` ? "Ophalen..." : "Status ophalen"}
+                    {busyKey === `status-${printer.id}` ? "Ophalen..." : "Status ophalen (read-only)"}
                   </button>
                   <button className="rounded-md bg-brand px-4 py-2 text-sm font-bold text-white disabled:opacity-60" disabled={busyKey !== null} onClick={() => savePrinter(printer.id)} type="button">
                     {busyKey === `save-${printer.id}` ? "Opslaan..." : "Printer opslaan"}
@@ -265,7 +267,7 @@ function PrinterFields({ draft, onChange }: { draft: PrinterDraft; onChange: (fi
       <TextField label="Model" value={draft.model} onChange={(value) => onChange("model", value)} placeholder="X1C, P1S, A1 mini" />
       <TextField label="IP-adres / host" value={draft.host} onChange={(value) => onChange("host", value)} placeholder="Bijv. 10.5.1.42" />
       <TextField label="MQTT-poort" value={draft.mqtt_port} onChange={(value) => onChange("mqtt_port", value)} inputMode="numeric" />
-      <TextField label="Serienummer voor status" value={draft.serial_number} onChange={(value) => onChange("serial_number", value)} placeholder="Nodig voor MQTT-status" />
+      <TextField label="Serienummer voor read-only status" value={draft.serial_number} onChange={(value) => onChange("serial_number", value)} placeholder="Nodig voor status ophalen" />
       <TextField label="Locatie" value={draft.location} onChange={(value) => onChange("location", value)} placeholder="Bijv. Rek printerfarm" />
       <TextField label="Access code" value={draft.access_code} onChange={(value) => onChange("access_code", value)} placeholder="Leeg laten om bestaande code te behouden" type="password" />
       <label className="flex items-center gap-3 rounded-md border border-line bg-white px-3 py-2 text-sm font-semibold">
