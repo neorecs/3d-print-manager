@@ -34,6 +34,7 @@ Bouw een centrale beheerapplicatie voor 3D-printactiviteiten. De applicatie behe
 - Filamentvoorraadmodule met rollen, materiaal, kleur en kosten per gram.
 - Printplanningmodule met printtaken, batches en resultaatverwerking.
 - Kosten- en winstmargemodule.
+- Administratiemodule voor verkoopboek, inkoopboek, documenten/bonnen, btw-controle en export voor boekhouder.
 - Trendanalyse en voorraadadvies.
 - Export richting Bambu Studio.
 
@@ -59,6 +60,8 @@ Bouw een centrale beheerapplicatie voor 3D-printactiviteiten. De applicatie behe
 18. Bouw geen eigen slicer.
 19. Vervang Bambu Studio niet.
 20. Automatische printstart is geen onderdeel van versie 1.
+21. Administratie is een hulpmiddel voor volledigheid, traceerbaarheid en export; fiscale keuzes moeten controleerbaar blijven en kunnen later door een boekhouder/fiscalist worden beoordeeld.
+22. Boekhoudkundige correcties mogen later niet stil worden overschreven; gebruik correctieregels of creditfacturen.
 
 ## Versieplanning
 
@@ -74,6 +77,7 @@ Bouw een centrale beheerapplicatie voor 3D-printactiviteiten. De applicatie behe
 - 0.10: trendanalyse.
 - 0.11: voorraadadvies.
 - 0.12: publicatie en synchronisatie.
+- 0.13: administratiebasis met verkoopboek, inkoopboek, documenten en btw-overzicht.
 - 1.0: werkbare eerste versie met echte Etsy- en Shopify-connectors.
 
 ## Versie 0.1 scope
@@ -89,4 +93,3 @@ Maak:
 - Streamlit dashboard met navigatiepagina's.
 - Dummydata voor testen zonder echte platformkoppelingen.
 - README met lokale startinstructies.
-

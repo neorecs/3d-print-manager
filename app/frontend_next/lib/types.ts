@@ -143,6 +143,89 @@ export type BambuPrintersData = {
   printers: BambuPrinter[];
 };
 
+export type AccountingSale = {
+  id: number;
+  order_id?: number | null;
+  platform_id?: number | null;
+  invoice_number?: string | null;
+  invoice_date?: string | null;
+  customer_name?: string | null;
+  customer_country?: string | null;
+  description?: string | null;
+  net_amount: number;
+  vat_rate: number;
+  vat_amount: number;
+  gross_amount: number;
+  currency: string;
+  status: string;
+  source: string;
+  note?: string | null;
+  created_at?: string | null;
+};
+
+export type AccountingPurchase = {
+  id: number;
+  supplier_name: string;
+  invoice_number?: string | null;
+  invoice_date?: string | null;
+  category: string;
+  description?: string | null;
+  net_amount: number;
+  vat_rate: number;
+  vat_amount: number;
+  gross_amount: number;
+  currency: string;
+  payment_status: string;
+  source: string;
+  note?: string | null;
+  created_at?: string | null;
+};
+
+export type AccountingDocument = {
+  id: number;
+  document_type: string;
+  sale_id?: number | null;
+  purchase_id?: number | null;
+  file_path: string;
+  original_filename?: string | null;
+  mime_type?: string | null;
+  status: string;
+  note?: string | null;
+  created_at?: string | null;
+};
+
+export type VatSummary = {
+  sales_net: number;
+  sales_vat: number;
+  purchase_net: number;
+  purchase_vat: number;
+  vat_due: number;
+  sales_count: number;
+  purchase_count: number;
+  missing_document_count: number;
+  note: string;
+};
+
+export type VatPeriod = {
+  id: number;
+  period_name: string;
+  start_date: string;
+  end_date: string;
+  sales_vat: number;
+  purchase_vat: number;
+  vat_due: number;
+  status: string;
+  note?: string | null;
+};
+
+export type AccountingData = {
+  sales: AccountingSale[];
+  purchases: AccountingPurchase[];
+  documents: AccountingDocument[];
+  vatSummary: VatSummary;
+  vatPeriods: VatPeriod[];
+};
+
 export type FilamentData = {
   filament: FilamentSpool[];
   printJobs: PrintJob[];

@@ -28,6 +28,7 @@ const navigation = [
     section: "Inzicht",
     items: [
       { label: "Analyse", href: "/analyse" },
+      { label: "Administratie", href: "/administratie" },
       { label: "Instellingen", href: "/instellingen" },
     ],
   },

@@ -15,6 +15,9 @@ from core.config import get_settings
 from core.credentials import encrypt_credential, generate_credential_key, is_encrypted_credential
 from database import get_db
 from models import (
+    AccountingDocument,
+    AccountingPurchase,
+    AccountingSale,
     BambuPrinter,
     CostSetting,
     FilamentSpool,
@@ -36,8 +39,11 @@ from models import (
     ProductVariant,
     StockRecommendation,
     TrendSnapshot,
+    VatPeriod,
 )
 from schemas.common import (
+    AccountingPurchaseCreate,
+    AccountingSaleCreate,
     BambuPrinterCreate,
     CostSettingCreate,
     AIProductDraftRequest,
@@ -100,6 +106,26 @@ def public_credential_dict(credential: PlatformCredential) -> dict:
     return data
 
 
+def parse_optional_date(value: str | None):
+    if not value:
+        return None
+    return date.fromisoformat(value)
+
+
+def fill_vat_amounts(data: dict) -> dict:
+    net_amount = float(data.get("net_amount") or 0)
+    vat_rate = float(data.get("vat_rate") or 0)
+    vat_amount = data.get("vat_amount")
+    gross_amount = data.get("gross_amount")
+    if vat_amount is None:
+        vat_amount = round(net_amount * vat_rate / 100, 2)
+    if gross_amount is None:
+        gross_amount = round(net_amount + float(vat_amount), 2)
+    data["vat_amount"] = vat_amount
+    data["gross_amount"] = gross_amount
+    return data
+
+
 @router.get("/health")
 def health() -> dict[str, str]:
     return {"status": "ok"}
@@ -131,6 +157,75 @@ def ai_generate_product_draft(payload: AIProductDraftRequest) -> dict[str, objec
 def seed(db: Session = Depends(get_db)) -> dict[str, str]:
     seed_dummy_data(db)
     return {"status": "seeded"}
+
+
+@router.get("/accounting/sales")
+def list_accounting_sales(db: Session = Depends(get_db)):
+    rows = db.scalars(select(AccountingSale).order_by(AccountingSale.invoice_date.desc().nullslast(), AccountingSale.id.desc())).all()
+    return list_rows(rows)
+
+
+@router.post("/accounting/sales")
+def create_accounting_sale(payload: AccountingSaleCreate, db: Session = Depends(get_db)):
+    data = payload.model_dump()
+    data["invoice_date"] = parse_optional_date(data.get("invoice_date"))
+    item = AccountingSale(**fill_vat_amounts(data))
+    db.add(item)
+    db.commit()
+    db.refresh(item)
+    return to_dict(item)
+
+
+@router.get("/accounting/purchases")
+def list_accounting_purchases(db: Session = Depends(get_db)):
+    rows = db.scalars(select(AccountingPurchase).order_by(AccountingPurchase.invoice_date.desc().nullslast(), AccountingPurchase.id.desc())).all()
+    return list_rows(rows)
+
+
+@router.post("/accounting/purchases")
+def create_accounting_purchase(payload: AccountingPurchaseCreate, db: Session = Depends(get_db)):
+    data = payload.model_dump()
+    data["invoice_date"] = parse_optional_date(data.get("invoice_date"))
+    item = AccountingPurchase(**fill_vat_amounts(data))
+    db.add(item)
+    db.commit()
+    db.refresh(item)
+    return to_dict(item)
+
+
+@router.get("/accounting/documents")
+def list_accounting_documents(db: Session = Depends(get_db)):
+    rows = db.scalars(select(AccountingDocument).order_by(AccountingDocument.created_at.desc(), AccountingDocument.id.desc())).all()
+    return list_rows(rows)
+
+
+@router.get("/accounting/vat-summary")
+def accounting_vat_summary(db: Session = Depends(get_db)):
+    sales = db.scalars(select(AccountingSale)).all()
+    purchases = db.scalars(select(AccountingPurchase)).all()
+    sales_net = sum(float(item.net_amount or 0) for item in sales)
+    sales_vat = sum(float(item.vat_amount or 0) for item in sales)
+    purchase_net = sum(float(item.net_amount or 0) for item in purchases)
+    purchase_vat = sum(float(item.vat_amount or 0) for item in purchases)
+    missing_sale_docs = sum(1 for item in sales if not db.scalar(select(AccountingDocument.id).where(AccountingDocument.sale_id == item.id)))
+    missing_purchase_docs = sum(1 for item in purchases if not db.scalar(select(AccountingDocument.id).where(AccountingDocument.purchase_id == item.id)))
+    return {
+        "sales_net": round(sales_net, 2),
+        "sales_vat": round(sales_vat, 2),
+        "purchase_net": round(purchase_net, 2),
+        "purchase_vat": round(purchase_vat, 2),
+        "vat_due": round(sales_vat - purchase_vat, 2),
+        "sales_count": len(sales),
+        "purchase_count": len(purchases),
+        "missing_document_count": missing_sale_docs + missing_purchase_docs,
+        "note": "Controlehulpmiddel voor administratie. Laat fiscale keuzes controleren door boekhouder/fiscalist.",
+    }
+
+
+@router.get("/accounting/vat-periods")
+def list_vat_periods(db: Session = Depends(get_db)):
+    rows = db.scalars(select(VatPeriod).order_by(VatPeriod.start_date.desc())).all()
+    return list_rows(rows)
 
 
 @router.get("/bambu/printers")

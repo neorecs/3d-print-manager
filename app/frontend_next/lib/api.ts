@@ -1,4 +1,8 @@
 import {
+  AccountingData,
+  AccountingDocument,
+  AccountingPurchase,
+  AccountingSale,
   AIProductStatus,
   AnalyticsData,
   AnalyticsRow,
@@ -32,6 +36,8 @@ import {
   SalesChannelDetailData,
   SalesChannelsData,
   StockRecommendation,
+  VatPeriod,
+  VatSummary,
 } from "./types";
 
 function getApiBaseUrl() {
@@ -212,6 +218,18 @@ export async function getInventoryData(): Promise<InventoryData> {
 export async function getBambuPrintersData(): Promise<BambuPrintersData> {
   const printers = await apiGet<BambuPrinter[]>("/bambu/printers");
   return { printers };
+}
+
+export async function getAccountingData(): Promise<AccountingData> {
+  const [sales, purchases, documents, vatSummary, vatPeriods] = await Promise.all([
+    apiGet<AccountingSale[]>("/accounting/sales"),
+    apiGet<AccountingPurchase[]>("/accounting/purchases"),
+    apiGet<AccountingDocument[]>("/accounting/documents"),
+    apiGet<VatSummary>("/accounting/vat-summary"),
+    apiGet<VatPeriod[]>("/accounting/vat-periods"),
+  ]);
+
+  return { sales, purchases, documents, vatSummary, vatPeriods };
 }
 
 export async function getSalesChannelsData(): Promise<SalesChannelsData> {

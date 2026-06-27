@@ -1,3 +1,4 @@
+from models.accounting import AccountingDocument, AccountingPurchase, AccountingSale, VatPeriod
 from models.analytics import StockRecommendation, TrendSnapshot
 from models.bambu import BambuPrinter
 from models.costs import CostSetting, OrderProfitCalculation
@@ -18,6 +19,9 @@ from models.products import (
 __all__ = [
     "FilamentSpool",
     "BambuPrinter",
+    "AccountingDocument",
+    "AccountingPurchase",
+    "AccountingSale",
     "CostSetting",
     "InventoryMovement",
     "Order",
@@ -39,4 +43,5 @@ __all__ = [
     "ProductVariantPlatformLink",
     "StockRecommendation",
     "TrendSnapshot",
+    "VatPeriod",
 ]

@@ -44,6 +44,7 @@ Aanwezig:
 - Streamlit-dashboard met veel prototypefunctionaliteit.
 - Next.js frontend als nieuwe hoofdinterface met dashboard, catalogus, productdetail, orders, printplanning, filament, productvoorraad, verkoopkanalen, analyse en AI Product Assistent.
 - Eerste Bambu-printerregistratie en veilige LAN-bereikbaarheidstest.
+- Administratiemodule gestart als hulpmiddel voor verkoopboek, inkoopboek, documenten en btw-controle.
 - Dummydata.
 - Voorraadregels en printplanning-businessregels.
 - Shopify/Etsy connectorbasis.
@@ -59,6 +60,7 @@ Nog belangrijk:
 - Echte AI is nog niet live geactiveerd.
 - Echte Etsy/Shopify liveflows zijn nog niet productiehard.
 - Bambu-koppeling is gestart als beheerlaag: printers registreren en netwerkbereik testen. Automatische printstart blijft buiten scope.
+- Administratie wordt gebouwd als controle- en exportlaag, niet als gegarandeerde vervanger van een boekhouder of fiscaal advies.
 
 ## Voortgang bijgewerkt op 2026-06-26
 
@@ -450,6 +452,38 @@ Status 2026-06-26:
 - Toont top producten, top kleuren, top materialen, omzet, geschatte winst, marge-indicatie, kosteninstellingen en voorraadadvies.
 - Voorraadadvies kan worden gegenereerd, geaccepteerd, genegeerd of omgezet naar printtaak.
 - Nog verfijnen: betere periodekeuze, grafieken, orderwinstdetail en marge per platform.
+
+## Fase 9b - Administratie en btw-controle
+
+Doel: administratie zoveel mogelijk automatisch voorbereiden, zodat handmatig werk beperkt blijft en gegevens exporteerbaar blijven voor boekhouder/aangifte.
+
+Belangrijk uitgangspunt:
+
+- De app helpt met volledigheid, traceerbaarheid en export.
+- De app claimt niet zelfstandig dat aangiftes fiscaal juist zijn.
+- Fiscale keuzes zoals KOR, btw-regime, EU-verkoop en aftrekbaarheid moeten later expliciet worden ingesteld en gecontroleerd.
+
+Eerste module:
+
+- Verkoopboek;
+- Inkoopboek;
+- Documenten/bonnen/facturen;
+- Btw-samenvatting;
+- Signaal voor ontbrekende documenten;
+- Basis voor bewaarplicht en audit trail.
+
+Niet stil aanpassen:
+
+- Boekingen mogen later niet zonder spoor worden overschreven.
+- Correcties moeten via correctieregels of creditfacturen lopen.
+
+Status 2026-06-27:
+
+- Backendmodellen toegevoegd voor `accounting_sales`, `accounting_purchases`, `accounting_documents` en `vat_periods`.
+- Alembic-migratie toegevoegd.
+- API-endpoints toegevoegd voor verkoopboek, inkoopboek, documenten, btw-samenvatting en btw-perioden.
+- Eerste Next.js scherm aanwezig op `/administratie`.
+- Nog verfijnen: handmatige invoerformulieren, documentupload, order-naar-verkoopboeking, inkoopbon upload, btw-periode afsluiten en CSV-export voor boekhouder.
 
 ## Fase 10 - Echte AI Product Assistent
 

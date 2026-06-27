@@ -25,6 +25,40 @@ class BambuPrinterCreate(BaseModel):
     active: bool = True
 
 
+class AccountingSaleCreate(BaseModel):
+    order_id: int | None = None
+    platform_id: int | None = None
+    invoice_number: str | None = None
+    invoice_date: str | None = None
+    customer_name: str | None = None
+    customer_country: str | None = None
+    description: str | None = None
+    net_amount: float = 0
+    vat_rate: float = 21
+    vat_amount: float | None = None
+    gross_amount: float | None = None
+    currency: str = "EUR"
+    status: str = "concept"
+    source: str = "manual"
+    note: str | None = None
+
+
+class AccountingPurchaseCreate(BaseModel):
+    supplier_name: str
+    invoice_number: str | None = None
+    invoice_date: str | None = None
+    category: str = "overig"
+    description: str | None = None
+    net_amount: float = 0
+    vat_rate: float = 21
+    vat_amount: float | None = None
+    gross_amount: float | None = None
+    currency: str = "EUR"
+    payment_status: str = "onbekend"
+    source: str = "manual"
+    note: str | None = None
+
+
 class ProductCreate(BaseModel):
     name: str
     internal_title: str | None = None
