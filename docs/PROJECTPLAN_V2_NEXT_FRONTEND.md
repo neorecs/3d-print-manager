@@ -484,7 +484,8 @@ Status 2026-06-27:
 - API-endpoints toegevoegd voor verkoopboek, inkoopboek, documenten, btw-samenvatting en btw-perioden.
 - Eerste Next.js scherm aanwezig op `/administratie`.
 - Handmatige inkoopboeking met bon/factuur-upload toegevoegd als eerste administratieworkflow.
-- Nog verfijnen: verkoopboekingformulier, order-naar-verkoopboeking, documentoverzicht/download, btw-periode afsluiten en CSV-export voor boekhouder.
+- Documentoverzicht met open/download-link toegevoegd voor gekoppelde bonnen en facturen.
+- Nog verfijnen: verkoopboekingformulier, order-naar-verkoopboeking, documentverwijdering/correcties, btw-periode afsluiten en CSV-export voor boekhouder.
 
 ## Fase 10 - Echte AI Product Assistent
 

@@ -73,6 +73,47 @@ function AccountingContent({ data }: { data: AccountingData }) {
         <AccountingPurchaseForm />
       </SectionCard>
 
+      <SectionCard title="Documenten" description="Bonnen en facturen die aan verkoop- of inkoopboekingen zijn gekoppeld.">
+        {data.documents.length ? (
+          <div className="table-scroll">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Datum</th>
+                  <th>Bestand</th>
+                  <th>Type</th>
+                  <th>Gekoppeld aan</th>
+                  <th>Status</th>
+                  <th>Actie</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.documents.slice(0, 50).map((document) => {
+                  const purchase = document.purchase_id ? data.purchases.find((item) => item.id === document.purchase_id) : null;
+                  const sale = document.sale_id ? data.sales.find((item) => item.id === document.sale_id) : null;
+                  return (
+                    <tr key={document.id}>
+                      <td>{formatDate(document.created_at)}</td>
+                      <td className="font-semibold">{document.original_filename || `Document ${document.id}`}</td>
+                      <td>{document.document_type}</td>
+                      <td>{purchase ? `Inkoop: ${purchase.supplier_name}` : sale ? `Verkoop: ${sale.invoice_number || sale.customer_name || sale.id}` : "-"}</td>
+                      <td><StatusBadge status={document.status} /></td>
+                      <td>
+                        <a className="font-bold text-brand hover:text-ink" href={document.file_path} target="_blank" rel="noreferrer">
+                          Openen
+                        </a>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <EmptyState title="Nog geen documenten" description="Upload een bon of factuur bij een inkoopboeking. Daarna verschijnt die hier." />
+        )}
+      </SectionCard>
+
       <SectionCard title="Verkoopboek" description="Verkoopregels uit orders, platformen of handmatige facturen.">
         {data.sales.length ? (
           <div className="table-scroll">
