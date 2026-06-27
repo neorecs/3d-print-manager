@@ -139,11 +139,11 @@ export async function getProductDetailData(productId: number): Promise<ProductDe
 export async function getOrdersData(): Promise<OrdersData> {
   const [orders, orderItems, platforms, products, variants, printJobs, importLogs] = await Promise.all([
     apiGet<Order[]>("/orders"),
-    apiGet<OrderItem[]>("/order-items"),
+    apiGet<OrderItem[]>("/order-items").catch(() => []),
     apiGet<Platform[]>("/platforms"),
-    apiGet<Product[]>("/products"),
-    apiGet<ProductVariant[]>("/product-variants"),
-    apiGet<PrintJob[]>("/print-jobs"),
+    apiGet<Product[]>("/products").catch(() => []),
+    apiGet<ProductVariant[]>("/product-variants").catch(() => []),
+    apiGet<PrintJob[]>("/print-jobs").catch(() => []),
     apiGet<PlatformImportLog[]>("/orders/import-logs").catch(() => []),
   ]);
 
