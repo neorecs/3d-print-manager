@@ -491,7 +491,11 @@ Status 2026-06-27:
 - Handmatige verkoopboeking met optionele factuur-upload toegevoegd voor verkopen of correcties buiten de automatische orderflow.
 - CSV-export toegevoegd voor verkoopboek, inkoopboek en btw-samenvatting.
 - Periodefilter toegevoegd voor administratie-overzicht en CSV-exports op basis van factuurdatum.
-- Nog verfijnen: documentverwijdering/correcties, btw-periode afsluiten en fiscale instellingen zoals KOR/EU-verkoop.
+- Correctie- en creditboekingen toegevoegd zonder originele boekingen stil aan te passen.
+- Documenten kunnen worden gearchiveerd, waarbij het bestand bewaard blijft maar niet meer als actief bewijs telt.
+- Btw-perioden kunnen worden afgesloten met vastgelegde bedragen voor de geselecteerde periode.
+- Fiscale instellingen toegevoegd voor btw-regime, KOR, standaardland, EU-verkoop en standaard btw-percentage.
+- Punt 1 administratie is hiermee als praktische basis afgerond. Blijft gelden: fiscale keuzes moeten door boekhouder/fiscalist worden gecontroleerd.
 
 ## Fase 10 - Echte AI Product Assistent
 

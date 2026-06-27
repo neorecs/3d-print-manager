@@ -159,6 +159,8 @@ export type AccountingSale = {
   currency: string;
   status: string;
   source: string;
+  entry_type?: string | null;
+  correction_of_sale_id?: number | null;
   note?: string | null;
   created_at?: string | null;
 };
@@ -177,6 +179,8 @@ export type AccountingPurchase = {
   currency: string;
   payment_status: string;
   source: string;
+  entry_type?: string | null;
+  correction_of_purchase_id?: number | null;
   note?: string | null;
   created_at?: string | null;
 };
@@ -218,12 +222,20 @@ export type VatPeriod = {
   note?: string | null;
 };
 
+export type AccountingFiscalSetting = {
+  id: number;
+  setting_name: string;
+  value: string;
+  note?: string | null;
+};
+
 export type AccountingData = {
   sales: AccountingSale[];
   purchases: AccountingPurchase[];
   documents: AccountingDocument[];
   vatSummary: VatSummary;
   vatPeriods: VatPeriod[];
+  fiscalSettings: AccountingFiscalSetting[];
 };
 
 export type FilamentData = {

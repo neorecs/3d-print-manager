@@ -1,6 +1,7 @@
 import {
   AccountingData,
   AccountingDocument,
+  AccountingFiscalSetting,
   AccountingPurchase,
   AccountingSale,
   AIProductStatus,
@@ -233,15 +234,16 @@ function buildQuery(params: Record<string, string | undefined | null>) {
 
 export async function getAccountingData(filters: { startDate?: string; endDate?: string } = {}): Promise<AccountingData> {
   const query = buildQuery({ start_date: filters.startDate, end_date: filters.endDate });
-  const [sales, purchases, documents, vatSummary, vatPeriods] = await Promise.all([
+  const [sales, purchases, documents, vatSummary, vatPeriods, fiscalSettings] = await Promise.all([
     apiGet<AccountingSale[]>(`/accounting/sales${query}`),
     apiGet<AccountingPurchase[]>(`/accounting/purchases${query}`),
     apiGet<AccountingDocument[]>("/accounting/documents"),
     apiGet<VatSummary>(`/accounting/vat-summary${query}`),
     apiGet<VatPeriod[]>("/accounting/vat-periods"),
+    apiGet<AccountingFiscalSetting[]>("/accounting/fiscal-settings"),
   ]);
 
-  return { sales, purchases, documents, vatSummary, vatPeriods };
+  return { sales, purchases, documents, vatSummary, vatPeriods, fiscalSettings };
 }
 
 export async function getSalesChannelsData(): Promise<SalesChannelsData> {

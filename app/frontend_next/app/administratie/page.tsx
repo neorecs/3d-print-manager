@@ -6,6 +6,7 @@ import { SectionCard } from "@/components/SectionCard";
 import { StatusBadge } from "@/components/StatusBadge";
 import { formatCurrency, getAccountingData } from "@/lib/api";
 import type { AccountingData } from "@/lib/types";
+import { ArchiveDocumentButton, CorrectionButton, FiscalSettingsForm, VatPeriodCloseForm } from "./AccountingControls";
 import { AccountingPurchaseForm } from "./AccountingPurchaseForm";
 import { AccountingSaleForm } from "./AccountingSaleForm";
 
@@ -95,12 +96,48 @@ function AccountingContent({ data, filters }: { data: AccountingData; filters: {
         </div>
       </SectionCard>
 
+      <SectionCard title="Fiscale instellingen" description="Leg expliciet vast welke fiscale aannames de app gebruikt. Controleer dit met je boekhouder of fiscalist.">
+        <FiscalSettingsForm settings={data.fiscalSettings} />
+      </SectionCard>
+
       <SectionCard title="Export voor boekhouder" description="Download CSV-bestanden met de huidige verkoopregels, inkoopregels en btw-samenvatting. Controleer fiscale keuzes voordat je dit gebruikt voor aangifte.">
         <div className="flex flex-wrap gap-3">
           <ExportLink href={`/api/accounting/export/sales${exportQuery}`} label="Verkoopboek CSV" />
           <ExportLink href={`/api/accounting/export/purchases${exportQuery}`} label="Inkoopboek CSV" />
           <ExportLink href={`/api/accounting/export/vat-summary${exportQuery}`} label="Btw-samenvatting CSV" />
         </div>
+      </SectionCard>
+
+      <SectionCard title="Btw-periode afsluiten" description="Leg de btw-samenvatting voor de geselecteerde periode vast. Afgesloten perioden worden niet stil overschreven.">
+        <VatPeriodCloseForm endDate={filters.endDate} startDate={filters.startDate} />
+        {data.vatPeriods.length ? (
+          <div className="mt-5 table-scroll">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Periode</th>
+                  <th>Datums</th>
+                  <th className="text-right">Verkoop-btw</th>
+                  <th className="text-right">Voorbelasting</th>
+                  <th className="text-right">Saldo</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.vatPeriods.slice(0, 10).map((period) => (
+                  <tr key={period.id}>
+                    <td className="font-semibold">{period.period_name}</td>
+                    <td>{formatDate(period.start_date)} - {formatDate(period.end_date)}</td>
+                    <td className="text-right">{formatCurrency(period.sales_vat)}</td>
+                    <td className="text-right">{formatCurrency(period.purchase_vat)}</td>
+                    <td className="text-right font-semibold">{formatCurrency(period.vat_due)}</td>
+                    <td><StatusBadge status={period.status} /></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : null}
       </SectionCard>
 
       <SectionCard title="Inkoopboeking toevoegen" description="Leg filament, verpakking, printeronderdelen, software of verzendkosten vast met bon of factuur.">
@@ -123,6 +160,7 @@ function AccountingContent({ data, filters }: { data: AccountingData; filters: {
                   <th>Gekoppeld aan</th>
                   <th>Status</th>
                   <th>Actie</th>
+                  <th>Beheer</th>
                 </tr>
               </thead>
               <tbody>
@@ -141,6 +179,7 @@ function AccountingContent({ data, filters }: { data: AccountingData; filters: {
                           Openen
                         </a>
                       </td>
+                      <td><ArchiveDocumentButton disabled={document.status === "gearchiveerd"} id={document.id} /></td>
                     </tr>
                   );
                 })}
@@ -166,6 +205,7 @@ function AccountingContent({ data, filters }: { data: AccountingData; filters: {
                   <th className="text-right">Bruto</th>
                   <th>Status</th>
                   <th>Bron</th>
+                  <th>Correctie</th>
                 </tr>
               </thead>
               <tbody>
@@ -187,6 +227,7 @@ function AccountingContent({ data, filters }: { data: AccountingData; filters: {
                         item.source || "handmatig"
                       )}
                     </td>
+                    <td><CorrectionButton disabled={item.entry_type === "credit" || item.status === "gecorrigeerd"} id={item.id} type="sale" /></td>
                   </tr>
                 ))}
               </tbody>
@@ -210,6 +251,7 @@ function AccountingContent({ data, filters }: { data: AccountingData; filters: {
                   <th className="text-right">Btw</th>
                   <th className="text-right">Bruto</th>
                   <th>Status</th>
+                  <th>Correctie</th>
                 </tr>
               </thead>
               <tbody>
@@ -222,6 +264,7 @@ function AccountingContent({ data, filters }: { data: AccountingData; filters: {
                     <td className="text-right">{formatCurrency(item.vat_amount)}</td>
                     <td className="text-right font-semibold">{formatCurrency(item.gross_amount)}</td>
                     <td><StatusBadge status={item.payment_status} /></td>
+                    <td><CorrectionButton disabled={item.entry_type === "correction" || item.payment_status === "gecorrigeerd"} id={item.id} type="purchase" /></td>
                   </tr>
                 ))}
               </tbody>

@@ -17,6 +17,7 @@ from core.credentials import encrypt_credential, generate_credential_key, is_enc
 from database import get_db
 from models import (
     AccountingDocument,
+    AccountingFiscalSetting,
     AccountingPurchase,
     AccountingSale,
     BambuPrinter,
@@ -44,7 +45,10 @@ from models import (
 )
 from schemas.common import (
     AccountingPurchaseCreate,
+    AccountingCorrectionCreate,
+    AccountingFiscalSettingCreate,
     AccountingSaleCreate,
+    VatPeriodCloseCreate,
     BambuPrinterCreate,
     CostSettingCreate,
     AIProductDraftRequest,
@@ -179,8 +183,8 @@ def accounting_vat_summary_data(db: Session, start: date | None = None, end: dat
     sales_vat = sum(float(item.vat_amount or 0) for item in sales)
     purchase_net = sum(float(item.net_amount or 0) for item in purchases)
     purchase_vat = sum(float(item.vat_amount or 0) for item in purchases)
-    missing_sale_docs = sum(1 for item in sales if not db.scalar(select(AccountingDocument.id).where(AccountingDocument.sale_id == item.id)))
-    missing_purchase_docs = sum(1 for item in purchases if not db.scalar(select(AccountingDocument.id).where(AccountingDocument.purchase_id == item.id)))
+    missing_sale_docs = sum(1 for item in sales if not db.scalar(select(AccountingDocument.id).where(AccountingDocument.sale_id == item.id, AccountingDocument.status != "gearchiveerd")))
+    missing_purchase_docs = sum(1 for item in purchases if not db.scalar(select(AccountingDocument.id).where(AccountingDocument.purchase_id == item.id, AccountingDocument.status != "gearchiveerd")))
     return {
         "sales_net": round(sales_net, 2),
         "sales_vat": round(sales_vat, 2),
@@ -304,6 +308,40 @@ def create_accounting_sale(payload: AccountingSaleCreate, db: Session = Depends(
     return to_dict(item)
 
 
+@router.post("/accounting/sales/{item_id}/credit")
+def credit_accounting_sale(item_id: int, payload: AccountingCorrectionCreate, db: Session = Depends(get_db)):
+    original = get_or_404(db, AccountingSale, item_id)
+    if original.entry_type in {"credit", "correction"}:
+        raise HTTPException(status_code=400, detail="Deze boeking is zelf al een correctie")
+    if original.status == "gecorrigeerd" or db.scalar(select(AccountingSale.id).where(AccountingSale.correction_of_sale_id == original.id)):
+        raise HTTPException(status_code=400, detail="Deze verkoopboeking is al gecorrigeerd")
+    correction_date = parse_optional_date(payload.correction_date) or date.today()
+    item = AccountingSale(
+        order_id=original.order_id,
+        platform_id=original.platform_id,
+        invoice_number=f"CR-{original.invoice_number or original.id}",
+        invoice_date=correction_date,
+        customer_name=original.customer_name,
+        customer_country=original.customer_country,
+        description=f"Credit/correctie op verkoopboeking {original.invoice_number or original.id}",
+        net_amount=-float(original.net_amount or 0),
+        vat_rate=float(original.vat_rate or 0),
+        vat_amount=-float(original.vat_amount or 0),
+        gross_amount=-float(original.gross_amount or 0),
+        currency=original.currency,
+        status="geboekt",
+        source="correction",
+        entry_type="credit",
+        correction_of_sale_id=original.id,
+        note=payload.reason,
+    )
+    original.status = "gecorrigeerd"
+    db.add(item)
+    db.commit()
+    db.refresh(item)
+    return to_dict(item)
+
+
 @router.get("/accounting/purchases")
 def list_accounting_purchases(
     start_date: str | None = Query(None),
@@ -326,10 +364,52 @@ def create_accounting_purchase(payload: AccountingPurchaseCreate, db: Session = 
     return to_dict(item)
 
 
+@router.post("/accounting/purchases/{item_id}/correction")
+def correct_accounting_purchase(item_id: int, payload: AccountingCorrectionCreate, db: Session = Depends(get_db)):
+    original = get_or_404(db, AccountingPurchase, item_id)
+    if original.entry_type in {"credit", "correction"}:
+        raise HTTPException(status_code=400, detail="Deze boeking is zelf al een correctie")
+    if original.payment_status == "gecorrigeerd" or db.scalar(select(AccountingPurchase.id).where(AccountingPurchase.correction_of_purchase_id == original.id)):
+        raise HTTPException(status_code=400, detail="Deze inkoopboeking is al gecorrigeerd")
+    correction_date = parse_optional_date(payload.correction_date) or date.today()
+    item = AccountingPurchase(
+        supplier_name=original.supplier_name,
+        invoice_number=f"COR-{original.invoice_number or original.id}",
+        invoice_date=correction_date,
+        category=original.category,
+        description=f"Correctie op inkoopboeking {original.invoice_number or original.id}",
+        net_amount=-float(original.net_amount or 0),
+        vat_rate=float(original.vat_rate or 0),
+        vat_amount=-float(original.vat_amount or 0),
+        gross_amount=-float(original.gross_amount or 0),
+        currency=original.currency,
+        payment_status="gecorrigeerd",
+        source="correction",
+        entry_type="correction",
+        correction_of_purchase_id=original.id,
+        note=payload.reason,
+    )
+    original.payment_status = "gecorrigeerd"
+    db.add(item)
+    db.commit()
+    db.refresh(item)
+    return to_dict(item)
+
+
 @router.get("/accounting/documents")
 def list_accounting_documents(db: Session = Depends(get_db)):
     rows = db.scalars(select(AccountingDocument).order_by(AccountingDocument.created_at.desc(), AccountingDocument.id.desc())).all()
     return list_rows(rows)
+
+
+@router.post("/accounting/documents/{item_id}/archive")
+def archive_accounting_document(item_id: int, db: Session = Depends(get_db)):
+    item = get_or_404(db, AccountingDocument, item_id)
+    item.status = "gearchiveerd"
+    item.note = f"{item.note or ''}\nGearchiveerd op {date.today().isoformat()}.".strip()
+    db.commit()
+    db.refresh(item)
+    return to_dict(item)
 
 
 @router.post("/accounting/documents/upload")
@@ -414,6 +494,8 @@ def export_accounting_sales(
         "currency",
         "status",
         "source",
+        "entry_type",
+        "correction_of_sale_id",
         "note",
     ]
     return csv_download("verkoopboek.csv", fieldnames, [to_dict(item) for item in rows])
@@ -441,6 +523,8 @@ def export_accounting_purchases(
         "currency",
         "payment_status",
         "source",
+        "entry_type",
+        "correction_of_purchase_id",
         "note",
     ]
     return csv_download("inkoopboek.csv", fieldnames, [to_dict(item) for item in rows])
@@ -461,6 +545,65 @@ def export_accounting_vat_summary(
 def list_vat_periods(db: Session = Depends(get_db)):
     rows = db.scalars(select(VatPeriod).order_by(VatPeriod.start_date.desc())).all()
     return list_rows(rows)
+
+
+@router.post("/accounting/vat-periods/close")
+def close_vat_period(payload: VatPeriodCloseCreate, db: Session = Depends(get_db)):
+    start, end = parse_date_range(payload.start_date, payload.end_date)
+    if not start or not end:
+        raise HTTPException(status_code=400, detail="Start- en einddatum zijn verplicht")
+    summary = accounting_vat_summary_data(db, start, end)
+    item = db.scalar(select(VatPeriod).where(VatPeriod.period_name == payload.period_name))
+    if item and item.status == "afgesloten":
+        raise HTTPException(status_code=400, detail="Deze btw-periode is al afgesloten")
+    if not item:
+        item = VatPeriod(period_name=payload.period_name, start_date=start, end_date=end)
+        db.add(item)
+    item.start_date = start
+    item.end_date = end
+    item.sales_vat = summary["sales_vat"]
+    item.purchase_vat = summary["purchase_vat"]
+    item.vat_due = summary["vat_due"]
+    item.status = "afgesloten"
+    item.note = payload.note or summary["note"]
+    db.commit()
+    db.refresh(item)
+    return to_dict(item)
+
+
+def seed_default_fiscal_settings(db: Session) -> None:
+    defaults = {
+        "btw_regime": ("standaard", "Voorlopig standaard btw-regime; controleer dit met boekhouder/fiscalist."),
+        "kor_enabled": ("false", "Kleineondernemersregeling niet actief tenzij bewust aangezet."),
+        "default_country": ("NL", "Standaardland voor btw-controle."),
+        "eu_sales_enabled": ("false", "EU-verkoopregels later expliciet controleren."),
+        "default_vat_rate": ("21", "Standaard btw-percentage voor voorlopige boekingen."),
+    }
+    for name, (value, note) in defaults.items():
+        if not db.scalar(select(AccountingFiscalSetting).where(AccountingFiscalSetting.setting_name == name)):
+            db.add(AccountingFiscalSetting(setting_name=name, value=value, note=note))
+    db.commit()
+
+
+@router.get("/accounting/fiscal-settings")
+def list_accounting_fiscal_settings(db: Session = Depends(get_db)):
+    seed_default_fiscal_settings(db)
+    rows = db.scalars(select(AccountingFiscalSetting).order_by(AccountingFiscalSetting.setting_name)).all()
+    return list_rows(rows)
+
+
+@router.post("/accounting/fiscal-settings")
+def upsert_accounting_fiscal_setting(payload: AccountingFiscalSettingCreate, db: Session = Depends(get_db)):
+    item = db.scalar(select(AccountingFiscalSetting).where(AccountingFiscalSetting.setting_name == payload.setting_name))
+    if not item:
+        item = AccountingFiscalSetting(setting_name=payload.setting_name, value=payload.value, note=payload.note)
+        db.add(item)
+    else:
+        item.value = payload.value
+        item.note = payload.note
+    db.commit()
+    db.refresh(item)
+    return to_dict(item)
 
 
 @router.get("/bambu/printers")

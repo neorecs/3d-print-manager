@@ -23,6 +23,8 @@ class AccountingSale(TimestampMixin, Base):
     currency: Mapped[str] = mapped_column(String(3), default="EUR", nullable=False)
     status: Mapped[str] = mapped_column(String(40), default="concept", nullable=False)
     source: Mapped[str] = mapped_column(String(60), default="manual", nullable=False)
+    entry_type: Mapped[str] = mapped_column(String(40), default="sale", nullable=False)
+    correction_of_sale_id: Mapped[int | None] = mapped_column(ForeignKey("accounting_sales.id"), nullable=True)
     note: Mapped[str | None] = mapped_column(Text, nullable=True)
 
 
@@ -42,6 +44,8 @@ class AccountingPurchase(TimestampMixin, Base):
     currency: Mapped[str] = mapped_column(String(3), default="EUR", nullable=False)
     payment_status: Mapped[str] = mapped_column(String(40), default="onbekend", nullable=False)
     source: Mapped[str] = mapped_column(String(60), default="manual", nullable=False)
+    entry_type: Mapped[str] = mapped_column(String(40), default="purchase", nullable=False)
+    correction_of_purchase_id: Mapped[int | None] = mapped_column(ForeignKey("accounting_purchases.id"), nullable=True)
     note: Mapped[str | None] = mapped_column(Text, nullable=True)
 
 
@@ -70,4 +74,13 @@ class VatPeriod(TimestampMixin, Base):
     purchase_vat: Mapped[float] = mapped_column(Numeric(12, 2), default=0, nullable=False)
     vat_due: Mapped[float] = mapped_column(Numeric(12, 2), default=0, nullable=False)
     status: Mapped[str] = mapped_column(String(40), default="concept", nullable=False)
+    note: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+
+class AccountingFiscalSetting(TimestampMixin, Base):
+    __tablename__ = "accounting_fiscal_settings"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    setting_name: Mapped[str] = mapped_column(String(80), unique=True, nullable=False)
+    value: Mapped[str] = mapped_column(String(255), nullable=False)
     note: Mapped[str | None] = mapped_column(Text, nullable=True)

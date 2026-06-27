@@ -59,6 +59,24 @@ class AccountingPurchaseCreate(BaseModel):
     note: str | None = None
 
 
+class AccountingCorrectionCreate(BaseModel):
+    reason: str
+    correction_date: str | None = None
+
+
+class VatPeriodCloseCreate(BaseModel):
+    period_name: str
+    start_date: str
+    end_date: str
+    note: str | None = None
+
+
+class AccountingFiscalSettingCreate(BaseModel):
+    setting_name: str
+    value: str
+    note: str | None = None
+
+
 class ProductCreate(BaseModel):
     name: str
     internal_title: str | None = None
