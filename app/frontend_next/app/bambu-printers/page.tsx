@@ -3,28 +3,19 @@ import { EmptyState } from "@/components/EmptyState";
 import { MetricCard } from "@/components/MetricCard";
 import { PageHeader } from "@/components/PageHeader";
 import { SectionCard } from "@/components/SectionCard";
-import { getBambuPrintersData } from "@/lib/api";
 import type { BambuPrintersData } from "@/lib/types";
 import { BambuPrinterManager } from "./BambuPrinterManager";
 
 export const dynamic = "force-dynamic";
 
 export default async function BambuPrintersPage() {
-  let data: BambuPrintersData | null = null;
-  let error: string | null = null;
-  try {
-    data = await getBambuPrintersData();
-  } catch (caught) {
-    error = caught instanceof Error ? caught.message : "Backend niet bereikbaar";
-  }
-
   return (
     <AppShell>
       <PageHeader
         title="Bambu printers"
         description="Registreer je Bambu-printers en controleer veilig of ze via LAN bereikbaar zijn. Automatisch printen blijft uitgeschakeld."
       />
-      {error || !data ? <SectionCard title="Bambu printers niet bereikbaar"><EmptyState title="Geen printerdata" description={error || "Geen data beschikbaar"} /></SectionCard> : <BambuPrintersContent data={data} />}
+      <BambuPrintersContent data={{ printers: [] }} />
     </AppShell>
   );
 }

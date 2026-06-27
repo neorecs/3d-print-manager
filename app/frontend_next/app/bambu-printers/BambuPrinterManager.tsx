@@ -1,7 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
-import { useRouter } from "next/navigation";
+import { FormEvent, useEffect, useState } from "react";
 import { StatusBadge } from "@/components/StatusBadge";
 import type { BambuPrinter } from "@/lib/types";
 
@@ -68,12 +67,26 @@ function toPayload(draft: PrinterDraft) {
 }
 
 export function BambuPrinterManager({ printers }: { printers: BambuPrinter[] }) {
-  const router = useRouter();
+  const [items, setItems] = useState<BambuPrinter[]>(printers);
   const [newDraft, setNewDraft] = useState<PrinterDraft>(() => emptyDraft());
   const [drafts, setDrafts] = useState<Record<number, PrinterDraft>>(() => Object.fromEntries(printers.map((printer) => [printer.id, draftFromPrinter(printer)])));
   const [busyKey, setBusyKey] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  async function loadPrinters() {
+    const response = await fetch("/api/bambu/printers", { cache: "no-store" });
+    const data = await response.json().catch(() => null);
+    if (!response.ok) throw new Error(data?.detail || "Bambu-printers konden niet worden geladen");
+    setItems(data);
+    setDrafts(Object.fromEntries(data.map((printer: BambuPrinter) => [printer.id, draftFromPrinter(printer)])));
+  }
+
+  useEffect(() => {
+    loadPrinters().catch((caught) => {
+      setError(caught instanceof Error ? caught.message : "Bambu-printers konden niet worden geladen");
+    });
+  }, []);
 
   function updateNew(field: keyof PrinterDraft, value: string | boolean) {
     setNewDraft((current) => ({ ...current, [field]: value }));
@@ -98,7 +111,7 @@ export function BambuPrinterManager({ printers }: { printers: BambuPrinter[] }) 
       if (!response.ok) throw new Error(data?.detail || "Printer kon niet worden aangemaakt");
       setNewDraft(emptyDraft());
       setMessage("Printer aangemaakt.");
-      router.refresh();
+      await loadPrinters();
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Printer opslaan is mislukt");
     } finally {
@@ -119,7 +132,7 @@ export function BambuPrinterManager({ printers }: { printers: BambuPrinter[] }) 
       const data = await response.json().catch(() => null);
       if (!response.ok) throw new Error(data?.detail || "Printer kon niet worden opgeslagen");
       setMessage("Printer opgeslagen.");
-      router.refresh();
+      await loadPrinters();
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Printer opslaan is mislukt");
     } finally {
@@ -136,7 +149,7 @@ export function BambuPrinterManager({ printers }: { printers: BambuPrinter[] }) 
       const data = await response.json().catch(() => null);
       if (!response.ok) throw new Error(data?.detail || "Verbindingstest is mislukt");
       setMessage(data?.status_message || "Verbindingstest uitgevoerd.");
-      router.refresh();
+      await loadPrinters();
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Verbindingstest is mislukt");
     } finally {
@@ -161,7 +174,7 @@ export function BambuPrinterManager({ printers }: { printers: BambuPrinter[] }) 
       </form>
 
       <div className="space-y-3">
-        {printers.length ? printers.map((printer) => {
+        {items.length ? items.map((printer) => {
           const draft = drafts[printer.id] || draftFromPrinter(printer);
           return (
             <details className="rounded-lg border border-line bg-white p-4 shadow-card" key={printer.id}>
