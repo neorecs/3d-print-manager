@@ -5,7 +5,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { SectionCard } from "@/components/SectionCard";
 import { StatusBadge } from "@/components/StatusBadge";
 import { formatCurrency, getOrdersData } from "@/lib/api";
-import type { Order, OrderItem, OrdersData, Platform } from "@/lib/types";
+import type { Order, OrderItem, OrdersData, Platform, PlatformImportLog } from "@/lib/types";
 import { ShopifyImportButton } from "./ShopifyImportButton";
 
 export default async function OrdersPage() {
@@ -57,6 +57,34 @@ function OrdersContent({ data }: { data: OrdersData }) {
 
       <SectionCard title="Orderimport" description="Importeer Shopify orders. In mockmodus blijft dit veilig en maakt de backend een testorder; in live-modus gebruikt hij je Shopify credentials.">
         <ShopifyImportButton />
+      </SectionCard>
+
+      <SectionCard title="Importgeschiedenis" description="Laatste orderimports per verkoopkanaal, inclusief aantallen en foutmeldingen.">
+        {data.importLogs.length ? (
+          <div className="table-scroll">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Start</th>
+                  <th>Kanaal</th>
+                  <th>Status</th>
+                  <th>Sinds</th>
+                  <th className="text-right">Nieuw</th>
+                  <th className="text-right">Bijgewerkt</th>
+                  <th className="text-right">Fouten</th>
+                  <th>Melding</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.importLogs.slice(0, 10).map((log) => (
+                  <ImportLogRow key={log.id} log={log} platform={data.platforms.find((platform) => platform.id === log.platform_id)} />
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <EmptyState title="Nog geen importgeschiedenis" description="Na de eerste Shopify import verschijnen hier de resultaten." />
+        )}
       </SectionCard>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
@@ -140,4 +168,29 @@ function SmallStat({ label, value }: { label: string; value: string | number }) 
       <div className="mt-1 text-lg font-bold text-ink">{value}</div>
     </div>
   );
+}
+
+function ImportLogRow({ log, platform }: { log: PlatformImportLog; platform?: Platform }) {
+  return (
+    <tr>
+      <td>{formatDateTime(log.started_at)}</td>
+      <td>{platform ? platform.name : `Platform ${log.platform_id}`}</td>
+      <td>
+        <StatusBadge status={log.status} />
+      </td>
+      <td>{formatDateTime(log.since)}</td>
+      <td className="text-right">{log.created_count}</td>
+      <td className="text-right">{log.updated_count}</td>
+      <td className="text-right">{log.error_count}</td>
+      <td>{log.message || "-"}</td>
+    </tr>
+  );
+}
+
+function formatDateTime(value?: string | null) {
+  if (!value) {
+    return "-";
+  }
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? value : date.toLocaleString("nl-NL");
 }

@@ -47,7 +47,7 @@ class PlatformConnector:
     def sync_product(self, payload: dict) -> ConnectorResult:
         return self._mock_result("sync", payload)
 
-    def import_orders(self, limit: int = 25) -> dict:
+    def import_orders(self, limit: int = 25, since: str | None = None) -> dict:
         return {
             "success": False,
             "message": f"{self.platform_type} orderimport is nog niet geimplementeerd.",

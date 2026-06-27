@@ -333,6 +333,22 @@ export type OrdersData = {
   products: Product[];
   variants: ProductVariant[];
   printJobs: PrintJob[];
+  importLogs: PlatformImportLog[];
+};
+
+export type PlatformImportLog = {
+  id: number;
+  platform_id: number;
+  import_type: string;
+  status: string;
+  started_at?: string | null;
+  finished_at?: string | null;
+  since?: string | null;
+  created_count: number;
+  updated_count: number;
+  skipped_count: number;
+  error_count: number;
+  message?: string | null;
 };
 
 export type OrderDetailData = {

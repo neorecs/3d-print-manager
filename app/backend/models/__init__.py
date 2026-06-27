@@ -4,7 +4,7 @@ from models.bambu import BambuPrinter
 from models.costs import CostSetting, OrderProfitCalculation
 from models.inventory import FilamentSpool, InventoryMovement, ProductInventory
 from models.orders import Order, OrderItem
-from models.platforms import Platform, PlatformCredential, PlatformProductLink
+from models.platforms import Platform, PlatformCredential, PlatformImportLog, PlatformProductLink
 from models.planning import PrintBatch, PrintBatchItem, PrintJob
 from models.products import (
     Product,
@@ -30,6 +30,7 @@ __all__ = [
     "OrderProfitCalculation",
     "Platform",
     "PlatformCredential",
+    "PlatformImportLog",
     "PlatformProductLink",
     "PrintBatch",
     "PrintBatchItem",

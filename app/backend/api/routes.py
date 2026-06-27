@@ -29,6 +29,7 @@ from models import (
     OrderProfitCalculation,
     Platform,
     PlatformCredential,
+    PlatformImportLog,
     PrintBatch,
     PrintBatchItem,
     PrintJob,
@@ -1110,7 +1111,8 @@ def import_etsy_orders(db: Session = Depends(get_db)):
 
 
 @router.post("/orders/import/shopify")
-def import_shopify_orders(db: Session = Depends(get_db)):
+def import_shopify_orders(since: str | None = Query(None), db: Session = Depends(get_db)):
+    since_dt = parse_optional_datetime(since) if since else None
     platforms = db.scalars(select(Platform).where(Platform.type == "shopify", Platform.active.is_(True)).order_by(Platform.id)).all()
     if not platforms:
         order = create_dummy_order(db, platform_type="shopify")
@@ -1122,23 +1124,46 @@ def import_shopify_orders(db: Session = Depends(get_db)):
     errors = []
 
     for platform in platforms:
+        log = PlatformImportLog(
+            platform_id=platform.id,
+            import_type="orders",
+            status="bezig",
+            started_at=datetime.now(timezone.utc),
+            since=since_dt,
+        )
+        db.add(log)
+        db.flush()
+        platform_created = 0
+        platform_updated = 0
+        platform_skipped = 0
+        platform_errors = []
         connector = get_platform_connector(db, platform)
         status = connector.status()
         if connector.live_mode and status.missing_credentials:
-            errors.append({"platform_id": platform.id, "platform": platform.name, "message": f"Ontbrekende Shopify credentials: {', '.join(status.missing_credentials)}"})
+            error = {"platform_id": platform.id, "platform": platform.name, "message": f"Ontbrekende Shopify credentials: {', '.join(status.missing_credentials)}"}
+            errors.append(error)
+            platform_errors.append(error["message"])
+            finish_import_log(log, "fout", platform_created, platform_updated, platform_skipped, platform_errors)
             continue
-        result = connector.import_orders(limit=25)
+        result = connector.import_orders(limit=25, since=since_dt.isoformat() if since_dt else None)
         if not result.get("success"):
-            errors.append({"platform_id": platform.id, "platform": platform.name, "message": result.get("message", "Shopify import mislukt")})
+            error = {"platform_id": platform.id, "platform": platform.name, "message": result.get("message", "Shopify import mislukt")}
+            errors.append(error)
+            platform_errors.append(error["message"])
+            finish_import_log(log, "fout", platform_created, platform_updated, platform_skipped, platform_errors)
             continue
         for payload in result.get("orders", []):
             imported = upsert_imported_order(db, platform, payload)
             if imported["action"] == "created":
                 created.append(imported["order"])
+                platform_created += 1
             elif imported["action"] == "updated":
                 updated.append(imported["order"])
+                platform_updated += 1
             else:
                 skipped.append(imported["order"])
+                platform_skipped += 1
+        finish_import_log(log, "klaar", platform_created, platform_updated, platform_skipped, platform_errors)
 
     db.commit()
     return {
@@ -1149,6 +1174,22 @@ def import_shopify_orders(db: Session = Depends(get_db)):
         "errors": errors,
         "orders": created + updated + skipped,
     }
+
+
+@router.get("/orders/import-logs")
+def list_order_import_logs(db: Session = Depends(get_db)):
+    rows = db.scalars(select(PlatformImportLog).where(PlatformImportLog.import_type == "orders").order_by(PlatformImportLog.started_at.desc().nullslast(), PlatformImportLog.id.desc()).limit(20)).all()
+    return list_rows(rows)
+
+
+def finish_import_log(log: PlatformImportLog, status: str, created_count: int, updated_count: int, skipped_count: int, errors: list[str]) -> None:
+    log.status = status
+    log.finished_at = datetime.now(timezone.utc)
+    log.created_count = created_count
+    log.updated_count = updated_count
+    log.skipped_count = skipped_count
+    log.error_count = len(errors)
+    log.message = "; ".join(errors) if errors else f"{created_count} nieuw, {updated_count} bijgewerkt, {skipped_count} overgeslagen"
 
 
 def upsert_imported_order(db: Session, platform: Platform, payload: dict) -> dict:

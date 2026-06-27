@@ -23,6 +23,7 @@ import {
   Platform,
   PlatformConnectorStatus,
   PlatformCredential,
+  PlatformImportLog,
   PrintBatch,
   PrintJob,
   PrintPlanningData,
@@ -136,13 +137,14 @@ export async function getProductDetailData(productId: number): Promise<ProductDe
 }
 
 export async function getOrdersData(): Promise<OrdersData> {
-  const [orders, orderItems, platforms, products, variants, printJobs] = await Promise.all([
+  const [orders, orderItems, platforms, products, variants, printJobs, importLogs] = await Promise.all([
     apiGet<Order[]>("/orders"),
     apiGet<OrderItem[]>("/order-items"),
     apiGet<Platform[]>("/platforms"),
     apiGet<Product[]>("/products"),
     apiGet<ProductVariant[]>("/product-variants"),
     apiGet<PrintJob[]>("/print-jobs"),
+    apiGet<PlatformImportLog[]>("/orders/import-logs").catch(() => []),
   ]);
 
   return {
@@ -152,6 +154,7 @@ export async function getOrdersData(): Promise<OrdersData> {
     products,
     variants,
     printJobs,
+    importLogs,
   };
 }
 

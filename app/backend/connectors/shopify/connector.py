@@ -69,7 +69,7 @@ class ShopifyConnector(PlatformConnector):
             raw_response=response,
         )
 
-    def import_orders(self, limit: int = 25) -> dict:
+    def import_orders(self, limit: int = 25, since: str | None = None) -> dict:
         if not self.live_mode:
             return {
                 "success": True,
@@ -95,7 +95,10 @@ class ShopifyConnector(PlatformConnector):
                 ],
             }
 
-        response = self._graphql(self._orders_query(), {"first": max(1, min(limit, 50)), "query": "status:any"})
+        query = "status:any"
+        if since:
+            query = f"{query} created_at:>={since}"
+        response = self._graphql(self._orders_query(), {"first": max(1, min(limit, 50)), "query": query})
         errors = response.get("errors") or []
         if errors:
             return {"success": False, "message": self._format_user_errors(errors), "orders": [], "raw_response": response}

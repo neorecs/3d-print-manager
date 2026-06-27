@@ -584,7 +584,9 @@ Status 2026-06-27:
 - In live-modus gebruikt de import `shop_domain` en `access_token`, haalt recente orders op, maakt interne orders/orderregels aan en koppelt orderregels via SKU.
 - Import is idempotent op `platform_id + external_order_id` en voorkomt dubbele orders bij herhaald importeren.
 - UI-knop toegevoegd op `/orders` voor Shopify orderimport.
-- Nog verfijnen: importlogs/history, datumfilter/since cursor, paginering voorbij 25 orders, uitgebreide Shopify status- en foutmeldingen.
+- Importlogs/history toegevoegd voor orderimports, inclusief status, aantallen, foutmeldingen en gebruikte vanaf-datum.
+- Datumfilter/since toegevoegd aan Shopify orderimport, zodat imports vanaf een gekozen datum kunnen starten.
+- Nog verfijnen: paginering voorbij 25 orders, uitgebreidere Shopify status- en foutmeldingen en automatische vervolgimports met cursor.
 
 ## Niet doen in V2
 

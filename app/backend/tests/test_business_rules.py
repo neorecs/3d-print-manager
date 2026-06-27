@@ -453,6 +453,7 @@ class BusinessRuleTestCase(unittest.TestCase):
         def fake_graphql(query: str, variables: dict) -> dict:
             self.assertIn("orders", query)
             self.assertEqual(variables["first"], 25)
+            self.assertEqual(variables["query"], "status:any created_at:>=2026-01-01T00:00:00+00:00")
             return {
                 "data": {
                     "orders": {
@@ -488,7 +489,7 @@ class BusinessRuleTestCase(unittest.TestCase):
             }
 
         connector._graphql = fake_graphql
-        result = connector.import_orders()
+        result = connector.import_orders(since="2026-01-01T00:00:00+00:00")
 
         self.assertTrue(result["success"])
         self.assertEqual(len(result["orders"]), 1)
