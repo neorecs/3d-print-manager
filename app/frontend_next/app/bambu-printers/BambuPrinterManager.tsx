@@ -51,17 +51,20 @@ function numberOrDefault(value: string, fallback: number) {
 }
 
 function toPayload(draft: PrinterDraft) {
-  return {
-    name: draft.name,
+  const payload: Record<string, string | number | boolean | null> = {
+    name: draft.name.trim(),
     model: draft.model || null,
     serial_number: draft.serial_number || null,
-    host: draft.host,
+    host: draft.host.trim(),
     mqtt_port: numberOrDefault(draft.mqtt_port, 8883),
-    access_code: draft.access_code || null,
     connection_mode: draft.connection_mode || "lan",
     location: draft.location || null,
     active: draft.active,
   };
+  if (draft.access_code.trim()) {
+    payload.access_code = draft.access_code.trim();
+  }
+  return payload;
 }
 
 export function BambuPrinterManager({ printers }: { printers: BambuPrinter[] }) {

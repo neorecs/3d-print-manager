@@ -7,6 +7,8 @@ import { getBambuPrintersData } from "@/lib/api";
 import type { BambuPrintersData } from "@/lib/types";
 import { BambuPrinterManager } from "./BambuPrinterManager";
 
+export const dynamic = "force-dynamic";
+
 export default async function BambuPrintersPage() {
   let data: BambuPrintersData | null = null;
   let error: string | null = null;
