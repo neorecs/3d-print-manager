@@ -73,6 +73,35 @@ function OrderContent({ data }: { data: OrderDetailData }) {
         </SectionCard>
       </div>
 
+      <SectionCard title="Verkoopboeking" description="Administratieve verkoopregel die bij deze order hoort.">
+        {data.accountingSale ? (
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-6">
+            <SmallStat label="Boeking" value={`#${data.accountingSale.id}`} />
+            <SmallStat label="Factuur" value={data.accountingSale.invoice_number || "-"} />
+            <SmallStat label="Datum" value={formatDate(data.accountingSale.invoice_date)} />
+            <SmallStat label="Netto" value={formatCurrency(data.accountingSale.net_amount)} />
+            <SmallStat label="Btw" value={formatCurrency(data.accountingSale.vat_amount)} />
+            <SmallStat label="Bruto" value={formatCurrency(data.accountingSale.gross_amount)} />
+            <div className="rounded-md border border-line bg-slate-50 px-3 py-3 md:col-span-2 xl:col-span-6">
+              <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <div className="text-xs font-bold uppercase text-muted">Status en controle</div>
+                  <div className="mt-1 flex flex-wrap items-center gap-2">
+                    <StatusBadge status={data.accountingSale.status} />
+                    <span className="text-sm text-slate-700">{data.accountingSale.note || "Controleer deze boeking voordat je aangifte voorbereidt."}</span>
+                  </div>
+                </div>
+                <a className="rounded-md border border-line bg-white px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50" href="/administratie">
+                  Naar administratie
+                </a>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <EmptyState title="Nog geen verkoopboeking" description="Maak de verkoopboeking via Orderacties. Daarna verschijnt deze order automatisch in het verkoopboek." />
+        )}
+      </SectionCard>
+
       <SectionCard title="Orderregels" description="Per regel zie je of de voorraad is gebruikt of dat er nog printwerk nodig is.">
         {data.order.items.length ? (
           <div className="table-scroll">
@@ -174,4 +203,10 @@ function SmallStat({ label, value }: { label: string; value: string | number }) 
       <div className="mt-1 text-lg font-bold text-ink">{value}</div>
     </div>
   );
+}
+
+function formatDate(value?: string | null) {
+  if (!value) return "-";
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString("nl-NL");
 }

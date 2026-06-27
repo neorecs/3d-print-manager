@@ -7,6 +7,7 @@ import { StatusBadge } from "@/components/StatusBadge";
 import { formatCurrency, getAccountingData } from "@/lib/api";
 import type { AccountingData } from "@/lib/types";
 import { AccountingPurchaseForm } from "./AccountingPurchaseForm";
+import { AccountingSaleForm } from "./AccountingSaleForm";
 
 export const dynamic = "force-dynamic";
 
@@ -73,6 +74,10 @@ function AccountingContent({ data }: { data: AccountingData }) {
         <AccountingPurchaseForm />
       </SectionCard>
 
+      <SectionCard title="Verkoopboeking toevoegen" description="Gebruik dit alleen voor handmatige verkopen of correcties buiten de automatische orderflow. Orders boek je bij voorkeur vanuit orderdetail.">
+        <AccountingSaleForm />
+      </SectionCard>
+
       <SectionCard title="Documenten" description="Bonnen en facturen die aan verkoop- of inkoopboekingen zijn gekoppeld.">
         {data.documents.length ? (
           <div className="table-scroll">
@@ -127,6 +132,7 @@ function AccountingContent({ data }: { data: AccountingData }) {
                   <th className="text-right">Btw</th>
                   <th className="text-right">Bruto</th>
                   <th>Status</th>
+                  <th>Bron</th>
                 </tr>
               </thead>
               <tbody>
@@ -139,6 +145,15 @@ function AccountingContent({ data }: { data: AccountingData }) {
                     <td className="text-right">{formatCurrency(item.vat_amount)}</td>
                     <td className="text-right font-semibold">{formatCurrency(item.gross_amount)}</td>
                     <td><StatusBadge status={item.status} /></td>
+                    <td>
+                      {item.order_id ? (
+                        <a className="font-bold text-brand hover:text-ink" href={`/orders/${item.order_id}`}>
+                          Order {item.order_id}
+                        </a>
+                      ) : (
+                        item.source || "handmatig"
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>

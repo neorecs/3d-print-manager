@@ -487,7 +487,9 @@ Status 2026-06-27:
 - Documentoverzicht met open/download-link toegevoegd voor gekoppelde bonnen en facturen.
 - Orderdetail kan nu automatisch een verkoopboeking maken vanuit een order. De actie is idempotent en voorkomt dubbele boekingen per order.
 - De automatische verkoopboeking gebruikt voorlopig het orderbedrag inclusief 21% btw met een duidelijke controle-notitie; btw-regime per land/platform moet later worden verfijnd.
-- Nog verfijnen: verkoopboekingformulier, documentverwijdering/correcties, btw-periode afsluiten, CSV-export voor boekhouder en fiscale instellingen zoals KOR/EU-verkoop.
+- Orderdetail toont een verkoopboekingoverzicht met bedragen, status en link naar `/administratie`.
+- Handmatige verkoopboeking met optionele factuur-upload toegevoegd voor verkopen of correcties buiten de automatische orderflow.
+- Nog verfijnen: documentverwijdering/correcties, btw-periode afsluiten, CSV-export voor boekhouder en fiscale instellingen zoals KOR/EU-verkoop.
 
 ## Fase 10 - Echte AI Product Assistent
 
