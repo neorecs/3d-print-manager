@@ -69,6 +69,45 @@ class ShopifyConnector(PlatformConnector):
             raw_response=response,
         )
 
+    def import_orders(self, limit: int = 25) -> dict:
+        if not self.live_mode:
+            return {
+                "success": True,
+                "message": "Shopify orderimport uitgevoerd in mockmodus.",
+                "orders": [
+                    {
+                        "external_order_id": "mock-shopify-order-1001",
+                        "order_number": "MOCK-SHOPIFY-1001",
+                        "customer_name": "Mock Shopify klant",
+                        "customer_email": "mock-shopify@example.com",
+                        "order_date": "2026-06-25T10:00:00+00:00",
+                        "total_amount": 19.9,
+                        "currency": "EUR",
+                        "items": [
+                            {
+                                "external_order_item_id": "mock-shopify-line-1",
+                                "sku": "DUMPLING-ROOD-PLA",
+                                "quantity_ordered": 2,
+                                "unit_sale_price": 9.95,
+                            }
+                        ],
+                    }
+                ],
+            }
+
+        response = self._graphql(self._orders_query(), {"first": max(1, min(limit, 50)), "query": "status:any"})
+        errors = response.get("errors") or []
+        if errors:
+            return {"success": False, "message": self._format_user_errors(errors), "orders": [], "raw_response": response}
+
+        edges = response.get("data", {}).get("orders", {}).get("edges") or []
+        return {
+            "success": True,
+            "message": f"{len(edges)} Shopify order(s) opgehaald.",
+            "orders": [self._order_from_node(edge.get("node") or {}) for edge in edges],
+            "raw_response": response,
+        }
+
     def _graphql(self, query: str, variables: dict) -> dict:
         shop_domain = self._normalized_shop_domain()
         request = Request(
@@ -124,6 +163,43 @@ class ShopifyConnector(PlatformConnector):
             shop_domain = f"{shop_domain}.myshopify.com"
         return shop_domain
 
+    def _money_amount(self, value: dict | None) -> float | None:
+        amount = ((value or {}).get("shopMoney") or {}).get("amount")
+        if amount is None:
+            return None
+        try:
+            return float(amount)
+        except (TypeError, ValueError):
+            return None
+
+    def _money_currency(self, value: dict | None) -> str:
+        return ((value or {}).get("shopMoney") or {}).get("currencyCode") or "EUR"
+
+    def _order_from_node(self, node: dict) -> dict:
+        customer = node.get("customer") or {}
+        line_edges = node.get("lineItems", {}).get("edges") or []
+        return {
+            "external_order_id": node.get("id"),
+            "order_number": node.get("name") or node.get("id"),
+            "customer_name": customer.get("displayName"),
+            "customer_email": node.get("email") or customer.get("email"),
+            "order_date": node.get("createdAt"),
+            "total_amount": self._money_amount(node.get("totalPriceSet")),
+            "currency": self._money_currency(node.get("totalPriceSet")),
+            "items": [self._order_item_from_node(edge.get("node") or {}) for edge in line_edges],
+        }
+
+    def _order_item_from_node(self, node: dict) -> dict:
+        variant = node.get("variant") or {}
+        return {
+            "external_order_item_id": node.get("id"),
+            "sku": node.get("sku") or variant.get("sku"),
+            "quantity_ordered": int(node.get("quantity") or 0),
+            "unit_sale_price": self._money_amount(node.get("originalUnitPriceSet")),
+            "title": node.get("title"),
+            "variant_title": node.get("variantTitle"),
+        }
+
     def _format_user_errors(self, errors: list[dict]) -> str:
         messages = []
         for error in errors:
@@ -159,6 +235,53 @@ class ShopifyConnector(PlatformConnector):
             userErrors {
               field
               message
+            }
+          }
+        }
+        """
+
+    def _orders_query(self) -> str:
+        return """
+        query Orders($first: Int!, $query: String) {
+          orders(first: $first, reverse: true, sortKey: CREATED_AT, query: $query) {
+            edges {
+              node {
+                id
+                name
+                email
+                createdAt
+                totalPriceSet {
+                  shopMoney {
+                    amount
+                    currencyCode
+                  }
+                }
+                customer {
+                  displayName
+                  email
+                }
+                lineItems(first: 50) {
+                  edges {
+                    node {
+                      id
+                      sku
+                      title
+                      variantTitle
+                      quantity
+                      originalUnitPriceSet {
+                        shopMoney {
+                          amount
+                          currencyCode
+                        }
+                      }
+                      variant {
+                        id
+                        sku
+                      }
+                    }
+                  }
+                }
+              }
             }
           }
         }

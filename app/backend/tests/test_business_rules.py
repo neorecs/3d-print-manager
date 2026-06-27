@@ -447,6 +447,59 @@ class BusinessRuleTestCase(unittest.TestCase):
         self.assertEqual(variables["product"]["id"], "gid://shopify/Product/123")
         self.assertEqual(variables["product"]["title"], "Updated")
 
+    def test_shopify_import_orders_maps_graphql_payload(self) -> None:
+        connector = ShopifyConnector({"access_token": "token", "shop_domain": "example-shop"}, live_mode=True)
+
+        def fake_graphql(query: str, variables: dict) -> dict:
+            self.assertIn("orders", query)
+            self.assertEqual(variables["first"], 25)
+            return {
+                "data": {
+                    "orders": {
+                        "edges": [
+                            {
+                                "node": {
+                                    "id": "gid://shopify/Order/1",
+                                    "name": "#1001",
+                                    "email": "customer@example.com",
+                                    "createdAt": "2026-06-27T10:00:00Z",
+                                    "totalPriceSet": {"shopMoney": {"amount": "19.90", "currencyCode": "EUR"}},
+                                    "customer": {"displayName": "Shopify klant", "email": "fallback@example.com"},
+                                    "lineItems": {
+                                        "edges": [
+                                            {
+                                                "node": {
+                                                    "id": "gid://shopify/LineItem/1",
+                                                    "sku": "DUMPLING-ROOD-PLA",
+                                                    "quantity": 2,
+                                                    "title": "Dumpling",
+                                                    "variantTitle": "Rood",
+                                                    "originalUnitPriceSet": {"shopMoney": {"amount": "9.95", "currencyCode": "EUR"}},
+                                                    "variant": {"id": "gid://shopify/ProductVariant/1", "sku": "VARIANT-SKU"},
+                                                }
+                                            }
+                                        ]
+                                    },
+                                }
+                            }
+                        ]
+                    }
+                }
+            }
+
+        connector._graphql = fake_graphql
+        result = connector.import_orders()
+
+        self.assertTrue(result["success"])
+        self.assertEqual(len(result["orders"]), 1)
+        order = result["orders"][0]
+        self.assertEqual(order["external_order_id"], "gid://shopify/Order/1")
+        self.assertEqual(order["order_number"], "#1001")
+        self.assertEqual(order["customer_name"], "Shopify klant")
+        self.assertEqual(order["total_amount"], 19.9)
+        self.assertEqual(order["items"][0]["sku"], "DUMPLING-ROOD-PLA")
+        self.assertEqual(order["items"][0]["unit_sale_price"], 9.95)
+
 
 if __name__ == "__main__":
     unittest.main()

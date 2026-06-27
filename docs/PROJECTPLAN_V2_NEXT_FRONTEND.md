@@ -577,6 +577,15 @@ Acceptatie:
 - Connectorfouten worden gelogd.
 - Import/sync kan getest worden zonder echte publicatiefouten.
 
+Status 2026-06-27:
+
+- Shopify orderimport is omgezet van dummy-only naar een eerste live-capable import via Shopify Admin GraphQL.
+- In mockmodus blijft de import veilig en maakt hij een testorder.
+- In live-modus gebruikt de import `shop_domain` en `access_token`, haalt recente orders op, maakt interne orders/orderregels aan en koppelt orderregels via SKU.
+- Import is idempotent op `platform_id + external_order_id` en voorkomt dubbele orders bij herhaald importeren.
+- UI-knop toegevoegd op `/orders` voor Shopify orderimport.
+- Nog verfijnen: importlogs/history, datumfilter/since cursor, paginering voorbij 25 orders, uitgebreide Shopify status- en foutmeldingen.
+
 ## Niet doen in V2
 
 - Backend herschrijven.

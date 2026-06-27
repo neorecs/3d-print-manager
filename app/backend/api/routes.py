@@ -1111,8 +1111,91 @@ def import_etsy_orders(db: Session = Depends(get_db)):
 
 @router.post("/orders/import/shopify")
 def import_shopify_orders(db: Session = Depends(get_db)):
-    order = create_dummy_order(db, platform_type="shopify")
-    return {"status": "dummy_shopify_import_complete", "order": to_dict(order)}
+    platforms = db.scalars(select(Platform).where(Platform.type == "shopify", Platform.active.is_(True)).order_by(Platform.id)).all()
+    if not platforms:
+        order = create_dummy_order(db, platform_type="shopify")
+        return {"status": "dummy_shopify_import_complete", "created": 1, "updated": 0, "skipped": 0, "orders": [to_dict(order)]}
+
+    created = []
+    updated = []
+    skipped = []
+    errors = []
+
+    for platform in platforms:
+        connector = get_platform_connector(db, platform)
+        status = connector.status()
+        if connector.live_mode and status.missing_credentials:
+            errors.append({"platform_id": platform.id, "platform": platform.name, "message": f"Ontbrekende Shopify credentials: {', '.join(status.missing_credentials)}"})
+            continue
+        result = connector.import_orders(limit=25)
+        if not result.get("success"):
+            errors.append({"platform_id": platform.id, "platform": platform.name, "message": result.get("message", "Shopify import mislukt")})
+            continue
+        for payload in result.get("orders", []):
+            imported = upsert_imported_order(db, platform, payload)
+            if imported["action"] == "created":
+                created.append(imported["order"])
+            elif imported["action"] == "updated":
+                updated.append(imported["order"])
+            else:
+                skipped.append(imported["order"])
+
+    db.commit()
+    return {
+        "status": "shopify_import_complete" if not errors else "shopify_import_completed_with_errors",
+        "created": len(created),
+        "updated": len(updated),
+        "skipped": len(skipped),
+        "errors": errors,
+        "orders": created + updated + skipped,
+    }
+
+
+def upsert_imported_order(db: Session, platform: Platform, payload: dict) -> dict:
+    external_order_id = payload.get("external_order_id")
+    if not external_order_id:
+        return {"action": "skipped", "order": {"reason": "Order zonder external_order_id overgeslagen"}}
+
+    order = db.scalar(select(Order).where(Order.platform_id == platform.id, Order.external_order_id == external_order_id))
+    action = "updated" if order else "created"
+    if not order:
+        order_number = str(payload.get("order_number") or external_order_id).replace("#", "").strip()
+        order = Order(
+            internal_order_number=f"SHOPIFY-{platform.id}-{order_number}",
+            platform_id=platform.id,
+            external_order_id=external_order_id,
+            status="nieuw",
+        )
+        db.add(order)
+        db.flush()
+
+    order.customer_name = payload.get("customer_name")
+    order.customer_email = payload.get("customer_email")
+    order.order_date = parse_optional_datetime(payload.get("order_date"))
+    order.total_amount = payload.get("total_amount")
+    order.currency = payload.get("currency") or "EUR"
+
+    for item_payload in payload.get("items", []):
+        external_item_id = item_payload.get("external_order_item_id")
+        if not external_item_id:
+            continue
+        item = db.scalar(select(OrderItem).where(OrderItem.order_id == order.id, OrderItem.external_order_item_id == external_item_id))
+        if not item:
+            item = OrderItem(order_id=order.id, external_order_item_id=external_item_id, quantity_ordered=0)
+            db.add(item)
+        item.sku = item_payload.get("sku")
+        item.quantity_ordered = int(item_payload.get("quantity_ordered") or 0)
+        item.unit_sale_price = item_payload.get("unit_sale_price")
+        item.inventory_status = item.inventory_status or "niet_op_voorraad"
+        link_order_item_by_sku(db, item)
+
+    return {"action": action, "order": to_dict(order)}
+
+
+def parse_optional_datetime(value: str | None):
+    if not value:
+        return None
+    return datetime.fromisoformat(value.replace("Z", "+00:00"))
 
 
 def create_dummy_order(db: Session, platform_type: str) -> Order:

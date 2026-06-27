@@ -47,6 +47,13 @@ class PlatformConnector:
     def sync_product(self, payload: dict) -> ConnectorResult:
         return self._mock_result("sync", payload)
 
+    def import_orders(self, limit: int = 25) -> dict:
+        return {
+            "success": False,
+            "message": f"{self.platform_type} orderimport is nog niet geimplementeerd.",
+            "orders": [],
+        }
+
     def _mock_result(self, action: str, payload: dict) -> ConnectorResult:
         sku = payload.get("variants", [{}])[0].get("sku", "product")
         safe_sku = str(sku).lower().replace(" ", "-")

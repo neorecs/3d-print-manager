@@ -6,6 +6,7 @@ import { SectionCard } from "@/components/SectionCard";
 import { StatusBadge } from "@/components/StatusBadge";
 import { formatCurrency, getOrdersData } from "@/lib/api";
 import type { Order, OrderItem, OrdersData, Platform } from "@/lib/types";
+import { ShopifyImportButton } from "./ShopifyImportButton";
 
 export default async function OrdersPage() {
   let data: OrdersData | null = null;
@@ -52,6 +53,10 @@ function OrdersContent({ data }: { data: OrdersData }) {
           <WorkflowStep title="2. Voorraad controleren" text="De app reserveert vrije voorraad en berekent alleen het tekort." />
           <WorkflowStep title="3. Printtaken maken" text="Alleen wat ontbreekt gaat door naar printplanning." />
         </div>
+      </SectionCard>
+
+      <SectionCard title="Orderimport" description="Importeer Shopify orders. In mockmodus blijft dit veilig en maakt de backend een testorder; in live-modus gebruikt hij je Shopify credentials.">
+        <ShopifyImportButton />
       </SectionCard>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
