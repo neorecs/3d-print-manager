@@ -70,6 +70,14 @@ function AccountingContent({ data }: { data: AccountingData }) {
         </div>
       </SectionCard>
 
+      <SectionCard title="Export voor boekhouder" description="Download CSV-bestanden met de huidige verkoopregels, inkoopregels en btw-samenvatting. Controleer fiscale keuzes voordat je dit gebruikt voor aangifte.">
+        <div className="flex flex-wrap gap-3">
+          <ExportLink href="/api/accounting/export/sales" label="Verkoopboek CSV" />
+          <ExportLink href="/api/accounting/export/purchases" label="Inkoopboek CSV" />
+          <ExportLink href="/api/accounting/export/vat-summary" label="Btw-samenvatting CSV" />
+        </div>
+      </SectionCard>
+
       <SectionCard title="Inkoopboeking toevoegen" description="Leg filament, verpakking, printeronderdelen, software of verzendkosten vast met bon of factuur.">
         <AccountingPurchaseForm />
       </SectionCard>
@@ -222,6 +230,14 @@ function Check({ title, text, status }: { title: string; text: string; status: s
         <StatusBadge status={status} />
       </div>
     </div>
+  );
+}
+
+function ExportLink({ href, label }: { href: string; label: string }) {
+  return (
+    <a className="rounded-md border border-line bg-white px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50" download href={href}>
+      {label}
+    </a>
   );
 }
 

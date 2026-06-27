@@ -1,11 +1,12 @@
 import csv
+import io
 import re
 import shutil
 import uuid
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Response, UploadFile
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -131,6 +132,40 @@ def fill_vat_amounts(data: dict) -> dict:
     data["vat_amount"] = vat_amount
     data["gross_amount"] = gross_amount
     return data
+
+
+def csv_download(filename: str, fieldnames: list[str], rows: list[dict]) -> Response:
+    output = io.StringIO()
+    writer = csv.DictWriter(output, fieldnames=fieldnames, extrasaction="ignore")
+    writer.writeheader()
+    writer.writerows(rows)
+    return Response(
+        content=output.getvalue(),
+        media_type="text/csv; charset=utf-8",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+def accounting_vat_summary_data(db: Session) -> dict:
+    sales = db.scalars(select(AccountingSale)).all()
+    purchases = db.scalars(select(AccountingPurchase)).all()
+    sales_net = sum(float(item.net_amount or 0) for item in sales)
+    sales_vat = sum(float(item.vat_amount or 0) for item in sales)
+    purchase_net = sum(float(item.net_amount or 0) for item in purchases)
+    purchase_vat = sum(float(item.vat_amount or 0) for item in purchases)
+    missing_sale_docs = sum(1 for item in sales if not db.scalar(select(AccountingDocument.id).where(AccountingDocument.sale_id == item.id)))
+    missing_purchase_docs = sum(1 for item in purchases if not db.scalar(select(AccountingDocument.id).where(AccountingDocument.purchase_id == item.id)))
+    return {
+        "sales_net": round(sales_net, 2),
+        "sales_vat": round(sales_vat, 2),
+        "purchase_net": round(purchase_net, 2),
+        "purchase_vat": round(purchase_vat, 2),
+        "vat_due": round(sales_vat - purchase_vat, 2),
+        "sales_count": len(sales),
+        "purchase_count": len(purchases),
+        "missing_document_count": missing_sale_docs + missing_purchase_docs,
+        "note": "Controlehulpmiddel voor administratie. Laat fiscale keuzes controleren door boekhouder/fiscalist.",
+    }
 
 
 def calculate_order_gross_amount(db: Session, order: Order) -> float:
@@ -311,25 +346,59 @@ def upload_accounting_document(
 
 @router.get("/accounting/vat-summary")
 def accounting_vat_summary(db: Session = Depends(get_db)):
-    sales = db.scalars(select(AccountingSale)).all()
-    purchases = db.scalars(select(AccountingPurchase)).all()
-    sales_net = sum(float(item.net_amount or 0) for item in sales)
-    sales_vat = sum(float(item.vat_amount or 0) for item in sales)
-    purchase_net = sum(float(item.net_amount or 0) for item in purchases)
-    purchase_vat = sum(float(item.vat_amount or 0) for item in purchases)
-    missing_sale_docs = sum(1 for item in sales if not db.scalar(select(AccountingDocument.id).where(AccountingDocument.sale_id == item.id)))
-    missing_purchase_docs = sum(1 for item in purchases if not db.scalar(select(AccountingDocument.id).where(AccountingDocument.purchase_id == item.id)))
-    return {
-        "sales_net": round(sales_net, 2),
-        "sales_vat": round(sales_vat, 2),
-        "purchase_net": round(purchase_net, 2),
-        "purchase_vat": round(purchase_vat, 2),
-        "vat_due": round(sales_vat - purchase_vat, 2),
-        "sales_count": len(sales),
-        "purchase_count": len(purchases),
-        "missing_document_count": missing_sale_docs + missing_purchase_docs,
-        "note": "Controlehulpmiddel voor administratie. Laat fiscale keuzes controleren door boekhouder/fiscalist.",
-    }
+    return accounting_vat_summary_data(db)
+
+
+@router.get("/accounting/sales/export.csv")
+def export_accounting_sales(db: Session = Depends(get_db)):
+    rows = db.scalars(select(AccountingSale).order_by(AccountingSale.invoice_date, AccountingSale.id)).all()
+    fieldnames = [
+        "id",
+        "order_id",
+        "platform_id",
+        "invoice_number",
+        "invoice_date",
+        "customer_name",
+        "customer_country",
+        "description",
+        "net_amount",
+        "vat_rate",
+        "vat_amount",
+        "gross_amount",
+        "currency",
+        "status",
+        "source",
+        "note",
+    ]
+    return csv_download("verkoopboek.csv", fieldnames, [to_dict(item) for item in rows])
+
+
+@router.get("/accounting/purchases/export.csv")
+def export_accounting_purchases(db: Session = Depends(get_db)):
+    rows = db.scalars(select(AccountingPurchase).order_by(AccountingPurchase.invoice_date, AccountingPurchase.id)).all()
+    fieldnames = [
+        "id",
+        "supplier_name",
+        "invoice_number",
+        "invoice_date",
+        "category",
+        "description",
+        "net_amount",
+        "vat_rate",
+        "vat_amount",
+        "gross_amount",
+        "currency",
+        "payment_status",
+        "source",
+        "note",
+    ]
+    return csv_download("inkoopboek.csv", fieldnames, [to_dict(item) for item in rows])
+
+
+@router.get("/accounting/vat-summary/export.csv")
+def export_accounting_vat_summary(db: Session = Depends(get_db)):
+    fieldnames = ["sales_net", "sales_vat", "purchase_net", "purchase_vat", "vat_due", "sales_count", "purchase_count", "missing_document_count", "note"]
+    return csv_download("btw-samenvatting.csv", fieldnames, [accounting_vat_summary_data(db)])
 
 
 @router.get("/accounting/vat-periods")

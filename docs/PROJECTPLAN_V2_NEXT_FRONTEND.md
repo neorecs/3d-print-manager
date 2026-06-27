@@ -489,7 +489,8 @@ Status 2026-06-27:
 - De automatische verkoopboeking gebruikt voorlopig het orderbedrag inclusief 21% btw met een duidelijke controle-notitie; btw-regime per land/platform moet later worden verfijnd.
 - Orderdetail toont een verkoopboekingoverzicht met bedragen, status en link naar `/administratie`.
 - Handmatige verkoopboeking met optionele factuur-upload toegevoegd voor verkopen of correcties buiten de automatische orderflow.
-- Nog verfijnen: documentverwijdering/correcties, btw-periode afsluiten, CSV-export voor boekhouder en fiscale instellingen zoals KOR/EU-verkoop.
+- CSV-export toegevoegd voor verkoopboek, inkoopboek en btw-samenvatting.
+- Nog verfijnen: documentverwijdering/correcties, btw-periode afsluiten en fiscale instellingen zoals KOR/EU-verkoop.
 
 ## Fase 10 - Echte AI Product Assistent
 
