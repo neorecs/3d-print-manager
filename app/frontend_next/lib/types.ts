@@ -6,6 +6,17 @@ export type Platform = {
   active: boolean;
 };
 
+export type SalesMarket = {
+  id: number;
+  country_code: string;
+  country_name: string;
+  primary_language: string;
+  additional_languages?: string | null;
+  currency: string;
+  active: boolean;
+  note?: string | null;
+};
+
 export type Product = {
   id: number;
   name: string;
@@ -489,6 +500,7 @@ export type InventoryData = {
 
 export type SalesChannelsData = {
   platforms: Platform[];
+  markets: SalesMarket[];
   statuses: PlatformConnectorStatus[];
   products: Product[];
   publications: ProductPublication[];

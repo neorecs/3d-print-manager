@@ -38,6 +38,7 @@ import {
   ProductVariant,
   SalesChannelDetailData,
   SalesChannelsData,
+  SalesMarket,
   StockRecommendation,
   VatPeriod,
   VatSummary,
@@ -253,8 +254,9 @@ export async function getAccountingData(filters: { startDate?: string; endDate?:
 }
 
 export async function getSalesChannelsData(): Promise<SalesChannelsData> {
-  const [platforms, products] = await Promise.all([
+  const [platforms, markets, products] = await Promise.all([
     apiGet<Platform[]>("/platforms"),
+    apiGet<SalesMarket[]>("/sales-markets").catch(() => []),
     apiGet<Product[]>("/products"),
   ]);
 
@@ -265,6 +267,7 @@ export async function getSalesChannelsData(): Promise<SalesChannelsData> {
 
   return {
     platforms,
+    markets,
     statuses: statuses.filter((status): status is PlatformConnectorStatus => Boolean(status)),
     products,
     publications: publicationsNested.flat(),

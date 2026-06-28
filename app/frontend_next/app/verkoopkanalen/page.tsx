@@ -8,6 +8,7 @@ import { StatusBadge } from "@/components/StatusBadge";
 import { getSalesChannelsData } from "@/lib/api";
 import type { SalesChannelsData } from "@/lib/types";
 import { SalesChannelsManager } from "./SalesChannelsManager";
+import { SalesMarketsManager } from "./SalesMarketsManager";
 
 export default async function SalesChannelsPage() {
   let data: SalesChannelsData | null = null;
@@ -30,16 +31,21 @@ function SalesChannelsContent({ data }: { data: SalesChannelsData }) {
   const ready = data.statuses.filter((status) => status.ready_for_live);
   const syncNeeded = data.publications.filter((publication) => publication.publication_status === "synchronisatie_nodig");
   const errors = data.publications.filter((publication) => publication.publication_status === "fout" || publication.last_error);
+  const activeMarkets = data.markets.filter((market) => market.active !== false);
 
   return (
     <div className="space-y-6">
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
         <MetricCard label="Kanalen" value={data.platforms.length} note="geregistreerd" />
+        <MetricCard label="Doellanden" value={activeMarkets.length} note="actief" tone={activeMarkets.length ? "good" : "warning"} />
         <MetricCard label="Live klaar" value={ready.length} note="credentials compleet" tone={ready.length ? "good" : "warning"} />
         <MetricCard label="Publicaties" value={data.publications.length} note="gekoppelde producten" />
         <MetricCard label="Sync nodig" value={syncNeeded.length} note="bijwerken vereist" tone={syncNeeded.length ? "warning" : "good"} />
-        <MetricCard label="Fouten" value={errors.length} note="publicatie/connectie" tone={errors.length ? "danger" : "good"} />
       </div>
+
+      <SectionCard title="Doellanden en talen" description="Bepaal eerst in welke landen je verkoopt. Deze instellingen sturen later welke vertalingen en platformvelden verplicht zijn.">
+        <SalesMarketsManager markets={data.markets} />
+      </SectionCard>
 
       <SectionCard title="Platformen beheren" description="Credentials zelf worden veilig in de backend opgeslagen; dit scherm toont status en basisgegevens.">
         <SalesChannelsManager platforms={data.platforms} />

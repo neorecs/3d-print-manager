@@ -42,6 +42,7 @@ from models import (
     ProductTranslation,
     ProductVariant,
     ProductVariantPlatformLink,
+    SalesMarket,
     StockRecommendation,
     TrendSnapshot,
     VatPeriod,
@@ -72,6 +73,7 @@ from schemas.common import (
     ProductTranslationGenerate,
     ProductTagCreate,
     ProductVariantCreate,
+    SalesMarketCreate,
     StockRecommendationGenerate,
     StockRecommendationUpdate,
 )
@@ -678,6 +680,62 @@ def update_platform(item_id: int, payload: PlatformCreate, db: Session = Depends
     db.commit()
     db.refresh(item)
     return to_dict(item)
+
+
+@router.get("/sales-markets")
+def list_sales_markets(db: Session = Depends(get_db)):
+    rows = db.scalars(select(SalesMarket).order_by(SalesMarket.country_code)).all()
+    return list_rows(rows)
+
+
+@router.post("/sales-markets")
+def create_sales_market(payload: SalesMarketCreate, db: Session = Depends(get_db)):
+    country_code = payload.country_code.strip().upper()
+    if len(country_code) != 2:
+        raise HTTPException(status_code=400, detail="Landcode moet uit 2 letters bestaan, bijvoorbeeld NL.")
+    existing = db.scalar(select(SalesMarket).where(SalesMarket.country_code == country_code))
+    if existing:
+        raise HTTPException(status_code=400, detail=f"Doelland {country_code} bestaat al.")
+    data = payload.model_dump()
+    data["country_code"] = country_code
+    data["primary_language"] = data["primary_language"].strip().lower()
+    data["additional_languages"] = normalize_language_list(data.get("additional_languages"))
+    data["currency"] = data["currency"].strip().upper() or "EUR"
+    item = SalesMarket(**data)
+    db.add(item)
+    db.commit()
+    db.refresh(item)
+    return to_dict(item)
+
+
+@router.put("/sales-markets/{item_id}")
+def update_sales_market(item_id: int, payload: SalesMarketCreate, db: Session = Depends(get_db)):
+    item = get_or_404(db, SalesMarket, item_id)
+    country_code = payload.country_code.strip().upper()
+    if len(country_code) != 2:
+        raise HTTPException(status_code=400, detail="Landcode moet uit 2 letters bestaan, bijvoorbeeld NL.")
+    duplicate = db.scalar(select(SalesMarket).where(SalesMarket.country_code == country_code, SalesMarket.id != item_id))
+    if duplicate:
+        raise HTTPException(status_code=400, detail=f"Doelland {country_code} bestaat al.")
+    data = payload.model_dump()
+    data["country_code"] = country_code
+    data["primary_language"] = data["primary_language"].strip().lower()
+    data["additional_languages"] = normalize_language_list(data.get("additional_languages"))
+    data["currency"] = data["currency"].strip().upper() or "EUR"
+    for key, value in data.items():
+        setattr(item, key, value)
+    db.commit()
+    db.refresh(item)
+    return to_dict(item)
+
+
+def normalize_language_list(value: str | None) -> str | None:
+    languages = []
+    for language in (value or "").split(","):
+        cleaned = language.strip().lower()
+        if cleaned and cleaned not in languages:
+            languages.append(cleaned)
+    return ", ".join(languages) if languages else None
 
 
 @router.get("/platforms/{platform_id}/credentials")

@@ -82,6 +82,7 @@ Next.js bevat nu de eerste werkbare versies van:
 - Filamentbeheer;
 - Analyse, trends en voorraadadvies op `/analyse`;
 - AI Product Assistent op `/catalogus/ai-assistent` met gratis mockmodus, veilige echte-AI statuscontrole, concept opslaan als intern product en optioneel automatisch vertalen naar Duits/Frans/Engels.
+- Doellanden en talen op `/verkoopkanalen`: Nederland, Belgie en Duitsland staan als actieve startmarkten klaar met taalregels voor Nederlands, Frans en Duits.
 
 Daarmee zijn de grootste UI-gaten uit de V2-migratie nu voorzien van een eerste Next.js-scherm. De resterende V2-focus verschuift naar verfijning, productiehardheid, echte connectoren, credentials, healthchecks, backups en het gecontroleerd uitfaseren van Streamlit.
 
@@ -595,6 +596,7 @@ Status 2026-06-27:
 - Etsy connectorbasis is toegevoegd met mockimport, eerste live receipt-import en draft-listing/sync basis. Echte OAuth/scopes, taxonomykeuzes en fotoupload moeten nog gecontroleerd worden.
 - Catalogus toont nu interne product-ID's duidelijker in het productoverzicht.
 - Productvertalingen zijn toegevoegd met `product_translations`, een productdetailpaneel en automatische AI/mockgeneratie voor Duits, Frans en Engels. Bij AI-concepten kan de gebruiker direct na opslaan vertalingen laten maken; Nederlands blijft de brontekst.
+- Verkoopmarkten zijn toegevoegd met `sales_markets`, standaardrecords voor NL/BE/DE en een Next.js beheerblok onder Verkoopkanalen. Dit is de basis om publicatiechecks later per land en taal af te dwingen.
 - Nog verfijnen: echte live-test met Shopify/Etsy credentials, voorraad-sync-logdetail, Etsy OAuth token refresh, Etsy foto-upload, uitgebreidere foutdetails per orderregel en platformregel.
 
 ## Niet doen in V2

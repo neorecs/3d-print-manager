@@ -13,6 +13,16 @@ class PlatformCredentialCreate(BaseModel):
     encrypted_value: str
 
 
+class SalesMarketCreate(BaseModel):
+    country_code: str
+    country_name: str
+    primary_language: str = "nl"
+    additional_languages: str | None = None
+    currency: str = "EUR"
+    active: bool = True
+    note: str | None = None
+
+
 class BambuPrinterCreate(BaseModel):
     name: str
     model: str | None = None

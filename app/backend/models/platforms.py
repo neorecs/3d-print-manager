@@ -54,3 +54,16 @@ class PlatformImportLog(TimestampMixin, Base):
     skipped_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     error_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     message: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+
+class SalesMarket(TimestampMixin, Base):
+    __tablename__ = "sales_markets"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    country_code: Mapped[str] = mapped_column(String(2), nullable=False, unique=True)
+    country_name: Mapped[str] = mapped_column(String(120), nullable=False)
+    primary_language: Mapped[str] = mapped_column(String(10), default="nl", nullable=False)
+    additional_languages: Mapped[str | None] = mapped_column(String(120))
+    currency: Mapped[str] = mapped_column(String(3), default="EUR", nullable=False)
+    active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    note: Mapped[str | None] = mapped_column(Text)
