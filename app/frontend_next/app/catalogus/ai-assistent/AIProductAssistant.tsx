@@ -20,6 +20,12 @@ type DraftInput = {
   platforms: string;
 };
 
+const TRANSLATION_OPTIONS = [
+  { code: "de", label: "Duits", note: "Duitsland" },
+  { code: "fr", label: "Frans", note: "Belgie" },
+  { code: "en", label: "Engels", note: "optioneel" },
+];
+
 function emptyInput(): DraftInput {
   return {
     idea: "",
@@ -100,12 +106,20 @@ export function AIProductAssistant({ status }: { status: AIProductStatus }) {
   const [input, setInput] = useState<DraftInput>(() => emptyInput());
   const [result, setResult] = useState<Record<string, unknown> | null>(null);
   const [saveResult, setSaveResult] = useState<Record<string, unknown> | null>(null);
+  const [autoTranslate, setAutoTranslate] = useState(true);
+  const [translationLanguages, setTranslationLanguages] = useState<string[]>(["de", "fr"]);
   const [busy, setBusy] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   function update(field: keyof DraftInput, value: string) {
     setInput((current) => ({ ...current, [field]: value }));
+  }
+
+  function toggleTranslationLanguage(languageCode: string) {
+    setTranslationLanguages((current) =>
+      current.includes(languageCode) ? current.filter((item) => item !== languageCode) : [...current, languageCode],
+    );
   }
 
   async function generate(event: FormEvent<HTMLFormElement>) {
@@ -151,7 +165,14 @@ export function AIProductAssistant({ status }: { status: AIProductStatus }) {
       const response = await fetch("/api/ai/product-draft/save", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(result),
+        body: JSON.stringify({
+          ...result,
+          translation_options: {
+            enabled: autoTranslate,
+            language_codes: translationLanguages,
+            overwrite: true,
+          },
+        }),
       });
       const data = await response.json().catch(() => null);
       if (!response.ok) {
@@ -252,6 +273,35 @@ export function AIProductAssistant({ status }: { status: AIProductStatus }) {
               >
                 {saving ? "Opslaan..." : "Concept opslaan als product"}
               </button>
+            </div>
+            <div className="mt-4 rounded-lg border border-line bg-slate-50 p-4">
+              <label className="flex items-start gap-3 text-sm font-semibold text-slate-700">
+                <input checked={autoTranslate} className="mt-1" onChange={(event) => setAutoTranslate(event.target.checked)} type="checkbox" />
+                <span>
+                  Na opslaan automatisch vertalingen maken
+                  <span className="mt-1 block font-normal leading-6 text-muted">
+                    Nederlands blijft de brontekst. In mockmodus kost dit niets. Met echte AI maakt iedere taal extra API-output.
+                  </span>
+                </span>
+              </label>
+              {autoTranslate ? (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {TRANSLATION_OPTIONS.map((option) => (
+                    <label
+                      className={`rounded-md border px-3 py-2 text-sm font-bold ${translationLanguages.includes(option.code) ? "border-brand bg-red-50 text-brand" : "border-line bg-white text-slate-700"}`}
+                      key={option.code}
+                    >
+                      <input
+                        checked={translationLanguages.includes(option.code)}
+                        className="mr-2"
+                        onChange={() => toggleTranslationLanguage(option.code)}
+                        type="checkbox"
+                      />
+                      {option.label} <span className="font-normal text-muted">({option.note})</span>
+                    </label>
+                  ))}
+                </div>
+              ) : null}
             </div>
             {saveResult ? (
               <div className="mt-4 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-3 text-sm text-emerald-800">

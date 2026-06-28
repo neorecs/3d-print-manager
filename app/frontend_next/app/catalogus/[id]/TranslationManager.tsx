@@ -10,14 +10,31 @@ type Props = {
   translations: ProductTranslation[];
 };
 
+const LANGUAGES = [
+  { code: "de", label: "Duits", note: "Duitsland" },
+  { code: "fr", label: "Frans", note: "Belgie" },
+  { code: "en", label: "Engels", note: "optioneel" },
+];
+
 export function TranslationManager({ product, translations }: Props) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [overwrite, setOverwrite] = useState(false);
+  const [selectedLanguages, setSelectedLanguages] = useState<string[]>(["de", "fr"]);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  async function generateGerman() {
+  function toggleLanguage(languageCode: string) {
+    setSelectedLanguages((current) =>
+      current.includes(languageCode) ? current.filter((item) => item !== languageCode) : [...current, languageCode],
+    );
+  }
+
+  async function generateTranslations() {
+    if (!selectedLanguages.length) {
+      setError("Kies minimaal een taal.");
+      return;
+    }
     setBusy(true);
     setMessage(null);
     setError(null);
@@ -25,7 +42,7 @@ export function TranslationManager({ product, translations }: Props) {
       const response = await fetch(`/api/products/${product.id}/translations/generate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ language_codes: ["de"], overwrite }),
+        body: JSON.stringify({ language_codes: selectedLanguages, overwrite }),
       });
       const data = await response.json().catch(() => null);
       if (!response.ok) throw new Error(data?.detail || "Vertaling genereren is mislukt");
@@ -45,18 +62,29 @@ export function TranslationManager({ product, translations }: Props) {
       <div className="rounded-lg border border-line bg-slate-50 p-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <div className="font-bold text-ink">Duitse teksten maken</div>
+            <div className="font-bold text-ink">Vertaalde teksten maken</div>
             <p className="mt-1 text-sm leading-6 text-muted">
-              Maakt titel, omschrijvingen, SEO en tags voor Duitsland. Zonder OpenAI API gebruikt de app gratis mocktekst.
+              Maakt titel, omschrijvingen, SEO en tags voor gekozen talen. Nederlands blijft de interne brontekst.
             </p>
           </div>
-          <button className="rounded-md bg-brand px-4 py-2 text-sm font-bold text-white disabled:opacity-60" disabled={busy} onClick={generateGerman} type="button">
-            {busy ? "Genereren..." : "Duits genereren"}
+          <button className="rounded-md bg-brand px-4 py-2 text-sm font-bold text-white disabled:opacity-60" disabled={busy || !selectedLanguages.length} onClick={generateTranslations} type="button">
+            {busy ? "Genereren..." : "Vertalingen genereren"}
           </button>
+        </div>
+        <div className="mt-3 flex flex-wrap gap-2">
+          {LANGUAGES.map((language) => (
+            <label
+              className={`rounded-md border px-3 py-2 text-sm font-bold ${selectedLanguages.includes(language.code) ? "border-brand bg-red-50 text-brand" : "border-line bg-white text-slate-700"}`}
+              key={language.code}
+            >
+              <input checked={selectedLanguages.includes(language.code)} className="mr-2" onChange={() => toggleLanguage(language.code)} type="checkbox" />
+              {language.label} <span className="font-normal text-muted">({language.note})</span>
+            </label>
+          ))}
         </div>
         <label className="mt-3 flex items-center gap-2 text-sm font-semibold text-slate-700">
           <input checked={overwrite} onChange={(event) => setOverwrite(event.target.checked)} type="checkbox" />
-          Bestaande Duitse vertaling overschrijven
+          Bestaande vertalingen overschrijven
         </label>
       </div>
 

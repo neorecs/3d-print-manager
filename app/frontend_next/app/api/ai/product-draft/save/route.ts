@@ -69,6 +69,7 @@ export async function POST(request: NextRequest) {
     tags: [] as Record<string, unknown>[],
     variants: [] as Record<string, unknown>[],
     publications: [] as Record<string, unknown>[],
+    translations: [] as Record<string, unknown>[],
   };
   const warnings: string[] = [];
 
@@ -169,6 +170,29 @@ export async function POST(request: NextRequest) {
         created.publications.push(createdPublication);
       } catch (caught) {
         warnings.push(`Publicatie voor '${platformKey}' kon niet worden opgeslagen: ${caught instanceof Error ? caught.message : "onbekende fout"}`);
+      }
+    }
+
+    const translationOptions = draft.translation_options && typeof draft.translation_options === "object" ? draft.translation_options : {};
+    const languageCodes = Array.isArray(translationOptions.language_codes)
+      ? translationOptions.language_codes.map((item: unknown) => String(item || "").trim().toLowerCase()).filter(Boolean)
+      : [];
+    if (translationOptions.enabled && languageCodes.length) {
+      try {
+        const translated = await backend(`/products/${productId}/translations/generate`, {
+          method: "POST",
+          body: JSON.stringify({
+            language_codes: languageCodes,
+            overwrite: translationOptions.overwrite !== false,
+          }),
+        });
+        created.translations = Array.isArray(translated.generated) ? translated.generated : [];
+        const skipped = Array.isArray(translated.skipped) ? translated.skipped : [];
+        if (skipped.length) {
+          warnings.push(`${skipped.length} vertaling(en) overgeslagen omdat ze al bestonden.`);
+        }
+      } catch (caught) {
+        warnings.push(`Vertalingen konden niet automatisch worden gemaakt: ${caught instanceof Error ? caught.message : "onbekende fout"}`);
       }
     }
 
