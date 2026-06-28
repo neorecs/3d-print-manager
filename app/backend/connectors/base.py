@@ -8,6 +8,7 @@ class ConnectorResult:
     external_product_id: str | None = None
     external_listing_id: str | None = None
     external_variant_ids: dict[str, str] = field(default_factory=dict)
+    external_inventory_ids: dict[str, str] = field(default_factory=dict)
     raw_response: dict | None = None
 
 
@@ -47,7 +48,7 @@ class PlatformConnector:
     def sync_product(self, payload: dict) -> ConnectorResult:
         return self._mock_result("sync", payload)
 
-    def import_orders(self, limit: int = 25, since: str | None = None) -> dict:
+    def import_orders(self, limit: int = 25, since: str | None = None, page_size: int = 50) -> dict:
         return {
             "success": False,
             "message": f"{self.platform_type} orderimport is nog niet geimplementeerd.",

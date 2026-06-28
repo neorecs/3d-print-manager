@@ -15,7 +15,9 @@ export function ShopifyImportButton() {
     setMessage(null);
     setError(null);
     try {
-      const query = since ? `?since=${encodeURIComponent(`${since}T00:00:00+00:00`)}` : "";
+      const params = new URLSearchParams({ limit: "100", page_size: "50" });
+      if (since) params.set("since", `${since}T00:00:00+00:00`);
+      const query = `?${params.toString()}`;
       const response = await fetch(`/api/orders/import/shopify${query}`, { method: "POST" });
       const data = await response.json().catch(() => null);
       if (!response.ok) throw new Error(data?.detail || "Shopify import is mislukt");

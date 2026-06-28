@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 
 from api.utils import to_dict
 from connectors.factory import get_platform_connector
-from models import Platform, Product, ProductMedia, ProductPlatformPublication, ProductPublicationMedia, ProductVariant
+from models import Platform, Product, ProductMedia, ProductPlatformPublication, ProductPublicationMedia, ProductVariant, ProductVariantPlatformLink
 
 
 def get_required(db: Session, model: type, item_id: int):
@@ -74,6 +74,7 @@ def apply_connector_result(db: Session, publication: ProductPlatformPublication,
     publication.external_product_id = result.external_product_id or publication.external_product_id
     publication.external_listing_id = result.external_listing_id or publication.external_listing_id
     publication.last_synced_at = datetime.now(timezone.utc).isoformat()
+    store_variant_platform_links(db, publication, result)
     db.commit()
 
 
@@ -81,6 +82,15 @@ def build_publication_payload(db: Session, publication: ProductPlatformPublicati
     product = get_required(db, Product, publication.product_id)
     media = get_publication_media_for_payload(db, publication)
     variants = db.scalars(select(ProductVariant).where(ProductVariant.product_id == product.id)).all()
+    links = {
+        link.product_variant_id: link
+        for link in db.scalars(
+            select(ProductVariantPlatformLink).where(
+                ProductVariantPlatformLink.platform_id == publication.platform_id,
+                ProductVariantPlatformLink.product_variant_id.in_([variant.id for variant in variants] or [0]),
+            )
+        ).all()
+    }
     return {
         "publication_id": publication.id,
         "product_id": product.id,
@@ -94,8 +104,40 @@ def build_publication_payload(db: Session, publication: ProductPlatformPublicati
         "price": publication.platform_price_override,
         "shipping_profile_id": publication.platform_shipping_profile_id,
         "media": [to_dict(item) for item in media],
-        "variants": [to_dict(item) for item in variants],
+        "variants": [variant_payload(item, links.get(item.id)) for item in variants],
     }
+
+
+def variant_payload(variant: ProductVariant, link: ProductVariantPlatformLink | None = None) -> dict:
+    data = to_dict(variant)
+    if link:
+        data["external_variant_id"] = link.external_variant_id
+        data["external_sku"] = link.external_sku
+        data["external_inventory_id"] = link.external_inventory_id
+    return data
+
+
+def store_variant_platform_links(db: Session, publication: ProductPlatformPublication, result) -> None:
+    if not result.external_variant_ids and not getattr(result, "external_inventory_ids", None):
+        return
+    variants = db.scalars(select(ProductVariant).where(ProductVariant.product_id == publication.product_id)).all()
+    variants_by_sku = {variant.sku: variant for variant in variants if variant.sku}
+    for sku, external_variant_id in result.external_variant_ids.items():
+        variant = variants_by_sku.get(sku)
+        if not variant:
+            continue
+        link = db.scalar(
+            select(ProductVariantPlatformLink).where(
+                ProductVariantPlatformLink.platform_id == publication.platform_id,
+                ProductVariantPlatformLink.product_variant_id == variant.id,
+            )
+        )
+        if not link:
+            link = ProductVariantPlatformLink(platform_id=publication.platform_id, product_variant_id=variant.id)
+            db.add(link)
+        link.external_variant_id = external_variant_id
+        link.external_sku = sku
+        link.external_inventory_id = result.external_inventory_ids.get(sku) or link.external_inventory_id
 
 
 def get_publication_media_for_payload(db: Session, publication: ProductPlatformPublication) -> list[ProductMedia]:

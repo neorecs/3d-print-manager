@@ -1111,7 +1111,12 @@ def import_etsy_orders(db: Session = Depends(get_db)):
 
 
 @router.post("/orders/import/shopify")
-def import_shopify_orders(since: str | None = Query(None), db: Session = Depends(get_db)):
+def import_shopify_orders(
+    since: str | None = Query(None),
+    limit: int = Query(100, ge=1, le=250),
+    page_size: int = Query(50, ge=1, le=50),
+    db: Session = Depends(get_db),
+):
     since_dt = parse_optional_datetime(since) if since else None
     platforms = db.scalars(select(Platform).where(Platform.type == "shopify", Platform.active.is_(True)).order_by(Platform.id)).all()
     if not platforms:
@@ -1145,7 +1150,7 @@ def import_shopify_orders(since: str | None = Query(None), db: Session = Depends
             platform_errors.append(error["message"])
             finish_import_log(log, "fout", platform_created, platform_updated, platform_skipped, platform_errors)
             continue
-        result = connector.import_orders(limit=25, since=since_dt.isoformat() if since_dt else None)
+        result = connector.import_orders(limit=limit, since=since_dt.isoformat() if since_dt else None, page_size=page_size)
         if not result.get("success"):
             error = {"platform_id": platform.id, "platform": platform.name, "message": result.get("message", "Shopify import mislukt")}
             errors.append(error)
@@ -1163,7 +1168,10 @@ def import_shopify_orders(since: str | None = Query(None), db: Session = Depends
             else:
                 skipped.append(imported["order"])
                 platform_skipped += 1
-        finish_import_log(log, "klaar", platform_created, platform_updated, platform_skipped, platform_errors)
+        platform_message = result.get("message") or ""
+        if result.get("has_next_page"):
+            platform_message = f"{platform_message} Importlimiet bereikt; er zijn mogelijk nog meer Shopify orders."
+        finish_import_log(log, "klaar", platform_created, platform_updated, platform_skipped, platform_errors, platform_message)
 
     db.commit()
     return {
@@ -1182,14 +1190,28 @@ def list_order_import_logs(db: Session = Depends(get_db)):
     return list_rows(rows)
 
 
-def finish_import_log(log: PlatformImportLog, status: str, created_count: int, updated_count: int, skipped_count: int, errors: list[str]) -> None:
+def finish_import_log(
+    log: PlatformImportLog,
+    status: str,
+    created_count: int,
+    updated_count: int,
+    skipped_count: int,
+    errors: list[str],
+    message: str | None = None,
+) -> None:
     log.status = status
     log.finished_at = datetime.now(timezone.utc)
     log.created_count = created_count
     log.updated_count = updated_count
     log.skipped_count = skipped_count
     log.error_count = len(errors)
-    log.message = "; ".join(errors) if errors else f"{created_count} nieuw, {updated_count} bijgewerkt, {skipped_count} overgeslagen"
+    default_message = f"{created_count} nieuw, {updated_count} bijgewerkt, {skipped_count} overgeslagen"
+    if errors:
+        log.message = "; ".join(errors)
+    elif message:
+        log.message = f"{default_message}. {message}".strip()
+    else:
+        log.message = default_message
 
 
 def upsert_imported_order(db: Session, platform: Platform, payload: dict) -> dict:

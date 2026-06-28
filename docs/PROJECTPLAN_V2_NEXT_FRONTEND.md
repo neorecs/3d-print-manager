@@ -586,7 +586,11 @@ Status 2026-06-27:
 - UI-knop toegevoegd op `/orders` voor Shopify orderimport.
 - Importlogs/history toegevoegd voor orderimports, inclusief status, aantallen, foutmeldingen en gebruikte vanaf-datum.
 - Datumfilter/since toegevoegd aan Shopify orderimport, zodat imports vanaf een gekozen datum kunnen starten.
-- Nog verfijnen: paginering voorbij 25 orders, uitgebreidere Shopify status- en foutmeldingen en automatische vervolgimports met cursor.
+- Shopify orderimport gebruikt nu GraphQL `pageInfo/endCursor` en haalt automatisch meerdere pagina's op tot de ingestelde importlimiet.
+- Shopify importknop importeert standaard tot 100 orders met pagina's van maximaal 50 orders.
+- Importlogs tonen nu ook Shopify paginainfo en waarschuwingen als de importlimiet bereikt is.
+- Shopify productpublicatie/sync is uitgebreid met bulkvariant-create/update en slaat externe variant-ID's en inventory-item-ID's op via `product_variant_platform_links`.
+- Nog verfijnen: echte live-test met Shopify credentials, voorraadniveau-sync naar Shopify inventory quantities, uitgebreidere UI voor importinstellingen en foutdetails per regel.
 
 ## Niet doen in V2
 
