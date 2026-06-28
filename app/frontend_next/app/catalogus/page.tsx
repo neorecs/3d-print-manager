@@ -143,6 +143,7 @@ function ProductRow({ row }: { row: ProductCatalogRow }) {
             {row.product.short_description || row.product.sales_description || row.product.long_description || "Nog geen korte omschrijving ingevuld."}
           </p>
           <div className="mt-3 flex flex-wrap gap-2 text-xs font-bold text-slate-600">
+            <span className="rounded-full bg-slate-100 px-2.5 py-1">Product-ID #{row.product.id}</span>
             <span className="rounded-full bg-slate-100 px-2.5 py-1">{row.product.internal_category || "geen categorie"}</span>
             <span className="rounded-full bg-slate-100 px-2.5 py-1">{row.product.product_type || "geen producttype"}</span>
             <span className="rounded-full bg-slate-100 px-2.5 py-1">{row.product.active === false ? "inactief" : "actief"}</span>

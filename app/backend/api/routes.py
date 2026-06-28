@@ -40,6 +40,7 @@ from models import (
     ProductPublicationMedia,
     ProductTag,
     ProductVariant,
+    ProductVariantPlatformLink,
     StockRecommendation,
     TrendSnapshot,
     VatPeriod,
@@ -736,6 +737,43 @@ def platform_connector_status(platform_id: int, db: Session = Depends(get_db)):
     }
 
 
+@router.post("/platforms/{platform_id}/sync-inventory")
+def sync_platform_inventory(platform_id: int, db: Session = Depends(get_db)):
+    platform = get_or_404(db, Platform, platform_id)
+    if (platform.type or "").lower() != "shopify":
+        raise HTTPException(status_code=400, detail="Voorraad-sync is nu alleen voor Shopify beschikbaar")
+
+    connector = get_platform_connector(db, platform)
+    links = {
+        link.product_variant_id: link
+        for link in db.scalars(
+            select(ProductVariantPlatformLink).where(ProductVariantPlatformLink.platform_id == platform.id)
+        ).all()
+    }
+    prepared = []
+    missing_variant_ids = []
+    for inventory in db.scalars(select(ProductInventory).order_by(ProductInventory.id)).all():
+        link = links.get(inventory.product_variant_id)
+        if not link or not link.external_inventory_id:
+            missing_variant_ids.append(inventory.product_variant_id)
+            continue
+        prepared.append(
+            {
+                "product_inventory_id": inventory.id,
+                "product_variant_id": inventory.product_variant_id,
+                "sku": link.external_sku,
+                "external_inventory_id": link.external_inventory_id,
+                "quantity": inventory.free_stock,
+            }
+        )
+
+    result = connector.sync_inventory(prepared)
+    result["prepared"] = len(prepared)
+    result["missing_inventory_links"] = sorted(set(missing_variant_ids))
+    result["mode"] = connector.status().mode
+    return result
+
+
 @router.get("/products")
 def list_products(db: Session = Depends(get_db)):
     return list_rows(db.scalars(select(Product).order_by(Product.id)).all())
@@ -1105,9 +1143,49 @@ def update_order_item(item_id: int, payload: OrderItemCreate, db: Session = Depe
 
 
 @router.post("/orders/import/etsy")
-def import_etsy_orders(db: Session = Depends(get_db)):
-    order = create_dummy_order(db, platform_type="etsy")
-    return {"status": "dummy_etsy_import_complete", "order": to_dict(order)}
+def import_etsy_orders(
+    since: str | None = Query(None),
+    limit: int = Query(50, ge=1, le=100),
+    db: Session = Depends(get_db),
+):
+    since_dt = parse_optional_datetime(since) if since else None
+    platforms = db.scalars(select(Platform).where(Platform.type == "etsy", Platform.active.is_(True)).order_by(Platform.id)).all()
+    if not platforms:
+        order = create_dummy_order(db, platform_type="etsy")
+        return {"status": "dummy_etsy_import_complete", "created": 1, "updated": 0, "skipped": 0, "orders": [to_dict(order)]}
+
+    created = []
+    updated = []
+    skipped = []
+    errors = []
+    for platform in platforms:
+        connector = get_platform_connector(db, platform)
+        status = connector.status()
+        if connector.live_mode and status.missing_credentials:
+            errors.append({"platform_id": platform.id, "platform": platform.name, "message": f"Ontbrekende Etsy credentials: {', '.join(status.missing_credentials)}"})
+            continue
+        result = connector.import_orders(limit=limit, since=since_dt.isoformat() if since_dt else None)
+        if not result.get("success"):
+            errors.append({"platform_id": platform.id, "platform": platform.name, "message": result.get("message", "Etsy import mislukt")})
+            continue
+        for payload in result.get("orders", []):
+            imported = upsert_imported_order(db, platform, payload)
+            if imported["action"] == "created":
+                created.append(imported["order"])
+            elif imported["action"] == "updated":
+                updated.append(imported["order"])
+            else:
+                skipped.append(imported["order"])
+
+    db.commit()
+    return {
+        "status": "etsy_import_complete" if not errors else "etsy_import_completed_with_errors",
+        "created": len(created),
+        "updated": len(updated),
+        "skipped": len(skipped),
+        "errors": errors,
+        "orders": created + updated + skipped,
+    }
 
 
 @router.post("/orders/import/shopify")
@@ -1223,8 +1301,9 @@ def upsert_imported_order(db: Session, platform: Platform, payload: dict) -> dic
     action = "updated" if order else "created"
     if not order:
         order_number = str(payload.get("order_number") or external_order_id).replace("#", "").strip()
+        prefix = (platform.type or platform.name or "platform").upper()
         order = Order(
-            internal_order_number=f"SHOPIFY-{platform.id}-{order_number}",
+            internal_order_number=f"{prefix}-{platform.id}-{order_number}",
             platform_id=platform.id,
             external_order_id=external_order_id,
             status="nieuw",

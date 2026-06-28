@@ -28,7 +28,7 @@ def load_platform_credentials(db: Session, platform: Platform) -> dict[str, str]
         ).all()
     }
     prefix = platform.type.upper()
-    for key in ["API_KEY", "ACCESS_TOKEN", "SHOP_ID", "SHOP_DOMAIN"]:
+    for key in ["API_KEY", "ACCESS_TOKEN", "SHOP_ID", "SHOP_DOMAIN", "LOCATION_ID", "TAXONOMY_ID"]:
         value = os.getenv(f"{prefix}_{key}")
         if value:
             credentials[key.lower()] = value

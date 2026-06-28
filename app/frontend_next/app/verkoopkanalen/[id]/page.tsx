@@ -7,6 +7,7 @@ import { SectionCard } from "@/components/SectionCard";
 import { StatusBadge } from "@/components/StatusBadge";
 import { getSalesChannelDetailData } from "@/lib/api";
 import type { SalesChannelDetailData } from "@/lib/types";
+import { InventorySyncButton } from "./InventorySyncButton";
 import { PlatformCredentialsManager } from "./PlatformCredentialsManager";
 
 export default async function SalesChannelDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -62,6 +63,10 @@ function SalesChannelDetailContent({ data }: { data: SalesChannelDetailData }) {
 
       <SectionCard title="Credentials beheren" description="Sla tokens en sleutels op. Waarden worden na opslaan niet meer in de UI getoond.">
         <PlatformCredentialsManager platform={data.platform} status={data.status} credentials={data.credentials} />
+      </SectionCard>
+
+      <SectionCard title="Voorraad synchroniseren" description="Stuur vrije voorraad vanuit 3D Print Manager naar het verkoopkanaal.">
+        <InventorySyncButton platformId={data.platform.id} platformType={data.platform.type} />
       </SectionCard>
 
       <SectionCard title="Publicaties op dit kanaal" description="Producten die al gekoppeld zijn aan dit verkoopkanaal.">

@@ -1,5 +1,6 @@
 import json
 import os
+import uuid
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
@@ -159,6 +160,75 @@ class ShopifyConnector(PlatformConnector):
             "has_next_page": has_next_page,
             "end_cursor": end_cursor,
             "raw_response": {"pages": raw_pages},
+        }
+
+    def sync_inventory(self, quantities: list[dict]) -> dict:
+        prepared = [
+            {
+                "inventoryItemId": item.get("external_inventory_id"),
+                "locationId": self.credentials.get("location_id"),
+                "quantity": int(item.get("quantity") or 0),
+            }
+            for item in quantities
+            if item.get("external_inventory_id")
+        ]
+        if not self.live_mode:
+            return {
+                "success": True,
+                "message": f"Shopify voorraad-sync uitgevoerd in mockmodus voor {len(prepared)} variant(en).",
+                "synced": len(prepared),
+                "errors": [],
+                "raw_response": {"mode": "mock", "quantities": prepared},
+            }
+        if not self.credentials.get("location_id"):
+            return {
+                "success": False,
+                "message": "Shopify voorraad-sync vereist credential location_id.",
+                "synced": 0,
+                "errors": ["location_id ontbreekt"],
+            }
+        if not prepared:
+            return {
+                "success": False,
+                "message": "Geen Shopify inventory-item-ID's gevonden om voorraad te synchroniseren.",
+                "synced": 0,
+                "errors": ["external_inventory_id ontbreekt"],
+            }
+
+        variables = {
+            "input": {
+                "name": "available",
+                "reason": "correction",
+                "referenceDocumentUri": f"3d-print-manager://shopify-inventory-sync/{uuid.uuid4()}",
+                "ignoreCompareQuantity": True,
+                "quantities": prepared,
+            }
+        }
+        response = self._graphql(self._inventory_set_quantities_mutation(), variables)
+        errors = response.get("errors") or []
+        if errors:
+            return {
+                "success": False,
+                "message": self._format_user_errors(errors),
+                "synced": 0,
+                "errors": [self._format_user_errors(errors)],
+                "raw_response": response,
+            }
+        user_errors = response.get("data", {}).get("inventorySetQuantities", {}).get("userErrors") or []
+        if user_errors:
+            return {
+                "success": False,
+                "message": self._format_user_errors(user_errors),
+                "synced": 0,
+                "errors": [self._format_user_errors(user_errors)],
+                "raw_response": response,
+            }
+        return {
+            "success": True,
+            "message": f"{len(prepared)} Shopify voorraadregel(s) gesynchroniseerd.",
+            "synced": len(prepared),
+            "errors": [],
+            "raw_response": response,
         }
 
     def _graphql(self, query: str, variables: dict) -> dict:
@@ -426,6 +496,23 @@ class ShopifyConnector(PlatformConnector):
             userErrors {
               field
               message
+            }
+          }
+        }
+        """
+
+    def _inventory_set_quantities_mutation(self) -> str:
+        return """
+        mutation InventorySetQuantities($input: InventorySetQuantitiesInput!) {
+          inventorySetQuantities(input: $input) {
+            inventoryAdjustmentGroup {
+              createdAt
+              reason
+            }
+            userErrors {
+              field
+              message
+              code
             }
           }
         }

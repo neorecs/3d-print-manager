@@ -25,6 +25,7 @@ from api.routes import (  # noqa: E402
 )
 from core.credentials import decrypt_credential, encrypt_credential, is_encrypted_credential  # noqa: E402
 from connectors.shopify.connector import ShopifyConnector  # noqa: E402
+from connectors.etsy.connector import EtsyConnector  # noqa: E402
 from database import Base  # noqa: E402
 from models import (  # noqa: E402
     InventoryMovement,
@@ -579,6 +580,41 @@ class BusinessRuleTestCase(unittest.TestCase):
         self.assertEqual(result["page_count"], 2)
         self.assertEqual([call["after"] for call in calls], [None, "cursor-1"])
         self.assertEqual([order["external_order_id"] for order in result["orders"]], ["gid://shopify/Order/1", "gid://shopify/Order/2"])
+
+    def test_shopify_inventory_sync_requires_location_id_in_live_mode(self) -> None:
+        connector = ShopifyConnector({"access_token": "token", "shop_domain": "example-shop"}, live_mode=True)
+
+        result = connector.sync_inventory([{"external_inventory_id": "gid://shopify/InventoryItem/1", "quantity": 4}])
+
+        self.assertFalse(result["success"])
+        self.assertIn("location_id", result["message"])
+
+    def test_shopify_inventory_sync_builds_inventory_set_quantities(self) -> None:
+        connector = ShopifyConnector({"access_token": "token", "shop_domain": "example-shop", "location_id": "gid://shopify/Location/1"}, live_mode=True)
+        calls = []
+
+        def fake_graphql(query: str, variables: dict) -> dict:
+            calls.append((query, variables))
+            return {"data": {"inventorySetQuantities": {"inventoryAdjustmentGroup": {"createdAt": "2026-06-28T00:00:00Z"}, "userErrors": []}}}
+
+        connector._graphql = fake_graphql
+        result = connector.sync_inventory([{"external_inventory_id": "gid://shopify/InventoryItem/1", "quantity": 4}])
+
+        self.assertTrue(result["success"])
+        query, variables = calls[0]
+        self.assertIn("inventorySetQuantities", query)
+        self.assertEqual(variables["input"]["quantities"][0]["inventoryItemId"], "gid://shopify/InventoryItem/1")
+        self.assertEqual(variables["input"]["quantities"][0]["locationId"], "gid://shopify/Location/1")
+        self.assertEqual(variables["input"]["quantities"][0]["quantity"], 4)
+
+    def test_etsy_mock_import_orders_returns_receipt_payload(self) -> None:
+        connector = EtsyConnector({}, live_mode=False)
+
+        result = connector.import_orders()
+
+        self.assertTrue(result["success"])
+        self.assertEqual(result["orders"][0]["external_order_id"], "mock-etsy-receipt-1001")
+        self.assertEqual(result["orders"][0]["items"][0]["sku"], "DUMPLING-ROOD-PLA")
 
 
 if __name__ == "__main__":

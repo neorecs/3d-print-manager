@@ -590,7 +590,11 @@ Status 2026-06-27:
 - Shopify importknop importeert standaard tot 100 orders met pagina's van maximaal 50 orders.
 - Importlogs tonen nu ook Shopify paginainfo en waarschuwingen als de importlimiet bereikt is.
 - Shopify productpublicatie/sync is uitgebreid met bulkvariant-create/update en slaat externe variant-ID's en inventory-item-ID's op via `product_variant_platform_links`.
-- Nog verfijnen: echte live-test met Shopify credentials, voorraadniveau-sync naar Shopify inventory quantities, uitgebreidere UI voor importinstellingen en foutdetails per regel.
+- Shopify voorraad-sync naar inventory quantities is toegevoegd op verkoopkanaalniveau. Live-modus vereist `location_id`, `write_inventory` scope en opgeslagen Shopify inventory-item-ID's.
+- Shopify orderimport-UI heeft nu instelbare vanaf-datum, importlimiet en paginaformaat.
+- Etsy connectorbasis is toegevoegd met mockimport, eerste live receipt-import en draft-listing/sync basis. Echte OAuth/scopes, taxonomykeuzes en fotoupload moeten nog gecontroleerd worden.
+- Catalogus toont nu interne product-ID's duidelijker in het productoverzicht.
+- Nog verfijnen: echte live-test met Shopify/Etsy credentials, voorraad-sync-logdetail, Etsy OAuth token refresh, Etsy foto-upload, uitgebreidere foutdetails per orderregel en platformregel.
 
 ## Niet doen in V2
 
