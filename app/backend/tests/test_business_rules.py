@@ -27,6 +27,7 @@ from core.credentials import decrypt_credential, encrypt_credential, is_encrypte
 from connectors.shopify.connector import ShopifyConnector  # noqa: E402
 from connectors.etsy.connector import EtsyConnector  # noqa: E402
 from database import Base  # noqa: E402
+from services.ai_product_assistant import generate_product_translation  # noqa: E402
 from models import (  # noqa: E402
     InventoryMovement,
     Order,
@@ -615,6 +616,25 @@ class BusinessRuleTestCase(unittest.TestCase):
         self.assertTrue(result["success"])
         self.assertEqual(result["orders"][0]["external_order_id"], "mock-etsy-receipt-1001")
         self.assertEqual(result["orders"][0]["items"][0]["sku"], "DUMPLING-ROOD-PLA")
+
+    def test_mock_product_translation_generates_without_openai_call(self) -> None:
+        class Settings:
+            ai_openai_enabled = False
+            openai_api_key = None
+
+        result = generate_product_translation(
+            {
+                "name": "Dumpling Rood",
+                "title": "Dumpling Rood",
+                "short_description": "Kleine decoratie voor op bureau.",
+                "tags": ["decoratie", "bureau"],
+            },
+            "de",
+            Settings(),
+        )
+
+        self.assertEqual(result["source"], "mock_translation")
+        self.assertTrue(result["title"].startswith("[DE concept]"))
 
 
 if __name__ == "__main__":

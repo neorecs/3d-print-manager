@@ -594,6 +594,7 @@ Status 2026-06-27:
 - Shopify orderimport-UI heeft nu instelbare vanaf-datum, importlimiet en paginaformaat.
 - Etsy connectorbasis is toegevoegd met mockimport, eerste live receipt-import en draft-listing/sync basis. Echte OAuth/scopes, taxonomykeuzes en fotoupload moeten nog gecontroleerd worden.
 - Catalogus toont nu interne product-ID's duidelijker in het productoverzicht.
+- Productvertalingen zijn toegevoegd met `product_translations`, een productdetailpaneel en automatische AI/mockgeneratie voor Duitse teksten.
 - Nog verfijnen: echte live-test met Shopify/Etsy credentials, voorraad-sync-logdetail, Etsy OAuth token refresh, Etsy foto-upload, uitgebreidere foutdetails per orderregel en platformregel.
 
 ## Niet doen in V2

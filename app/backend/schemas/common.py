@@ -107,6 +107,24 @@ class AIProductDraftRequest(BaseModel):
     platforms: list[str] = []
 
 
+class ProductTranslationCreate(BaseModel):
+    language_code: str
+    title: str | None = None
+    short_description: str | None = None
+    long_description: str | None = None
+    sales_description: str | None = None
+    seo_title: str | None = None
+    seo_description: str | None = None
+    tags: str | None = None
+    source: str = "manual"
+    status: str = "concept"
+
+
+class ProductTranslationGenerate(BaseModel):
+    language_codes: list[str] = ["de"]
+    overwrite: bool = False
+
+
 class ProductVariantCreate(BaseModel):
     product_id: int
     variant_name: str

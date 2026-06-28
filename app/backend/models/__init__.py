@@ -12,6 +12,7 @@ from models.products import (
     ProductPlatformPublication,
     ProductPublicationMedia,
     ProductTag,
+    ProductTranslation,
     ProductVariant,
     ProductVariantPlatformLink,
 )
@@ -41,6 +42,7 @@ __all__ = [
     "ProductPlatformPublication",
     "ProductPublicationMedia",
     "ProductTag",
+    "ProductTranslation",
     "ProductVariant",
     "ProductVariantPlatformLink",
     "StockRecommendation",

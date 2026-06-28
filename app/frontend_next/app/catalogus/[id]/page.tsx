@@ -9,6 +9,7 @@ import { InventoryManager } from "./InventoryManager";
 import { MediaManager } from "./MediaManager";
 import { PublicationManager } from "./PublicationManager";
 import { ProductEditForm } from "./ProductEditForm";
+import { TranslationManager } from "./TranslationManager";
 import { VariantManager } from "./VariantManager";
 
 export default async function ProductDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -87,6 +88,10 @@ function DetailContent({ data }: { data: ProductDetailData }) {
 
         <SectionCard title="Platformpublicaties beheren" description="Leg per platform afwijkende titel, omschrijving, categorie, tags, prijs en status vast.">
           <PublicationManager product={data.product} platforms={data.platforms} publications={data.publications} />
+        </SectionCard>
+
+        <SectionCard title="Vertalingen beheren" description="Maak taalversies voor Duitsland en later andere markten.">
+          <TranslationManager product={data.product} translations={data.translations} />
         </SectionCard>
       </div>
     </div>

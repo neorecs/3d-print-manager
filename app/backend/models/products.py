@@ -76,6 +76,23 @@ class ProductTag(Base):
     product: Mapped[Product] = relationship(back_populates="tags")
 
 
+class ProductTranslation(TimestampMixin, Base):
+    __tablename__ = "product_translations"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    product_id: Mapped[int] = mapped_column(ForeignKey("products.id"), nullable=False)
+    language_code: Mapped[str] = mapped_column(String(10), nullable=False)
+    title: Mapped[str | None] = mapped_column(String(255))
+    short_description: Mapped[str | None] = mapped_column(Text)
+    long_description: Mapped[str | None] = mapped_column(Text)
+    sales_description: Mapped[str | None] = mapped_column(Text)
+    seo_title: Mapped[str | None] = mapped_column(String(255))
+    seo_description: Mapped[str | None] = mapped_column(Text)
+    tags: Mapped[str | None] = mapped_column(Text)
+    source: Mapped[str] = mapped_column(String(80), default="manual", nullable=False)
+    status: Mapped[str] = mapped_column(String(60), default="concept", nullable=False)
+
+
 class ProductPlatformPublication(TimestampMixin, Base):
     __tablename__ = "product_platform_publications"
 

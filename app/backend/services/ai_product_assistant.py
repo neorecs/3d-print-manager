@@ -105,6 +105,22 @@ PRODUCT_DRAFT_SCHEMA: dict[str, Any] = {
 }
 
 
+TRANSLATION_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "additionalProperties": False,
+    "required": ["title", "short_description", "long_description", "sales_description", "seo_title", "seo_description", "tags"],
+    "properties": {
+        "title": {"type": "string"},
+        "short_description": {"type": "string"},
+        "long_description": {"type": "string"},
+        "sales_description": {"type": "string"},
+        "seo_title": {"type": "string"},
+        "seo_description": {"type": "string"},
+        "tags": {"type": "array", "items": {"type": "string"}, "minItems": 4, "maxItems": 12},
+    },
+}
+
+
 def generate_ai_product_draft(payload: AIProductDraftRequest, settings: Settings) -> dict[str, Any]:
     if not settings.ai_openai_enabled:
         raise HTTPException(status_code=403, detail="Echte AI-generatie staat uit. Zet AI_OPENAI_ENABLED=true om dit te gebruiken.")
@@ -149,6 +165,74 @@ def generate_ai_product_draft(payload: AIProductDraftRequest, settings: Settings
     draft["source"] = f"openai_api:{settings.openai_product_model}"
     draft["usage"] = response_data.get("usage") or {}
     return draft
+
+
+def generate_product_translation(source: dict[str, Any], language_code: str, settings: Settings) -> dict[str, Any]:
+    if not settings.ai_openai_enabled:
+        return mock_product_translation(source, language_code)
+    if not settings.openai_api_key:
+        raise HTTPException(status_code=403, detail="OPENAI_API_KEY ontbreekt in de backend environment.")
+
+    language_name = {"de": "Duits", "nl": "Nederlands", "fr": "Frans", "en": "Engels"}.get(language_code, language_code)
+    request_body = {
+        "model": settings.openai_product_model,
+        "input": [
+            {
+                "role": "system",
+                "content": [
+                    {
+                        "type": "input_text",
+                        "text": (
+                            "Je vertaalt productteksten voor een 3D-print webshop. "
+                            "Behoud betekenis, verkoopkracht en SEO-intentie, maar vertaal natuurlijk voor lokale klanten. "
+                            "Verzin geen nieuwe claims, levertijden, keurmerken, garantie of technische eigenschappen. "
+                            "Tags moeten zoekwoorden zijn die passen bij het doelplatform."
+                        ),
+                    }
+                ],
+            },
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "input_text",
+                        "text": json.dumps({"target_language": language_name, "source": source}, ensure_ascii=False),
+                    }
+                ],
+            },
+        ],
+        "text": {
+            "format": {
+                "type": "json_schema",
+                "name": "product_translation",
+                "schema": TRANSLATION_SCHEMA,
+                "strict": True,
+            }
+        },
+        "max_output_tokens": min(settings.ai_product_max_output_tokens, 1800),
+    }
+    response_data = post_openai_response(request_body, settings)
+    translated = extract_json_response(response_data)
+    translated["tags"] = ", ".join(translated.get("tags") or [])
+    translated["source"] = f"openai_api:{settings.openai_product_model}"
+    return translated
+
+
+def mock_product_translation(source: dict[str, Any], language_code: str) -> dict[str, Any]:
+    prefix = {"de": "[DE concept]", "fr": "[FR concept]", "en": "[EN concept]"}.get(language_code, f"[{language_code.upper()} concept]")
+    tags = source.get("tags") or []
+    if isinstance(tags, str):
+        tags = [tag.strip() for tag in tags.split(",") if tag.strip()]
+    return {
+        "title": f"{prefix} {source.get('title') or source.get('name') or 'Product'}",
+        "short_description": f"{prefix} {source.get('short_description') or ''}".strip(),
+        "long_description": f"{prefix} {source.get('long_description') or source.get('sales_description') or ''}".strip(),
+        "sales_description": f"{prefix} {source.get('sales_description') or source.get('long_description') or ''}".strip(),
+        "seo_title": f"{prefix} {source.get('seo_title') or source.get('title') or source.get('name') or 'Product'}",
+        "seo_description": f"{prefix} {source.get('seo_description') or source.get('short_description') or ''}".strip(),
+        "tags": ", ".join(tags),
+        "source": "mock_translation",
+    }
 
 
 def post_openai_response(request_body: dict[str, Any], settings: Settings) -> dict[str, Any]:

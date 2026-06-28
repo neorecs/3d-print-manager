@@ -34,6 +34,7 @@ import {
   ProductMedia,
   ProductPublication,
   ProductTag,
+  ProductTranslation,
   ProductVariant,
   SalesChannelDetailData,
   SalesChannelsData,
@@ -115,12 +116,13 @@ export async function getProductCatalogData(): Promise<ProductCatalogData> {
 }
 
 export async function getProductDetailData(productId: number): Promise<ProductDetailData> {
-  const [product, variants, inventory, media, tags, publications, platforms] = await Promise.all([
+  const [product, variants, inventory, media, tags, translations, publications, platforms] = await Promise.all([
     apiGet<Product>(`/products/${productId}`),
     apiGet<ProductVariant[]>("/product-variants"),
     apiGet<ProductInventory[]>("/inventory/products"),
     apiGet<ProductMedia[]>(`/products/${productId}/media`).catch(() => []),
     apiGet<ProductTag[]>(`/products/${productId}/tags`).catch(() => []),
+    apiGet<ProductTranslation[]>(`/products/${productId}/translations`).catch(() => []),
     apiGet<ProductPublication[]>(`/products/${productId}/publications`).catch(() => []),
     apiGet<Platform[]>("/platforms"),
   ]);
@@ -131,6 +133,7 @@ export async function getProductDetailData(productId: number): Promise<ProductDe
     inventory: inventory.filter((item) => item.product_id === productId),
     media,
     tags,
+    translations,
     publications,
     platforms,
   };

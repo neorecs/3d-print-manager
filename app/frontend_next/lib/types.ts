@@ -59,6 +59,21 @@ export type ProductTag = {
   tag: string;
 };
 
+export type ProductTranslation = {
+  id: number;
+  product_id: number;
+  language_code: string;
+  title?: string | null;
+  short_description?: string | null;
+  long_description?: string | null;
+  sales_description?: string | null;
+  seo_title?: string | null;
+  seo_description?: string | null;
+  tags?: string | null;
+  source?: string | null;
+  status?: string | null;
+};
+
 export type Order = {
   id: number;
   internal_order_number: string;
@@ -390,6 +405,7 @@ export type ProductDetailData = {
   inventory: ProductInventory[];
   media: ProductMedia[];
   tags: ProductTag[];
+  translations: ProductTranslation[];
   publications: ProductPublication[];
   platforms: Platform[];
 };
