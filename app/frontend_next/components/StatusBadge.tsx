@@ -5,18 +5,18 @@ type StatusBadgeProps = {
 function statusTone(status: string) {
   const normalized = status.toLowerCase();
   if (["klaar", "gepubliceerd", "verwerkt", "afgerond", "online"].some((item) => normalized.includes(item))) {
-    return "bg-emerald-50 text-emerald-700 ring-emerald-200";
+    return "bg-emerald-400/10 text-emerald-300 ring-emerald-400/25";
   }
   if (["fout", "mislukt", "tekort", "offline"].some((item) => normalized.includes(item))) {
-    return "bg-red-50 text-red-700 ring-red-200";
+    return "bg-red-400/10 text-red-300 ring-red-400/25";
   }
   if (["nieuw", "nodig", "laag", "deels"].some((item) => normalized.includes(item))) {
-    return "bg-amber-50 text-amber-700 ring-amber-200";
+    return "bg-amber-400/10 text-amber-200 ring-amber-400/25";
   }
   if (["gepland", "bezig", "sync"].some((item) => normalized.includes(item))) {
-    return "bg-blue-50 text-blue-700 ring-blue-200";
+    return "bg-blue-400/10 text-blue-300 ring-blue-400/25";
   }
-  return "bg-slate-50 text-slate-700 ring-slate-200";
+  return "bg-slate-400/10 text-slate-300 ring-slate-400/25";
 }
 
 export function StatusBadge({ status }: StatusBadgeProps) {

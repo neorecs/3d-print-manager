@@ -5,7 +5,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { SectionCard } from "@/components/SectionCard";
 import { StatusBadge } from "@/components/StatusBadge";
 import { formatCurrency, getOrdersData } from "@/lib/api";
-import type { Order, OrderItem, OrdersData, Platform, PlatformImportLog } from "@/lib/types";
+import type { Order, OrderItem, OrdersData, Platform, PrintJob } from "@/lib/types";
 import { ShopifyImportButton } from "./ShopifyImportButton";
 
 export default async function OrdersPage() {
@@ -22,8 +22,8 @@ export default async function OrdersPage() {
     <AppShell>
       <PageHeader
         title="Orders"
-        description="Verwerk orders vanuit verkoopplatformen en bepaal wat uit voorraad kan en wat nog geprint moet worden."
-        actions={<a className="rounded-md border border-line bg-white px-4 py-2 text-sm font-bold text-slate-700" href="/">Terug naar dashboard</a>}
+        description="Verkooporders vertalen naar voorraadreserveringen, printopdrachten en verzending."
+        actions={<ShopifyImportButton />}
       />
       {error || !data ? <OrdersError message={error || "Geen orderdata beschikbaar"} /> : <OrdersContent data={data} />}
     </AppShell>
@@ -33,33 +33,59 @@ export default async function OrdersPage() {
 function OrdersError({ message }: { message: string }) {
   return (
     <SectionCard title="Orders niet bereikbaar" description="Controleer of de FastAPI backend draait.">
-      <EmptyState title="Geen orderdata" description={`Orders kunnen nog niet worden geladen. Details: ${message}`} />
+      <EmptyState title="Geen orderdata" description={`Details: ${message}`} />
     </SectionCard>
   );
 }
 
 function OrdersContent({ data }: { data: OrdersData }) {
   const openOrders = data.orders.filter((order) => !["verzonden", "geannuleerd"].includes(order.status || ""));
-  const fullyFromStock = data.orders.filter((order) => order.status === "volledig_uit_voorraad");
-  const printNeeded = data.orders.filter((order) => ["deels_te_printen", "volledig_te_printen", "ingepland"].includes(order.status || ""));
-  const unlinkedItems = data.orderItems.filter((item) => !item.product_variant_id);
-  const totalRevenue = data.orders.reduce((total, order) => total + Number(order.total_amount || 0), 0);
+  const paidOrders = data.orders.filter((order) => Number(order.total_amount || 0) > 0);
+  const production = data.orders.filter((order) => ["deels_te_printen", "volledig_te_printen", "ingepland"].includes(order.status || ""));
+  const shipped = data.orders.filter((order) => order.status === "verzonden");
+  const cancelled = data.orders.filter((order) => order.status === "geannuleerd");
+  const revenue = data.orders.reduce((total, order) => total + Number(order.total_amount || 0), 0);
 
   return (
     <div className="space-y-6">
-      <SectionCard title="Wat doe ik hier?" description="Orders zijn de brug tussen verkoop, voorraad en printplanning.">
-        <div className="grid gap-3 md:grid-cols-3">
-          <WorkflowStep title="1. Importeren" text="Orders komen binnen vanuit Etsy, Shopify of dummy-imports." />
-          <WorkflowStep title="2. Voorraad controleren" text="De app reserveert vrije voorraad en berekent alleen het tekort." />
-          <WorkflowStep title="3. Printtaken maken" text="Alleen wat ontbreekt gaat door naar printplanning." />
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
+        <MetricCard label="Nieuw" value={data.orders.filter((order) => order.status === "nieuw").length} note="wacht op controle" tone="warning" />
+        <MetricCard label="Betaald" value={paidOrders.length} note="met orderwaarde" tone="good" />
+        <MetricCard label="In productie" value={production.length} note="te printen of ingepland" tone="warning" />
+        <MetricCard label="Klaar" value={data.orders.filter((order) => order.status === "ingepakt").length} note="klaar voor verzending" />
+        <MetricCard label="Verzonden" value={shipped.length} note="afgerond" tone="good" />
+        <MetricCard label="Omzet" value={formatCurrency(revenue)} note={`${cancelled.length} geannuleerd`} />
+      </div>
+
+      <SectionCard title="Filters" description="Visuele statusfilters voor de orderflow. Klikken wordt later aangesloten op echte filtering.">
+        <div className="flex flex-wrap gap-2">
+          {["nieuw", "betaald", "in productie", "klaar", "verzonden", "geannuleerd"].map((filter) => (
+            <span className="rounded-full border border-line bg-panelSoft px-3 py-2 text-sm font-black text-slate-200" key={filter}>
+              {filter}
+            </span>
+          ))}
         </div>
       </SectionCard>
 
-      <SectionCard title="Orderimport" description="Importeer Shopify orders. In mockmodus blijft dit veilig en maakt de backend een testorder; in live-modus gebruikt hij je Shopify credentials.">
-        <ShopifyImportButton />
+      <SectionCard title="Orderoverzicht" description="Elke order toont verkoopkanaal, productregels, betaling, leverdatum en gekoppelde printopdracht.">
+        {data.orders.length ? (
+          <div className="space-y-3">
+            {data.orders.map((order) => (
+              <OrderCard
+                items={data.orderItems.filter((item) => item.order_id === order.id)}
+                key={order.id}
+                order={order}
+                platform={data.platforms.find((item) => item.id === order.platform_id)}
+                printJobs={data.printJobs}
+              />
+            ))}
+          </div>
+        ) : (
+          <EmptyState title="Nog geen orders" description="Importeer dummydata of Shopify/Etsy-orders om de orderflow te vullen." />
+        )}
       </SectionCard>
 
-      <SectionCard title="Importgeschiedenis" description="Laatste orderimports per verkoopkanaal, inclusief aantallen en foutmeldingen.">
+      <SectionCard title="Importgeschiedenis" description="Laatste importresultaten per verkoopkanaal.">
         {data.importLogs.length ? (
           <div className="table-scroll">
             <table className="data-table">
@@ -68,7 +94,6 @@ function OrdersContent({ data }: { data: OrdersData }) {
                   <th>Start</th>
                   <th>Kanaal</th>
                   <th>Status</th>
-                  <th>Sinds</th>
                   <th className="text-right">Nieuw</th>
                   <th className="text-right">Bijgewerkt</th>
                   <th className="text-right">Fouten</th>
@@ -76,121 +101,82 @@ function OrdersContent({ data }: { data: OrdersData }) {
                 </tr>
               </thead>
               <tbody>
-                {data.importLogs.slice(0, 10).map((log) => (
-                  <ImportLogRow key={log.id} log={log} platform={data.platforms.find((platform) => platform.id === log.platform_id)} />
+                {data.importLogs.slice(0, 8).map((log) => (
+                  <tr key={log.id}>
+                    <td>{formatDateTime(log.started_at)}</td>
+                    <td>{data.platforms.find((platform) => platform.id === log.platform_id)?.name || `Platform ${log.platform_id}`}</td>
+                    <td><StatusBadge status={log.status} /></td>
+                    <td className="text-right">{log.created_count}</td>
+                    <td className="text-right">{log.updated_count}</td>
+                    <td className="text-right">{log.error_count}</td>
+                    <td>{log.message || "-"}</td>
+                  </tr>
                 ))}
               </tbody>
             </table>
           </div>
         ) : (
-          <EmptyState title="Nog geen importgeschiedenis" description="Na de eerste Shopify import verschijnen hier de resultaten." />
-        )}
-      </SectionCard>
-
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
-        <MetricCard label="Open orders" value={openOrders.length} note="nog af te handelen" />
-        <MetricCard label="Uit voorraad" value={fullyFromStock.length} note="volledig leverbaar" tone="good" />
-        <MetricCard label="Te printen" value={printNeeded.length} note="tekort of ingepland" tone="warning" />
-        <MetricCard label="Ongekoppelde regels" value={unlinkedItems.length} note="SKU mist match" tone={unlinkedItems.length ? "danger" : "good"} />
-        <MetricCard label="Omzet orders" value={formatCurrency(totalRevenue)} note="bekende orderwaarde" />
-      </div>
-
-      <SectionCard title="Orderlijst" description="Open een order om voorraadcontrole en printtaken te bekijken of acties uit te voeren.">
-        {data.orders.length ? (
-          <div className="space-y-3">
-            {data.orders.map((order) => (
-              <OrderRow
-                items={data.orderItems.filter((item) => item.order_id === order.id)}
-                key={order.id}
-                order={order}
-                platform={data.platforms.find((item) => item.id === order.platform_id)}
-              />
-            ))}
-          </div>
-        ) : (
-          <EmptyState title="Nog geen orders" description="Importeer dummydata of koppel later Etsy/Shopify om orders hier te zien." />
+          <EmptyState title="Nog geen importgeschiedenis" description="Na de eerste import verschijnen hier aantallen en eventuele fouten." />
         )}
       </SectionCard>
     </div>
   );
 }
 
-function WorkflowStep({ title, text }: { title: string; text: string }) {
-  return (
-    <div className="rounded-md border-l-4 border-brand bg-slate-50 px-4 py-4">
-      <div className="font-bold text-ink">{title}</div>
-      <p className="mt-2 text-sm leading-6 text-slate-700">{text}</p>
-    </div>
-  );
-}
-
-function OrderRow({ order, items, platform }: { order: Order; items: OrderItem[]; platform?: Platform }) {
+function OrderCard({ order, items, platform, printJobs }: { order: Order; items: OrderItem[]; platform?: Platform; printJobs: PrintJob[] }) {
   const ordered = items.reduce((total, item) => total + Number(item.quantity_ordered || 0), 0);
-  const fromInventory = items.reduce((total, item) => total + Number(item.quantity_from_inventory || 0), 0);
   const toPrint = items.reduce((total, item) => total + Number(item.quantity_to_print || 0), 0);
-  const date = order.order_date ? new Date(order.order_date).toLocaleDateString("nl-NL") : "-";
+  const linkedJob = printJobs.find((job) => items.some((item) => item.id === job.order_item_id));
+  const paid = Number(order.total_amount || 0) > 0;
+  const deliveryDate = order.order_date ? addDays(order.order_date, toPrint > 0 ? 5 : 2) : "-";
+  const productSummary = items.map((item) => item.sku || `Regel ${item.id}`).slice(0, 2).join(", ") || "Geen regels";
 
   return (
-    <article className="rounded-lg border border-line bg-white p-4 shadow-card">
-      <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
-        <div className="min-w-0 flex-1">
+    <article className="rounded-2xl border border-line bg-panelSoft p-4 shadow-card">
+      <div className="grid gap-4 xl:grid-cols-[1.1fr_.9fr]">
+        <div>
           <div className="flex flex-wrap items-center gap-2">
-            <a className="text-lg font-bold text-ink hover:text-brand" href={`/orders/${order.id}`}>
-              {order.internal_order_number}
-            </a>
+            <a className="text-xl font-black text-ink hover:text-brand" href={`/orders/${order.id}`}>{order.internal_order_number}</a>
             <StatusBadge status={order.status} />
           </div>
-          <p className="mt-2 text-sm leading-6 text-muted">
-            {platform ? `${platform.name} (${platform.type})` : `Platform ${order.platform_id}`} - {order.customer_name || "geen klantnaam"} - {date}
-          </p>
-          <div className="mt-3 text-sm font-semibold text-slate-700">{formatCurrency(order.total_amount)} {order.currency || "EUR"}</div>
+          <p className="mt-2 text-sm text-muted">{order.customer_name || "Geen klantnaam"} - {platform ? platform.name : `Platform ${order.platform_id}`}</p>
+          <p className="mt-2 text-sm font-semibold text-slate-300">{productSummary}</p>
         </div>
-        <div className="grid min-w-full grid-cols-2 gap-3 sm:grid-cols-4 xl:min-w-[520px]">
-          <SmallStat label="Regels" value={items.length} />
-          <SmallStat label="Besteld" value={ordered} />
-          <SmallStat label="Uit voorraad" value={fromInventory} />
-          <SmallStat label="Te printen" value={toPrint} />
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+          <Small label="Aantal" value={ordered} />
+          <Small label="Te printen" value={toPrint} />
+          <Small label="Betaald" value={paid ? "Ja" : "Nee"} />
+          <Small label="Leverdatum" value={deliveryDate} />
         </div>
       </div>
-      <div className="mt-4 flex justify-end">
-        <a className="rounded-md border border-line bg-white px-3 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50" href={`/orders/${order.id}`}>
-          Order openen
-        </a>
+      <div className="mt-4 grid gap-3 border-t border-line pt-4 md:grid-cols-4">
+        <Small label="Bedrag" value={formatCurrency(order.total_amount)} />
+        <Small label="Kanaal" value={platform?.type || "-"} />
+        <Small label="Printopdracht" value={linkedJob ? `#${linkedJob.id}` : "Niet gekoppeld"} />
+        <Small label="Orderdatum" value={formatDateTime(order.order_date)} />
       </div>
     </article>
   );
 }
 
-function SmallStat({ label, value }: { label: string; value: string | number }) {
+function Small({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="rounded-md border border-line bg-slate-50 px-3 py-3">
-      <div className="text-xs font-bold uppercase text-muted">{label}</div>
-      <div className="mt-1 text-lg font-bold text-ink">{value}</div>
+    <div className="rounded-xl border border-line bg-slate-950/25 p-3">
+      <div className="text-[11px] font-black uppercase tracking-[.12em] text-muted">{label}</div>
+      <div className="mt-1 truncate font-black text-ink" title={String(value)}>{value}</div>
     </div>
   );
 }
 
-function ImportLogRow({ log, platform }: { log: PlatformImportLog; platform?: Platform }) {
-  return (
-    <tr>
-      <td>{formatDateTime(log.started_at)}</td>
-      <td>{platform ? platform.name : `Platform ${log.platform_id}`}</td>
-      <td>
-        <StatusBadge status={log.status} />
-      </td>
-      <td>{formatDateTime(log.since)}</td>
-      <td className="text-right">{log.created_count}</td>
-      <td className="text-right">{log.updated_count}</td>
-      <td className="text-right">{log.error_count}</td>
-      <td>{log.message || "-"}</td>
-    </tr>
-  );
+function formatDateTime(value?: string | null) {
+  if (!value) return "-";
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString("nl-NL");
 }
 
-function formatDateTime(value?: string | null) {
-  if (!value) {
-    return "-";
-  }
+function addDays(value: string, days: number) {
   const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? value : date.toLocaleString("nl-NL");
+  if (Number.isNaN(date.getTime())) return "-";
+  date.setDate(date.getDate() + days);
+  return date.toLocaleDateString("nl-NL");
 }

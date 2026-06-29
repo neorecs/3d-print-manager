@@ -9,17 +9,19 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        ink: "#17212b",
-        muted: "#667085",
-        line: "#d9e2e7",
-        canvas: "#f6f8fb",
-        brand: "#0f766e",
-        brandSoft: "#dff7f2",
+        ink: "#eef6ff",
+        muted: "#8ea0b6",
+        line: "#223047",
+        canvas: "#070b12",
+        panel: "#0d1422",
+        panelSoft: "#111b2d",
+        brand: "#2dd4bf",
+        brandSoft: "#123c3b",
         warning: "#b45309",
         danger: "#b42318",
       },
       boxShadow: {
-        card: "0 1px 2px rgba(16, 24, 40, .05)",
+        card: "0 18px 60px rgba(0, 0, 0, .28)",
       },
     },
   },
