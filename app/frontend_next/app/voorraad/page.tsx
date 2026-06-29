@@ -22,7 +22,7 @@ export default async function InventoryPage() {
       <PageHeader
         title="Productvoorraad"
         description="Beheer geprinte producten die klaar liggen voor verkoop, verzending of reservering."
-        actions={<a className="rounded-md border border-line bg-white px-4 py-2 text-sm font-bold text-slate-700" href="/catalogus">Naar catalogus</a>}
+        actions={<a className="rounded-xl border border-line px-4 py-2 text-sm font-black text-slate-200 hover:bg-white/5" href="/catalogus">Naar catalogus</a>}
       />
       {error || !data ? <InventoryError message={error || "Geen voorraaddata beschikbaar"} /> : <InventoryContent data={data} />}
     </AppShell>
@@ -145,9 +145,9 @@ function free(item: ProductInventory) {
 
 function Step({ title, text }: { title: string; text: string }) {
   return (
-    <div className="rounded-md border-l-4 border-brand bg-slate-50 px-4 py-4">
-      <div className="font-bold text-ink">{title}</div>
-      <p className="mt-2 text-sm leading-6 text-slate-700">{text}</p>
+    <div className="rounded-xl border border-line border-l-4 border-l-brand bg-panelSoft px-4 py-4">
+      <div className="font-black text-ink">{title}</div>
+      <p className="mt-2 text-sm leading-6 text-muted">{text}</p>
     </div>
   );
 }

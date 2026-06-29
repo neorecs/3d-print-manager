@@ -174,10 +174,10 @@ export function FilamentManager({ filament }: { filament: FilamentSpool[] }) {
 
   return (
     <div className="space-y-5">
-      {message ? <div className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-700">{message}</div> : null}
-      {error ? <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm font-semibold text-red-700">{error}</div> : null}
+      {message ? <div className="rounded-md border border-emerald-400/25 bg-emerald-400/10 px-3 py-2 text-sm font-semibold text-emerald-300">{message}</div> : null}
+      {error ? <div className="rounded-md border border-red-400/25 bg-red-400/10 px-3 py-2 text-sm font-semibold text-red-300">{error}</div> : null}
 
-      <form className="rounded-lg border border-line bg-slate-50 p-4" onSubmit={createSpool}>
+      <form className="rounded-lg border border-line bg-slate-950/25 p-4" onSubmit={createSpool}>
         <div className="mb-4">
           <h3 className="font-bold text-ink">Filamentrol toevoegen</h3>
           <p className="mt-1 text-sm text-muted">Leg merk, materiaal, kleur, gewicht en aankoopprijs vast. De prijs per gram wordt automatisch berekend.</p>
@@ -185,7 +185,7 @@ export function FilamentManager({ filament }: { filament: FilamentSpool[] }) {
         <FilamentFields draft={newDraft} onChange={updateNew} />
         <div className="mt-4 flex justify-end">
           <button
-            className="rounded-md bg-brand px-4 py-2 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-60"
+            className="rounded-md bg-brand px-4 py-2 text-sm font-black text-slate-950 disabled:cursor-not-allowed disabled:opacity-60"
             disabled={busyKey === "new"}
             type="submit"
           >
@@ -204,7 +204,7 @@ export function FilamentManager({ filament }: { filament: FilamentSpool[] }) {
             const used = Math.max(Number(spool.initial_weight_grams || 0) - remaining, 0);
 
             return (
-              <details className="rounded-lg border border-line bg-white p-4 shadow-card" key={spool.id}>
+              <details className="rounded-lg border border-line bg-panelSoft p-4 shadow-card" key={spool.id}>
                 <summary className="cursor-pointer list-none">
                   <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                     <div>
@@ -214,10 +214,10 @@ export function FilamentManager({ filament }: { filament: FilamentSpool[] }) {
                       </p>
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${lowStock ? "bg-amber-100 text-amber-800" : "bg-emerald-100 text-emerald-800"}`}>
+                      <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${lowStock ? "bg-amber-400/10 text-amber-200" : "bg-emerald-400/10 text-emerald-300"}`}>
                         {lowStock ? "lage voorraad" : "voldoende"}
                       </span>
-                      <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-700">
+                      <span className="rounded-full bg-slate-800 px-2.5 py-1 text-xs font-bold text-slate-300">
                         {formatCurrency(spool.price_per_gram || 0)} / g
                       </span>
                     </div>
@@ -227,7 +227,7 @@ export function FilamentManager({ filament }: { filament: FilamentSpool[] }) {
                   <FilamentFields draft={draft} onChange={(field, value) => updateDraft(spool.id, field, value)} />
                   <div className="mt-4 flex justify-end">
                     <button
-                      className="rounded-md bg-brand px-4 py-2 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-60"
+                      className="rounded-md bg-brand px-4 py-2 text-sm font-black text-slate-950 disabled:cursor-not-allowed disabled:opacity-60"
                       disabled={busyKey !== null}
                       onClick={() => saveSpool(spool.id)}
                       type="button"
@@ -236,7 +236,7 @@ export function FilamentManager({ filament }: { filament: FilamentSpool[] }) {
                     </button>
                   </div>
 
-                  <div className="mt-5 rounded-lg border border-line bg-slate-50 p-4">
+                  <div className="mt-5 rounded-lg border border-line bg-slate-950/25 p-4">
                     <h4 className="font-bold text-ink">Resterend gewicht snel bijwerken</h4>
                     <p className="mt-1 text-sm text-muted">Gebruik dit na een print of bij een weegcorrectie.</p>
                     <div className="mt-4 grid gap-4 md:grid-cols-[1fr_auto] md:items-end">
@@ -247,7 +247,7 @@ export function FilamentManager({ filament }: { filament: FilamentSpool[] }) {
                         value={adjustments[spool.id] || ""}
                       />
                       <button
-                        className="rounded-md border border-line bg-white px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                        className="rounded-md border border-line bg-slate-950/35 px-4 py-2 text-sm font-bold text-slate-300 hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-60"
                         disabled={busyKey !== null}
                         onClick={() => adjustSpool(spool.id)}
                         type="button"
@@ -261,7 +261,7 @@ export function FilamentManager({ filament }: { filament: FilamentSpool[] }) {
             );
           })
         ) : (
-          <div className="rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">
+          <div className="rounded-md border border-amber-400/25 bg-amber-400/10 px-4 py-3 text-sm font-semibold text-amber-200">
             Nog geen filamentrollen. Voeg hierboven je eerste rol toe.
           </div>
         )}
@@ -289,11 +289,11 @@ function FilamentFields({
       <TextField inputMode="decimal" label="Resterend gram" value={draft.remaining_weight_grams} onChange={(value) => onChange("remaining_weight_grams", value)} />
       <TextField inputMode="decimal" label="Aankoopprijs" value={draft.purchase_price} onChange={(value) => onChange("purchase_price", value)} />
       <TextField inputMode="decimal" label="Minimum gram" value={draft.minimum_remaining_grams} onChange={(value) => onChange("minimum_remaining_grams", value)} />
-      <div className="rounded-md border border-line bg-white px-3 py-2">
-        <div className="text-sm font-bold text-slate-700">Berekende prijs per gram</div>
+      <div className="rounded-md border border-line bg-slate-950/35 px-3 py-2 text-ink">
+        <div className="text-sm font-bold text-slate-300">Berekende prijs per gram</div>
         <div className="mt-1 text-lg font-bold text-ink">{formatCurrency(pricePerGram)}</div>
       </div>
-      <label className="flex items-center gap-3 rounded-md border border-line bg-white px-3 py-2 text-sm font-semibold">
+      <label className="flex items-center gap-3 rounded-md border border-line bg-slate-950/35 px-3 py-2 text-ink text-sm font-semibold">
         <input checked={draft.active} onChange={(event) => onChange("active", event.target.checked)} type="checkbox" />
         Rol actief
       </label>
@@ -316,9 +316,9 @@ function TextField({
 }) {
   return (
     <label className="space-y-2">
-      <span className="text-sm font-bold text-slate-700">{label}</span>
+      <span className="text-sm font-bold text-slate-300">{label}</span>
       <input
-        className="w-full rounded-md border border-line bg-white px-3 py-2 text-sm outline-none focus:border-brand"
+        className="w-full rounded-md border border-line bg-slate-950/35 px-3 py-2 text-ink text-sm outline-none focus:border-brand"
         inputMode={inputMode}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
@@ -327,3 +327,5 @@ function TextField({
     </label>
   );
 }
+
+
