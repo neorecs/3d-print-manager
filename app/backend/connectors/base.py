@@ -32,7 +32,7 @@ class PlatformConnector:
 
     def status(self) -> ConnectorStatus:
         configured = sorted(key for key, value in self.credentials.items() if value)
-        missing = [key for key in self.required_credentials if not self.credentials.get(key)]
+        missing = self.missing_required_credentials()
         return ConnectorStatus(
             platform_type=self.platform_type,
             mode="live" if self.live_mode else "mock",
@@ -41,6 +41,13 @@ class PlatformConnector:
             missing_credentials=missing,
             ready_for_live=not missing,
         )
+
+    def missing_required_credentials(self, extra_required: list[str] | None = None) -> list[str]:
+        required = [*self.required_credentials, *(extra_required or [])]
+        return [key for key in required if not self.credentials.get(key)]
+
+    def live_credentials_error(self, action: str, missing: list[str]) -> str:
+        return f"{self.platform_type} {action} vereist ontbrekende credential(s): {', '.join(missing)}."
 
     def publish_product(self, payload: dict) -> ConnectorResult:
         return self._mock_result("publish", payload)

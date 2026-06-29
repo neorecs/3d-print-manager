@@ -1,4 +1,5 @@
 import json
+import logging
 from datetime import datetime, timezone
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
@@ -8,6 +9,7 @@ from connectors.base import ConnectorResult, PlatformConnector
 
 
 ETSY_API_BASE = "https://openapi.etsy.com/v3/application"
+logger = logging.getLogger(__name__)
 
 
 class EtsyConnector(PlatformConnector):
@@ -17,9 +19,9 @@ class EtsyConnector(PlatformConnector):
     def publish_product(self, payload: dict) -> ConnectorResult:
         if not self.live_mode:
             return self._mock_result("publish", payload)
-        missing = [key for key in ["taxonomy_id"] if not self.credentials.get(key)]
+        missing = self.missing_required_credentials(["taxonomy_id"])
         if missing:
-            return ConnectorResult(False, f"Etsy live-publicatie mist verplichte Etsy-velden: {', '.join(missing)}.")
+            return ConnectorResult(False, self.live_credentials_error("live-publicatie", missing))
         variants = payload.get("variants") or []
         first_variant = variants[0] if variants else {}
         price = payload.get("price") or first_variant.get("default_sale_price")
@@ -56,6 +58,9 @@ class EtsyConnector(PlatformConnector):
     def sync_product(self, payload: dict) -> ConnectorResult:
         if not self.live_mode:
             return self._mock_result("sync", payload)
+        missing = self.missing_required_credentials()
+        if missing:
+            return ConnectorResult(False, self.live_credentials_error("sync", missing))
         listing_id = payload.get("external_listing_id") or payload.get("external_product_id")
         if not listing_id:
             return ConnectorResult(False, "Etsy sync vereist een bestaande external_listing_id.")
@@ -98,6 +103,14 @@ class EtsyConnector(PlatformConnector):
                 ],
                 "page_count": 1,
             }
+        missing = self.missing_required_credentials()
+        if missing:
+            return {
+                "success": False,
+                "message": self.live_credentials_error("orderimport", missing),
+                "orders": [],
+                "page_count": 0,
+            }
         params = {"limit": max(1, min(limit, 100))}
         response = self._request("GET", f"/shops/{self.credentials['shop_id']}/receipts?{urlencode(params)}")
         errors = response.get("errors") or []
@@ -129,9 +142,14 @@ class EtsyConnector(PlatformConnector):
                 return json.loads(response.read().decode("utf-8"))
         except HTTPError as exc:
             body = exc.read().decode("utf-8", errors="replace")
+            logger.warning("Etsy HTTP error: %s", exc.code)
             return {"errors": [{"message": f"Etsy HTTP {exc.code}: {body}"}]}
         except URLError as exc:
+            logger.warning("Etsy connection error: %s", exc.reason)
             return {"errors": [{"message": f"Etsy verbinding mislukt: {exc.reason}"}]}
+        except (json.JSONDecodeError, OSError) as exc:
+            logger.warning("Etsy request failed: %s", exc)
+            return {"errors": [{"message": f"Etsy request mislukt: {exc}"}]}
 
     def _receipt_to_order(self, receipt: dict) -> dict:
         transactions = receipt.get("transactions") or []
@@ -159,6 +177,12 @@ class EtsyConnector(PlatformConnector):
     def _money_value(self, value: dict | None) -> float | None:
         if not value:
             return None
+        amount = value.get("amount")
+        divisor = value.get("divisor") or 100
+        try:
+            return round(float(amount) / float(divisor), 2)
+        except (TypeError, ValueError, ZeroDivisionError):
+            return None
 
     def _timestamp_to_iso(self, value) -> str | None:
         if not value:
@@ -167,12 +191,6 @@ class EtsyConnector(PlatformConnector):
             return datetime.fromtimestamp(int(value), tz=timezone.utc).isoformat()
         except (TypeError, ValueError, OSError):
             return str(value)
-        amount = value.get("amount")
-        divisor = value.get("divisor") or 100
-        try:
-            return round(float(amount) / float(divisor), 2)
-        except (TypeError, ValueError, ZeroDivisionError):
-            return None
 
     def _format_errors(self, errors: list[dict]) -> str:
         return "; ".join(error.get("message", str(error)) for error in errors)

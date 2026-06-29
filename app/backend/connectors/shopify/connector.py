@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 import uuid
 from urllib.error import HTTPError, URLError
@@ -8,6 +9,7 @@ from connectors.base import ConnectorResult, PlatformConnector
 
 
 SHOPIFY_API_VERSION = os.getenv("SHOPIFY_API_VERSION", "2026-04")
+logger = logging.getLogger(__name__)
 
 
 class ShopifyConnector(PlatformConnector):
@@ -17,6 +19,9 @@ class ShopifyConnector(PlatformConnector):
     def publish_product(self, payload: dict) -> ConnectorResult:
         if not self.live_mode:
             return self._mock_result("publish", payload)
+        missing = self.missing_required_credentials()
+        if missing:
+            return ConnectorResult(False, self.live_credentials_error("live-publicatie", missing))
         variables = {
             "product": self._product_input(payload),
             "media": self._media_input(payload),
@@ -49,6 +54,9 @@ class ShopifyConnector(PlatformConnector):
     def sync_product(self, payload: dict) -> ConnectorResult:
         if not self.live_mode:
             return self._mock_result("sync", payload)
+        missing = self.missing_required_credentials()
+        if missing:
+            return ConnectorResult(False, self.live_credentials_error("sync", missing))
         product_id = payload.get("external_product_id") or payload.get("external_listing_id")
         if not product_id:
             return ConnectorResult(False, "Shopify sync vereist een bestaand external_product_id.")
@@ -105,6 +113,16 @@ class ShopifyConnector(PlatformConnector):
                     }
                 ],
                 "page_count": 1,
+                "has_next_page": False,
+                "end_cursor": None,
+            }
+        missing = self.missing_required_credentials()
+        if missing:
+            return {
+                "success": False,
+                "message": self.live_credentials_error("orderimport", missing),
+                "orders": [],
+                "page_count": 0,
                 "has_next_page": False,
                 "end_cursor": None,
             }
@@ -180,6 +198,14 @@ class ShopifyConnector(PlatformConnector):
                 "errors": [],
                 "raw_response": {"mode": "mock", "quantities": prepared},
             }
+        missing = self.missing_required_credentials()
+        if missing:
+            return {
+                "success": False,
+                "message": self.live_credentials_error("voorraad-sync", missing),
+                "synced": 0,
+                "errors": missing,
+            }
         if not self.credentials.get("location_id"):
             return {
                 "success": False,
@@ -247,9 +273,14 @@ class ShopifyConnector(PlatformConnector):
                 payload = json.loads(response.read().decode("utf-8"))
         except HTTPError as exc:
             body = exc.read().decode("utf-8", errors="replace")
+            logger.warning("Shopify HTTP error: %s", exc.code)
             return {"errors": [{"message": f"Shopify HTTP {exc.code}: {body}"}]}
         except URLError as exc:
+            logger.warning("Shopify connection error: %s", exc.reason)
             return {"errors": [{"message": f"Shopify verbinding mislukt: {exc.reason}"}]}
+        except (json.JSONDecodeError, OSError) as exc:
+            logger.warning("Shopify request failed: %s", exc)
+            return {"errors": [{"message": f"Shopify request mislukt: {exc}"}]}
 
         if payload.get("errors"):
             messages = ", ".join(error.get("message", str(error)) for error in payload["errors"])

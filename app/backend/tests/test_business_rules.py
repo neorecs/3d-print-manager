@@ -485,6 +485,15 @@ class BusinessRuleTestCase(unittest.TestCase):
         self.assertFalse(result.success)
         self.assertIn("external_product_id", result.message)
 
+    def test_shopify_live_publish_missing_credentials_returns_connector_error(self) -> None:
+        connector = ShopifyConnector({}, live_mode=True)
+
+        result = connector.publish_product({"product_id": 1, "title": "Geen credentials"})
+
+        self.assertFalse(result.success)
+        self.assertIn("access_token", result.message)
+        self.assertIn("shop_domain", result.message)
+
     def test_shopify_live_sync_builds_graphql_product_update(self) -> None:
         calls = []
         connector = ShopifyConnector({"access_token": "token", "shop_domain": "example-shop"}, live_mode=True)
@@ -635,6 +644,15 @@ class BusinessRuleTestCase(unittest.TestCase):
         self.assertFalse(result["success"])
         self.assertIn("location_id", result["message"])
 
+    def test_shopify_live_import_missing_credentials_returns_clean_error(self) -> None:
+        connector = ShopifyConnector({}, live_mode=True)
+
+        result = connector.import_orders()
+
+        self.assertFalse(result["success"])
+        self.assertEqual(result["orders"], [])
+        self.assertIn("access_token", result["message"])
+
     def test_shopify_inventory_sync_builds_inventory_set_quantities(self) -> None:
         connector = ShopifyConnector({"access_token": "token", "shop_domain": "example-shop", "location_id": "gid://shopify/Location/1"}, live_mode=True)
         calls = []
@@ -661,6 +679,24 @@ class BusinessRuleTestCase(unittest.TestCase):
         self.assertTrue(result["success"])
         self.assertEqual(result["orders"][0]["external_order_id"], "mock-etsy-receipt-1001")
         self.assertEqual(result["orders"][0]["items"][0]["sku"], "DUMPLING-ROOD-PLA")
+
+    def test_etsy_live_publish_missing_credentials_returns_connector_error(self) -> None:
+        connector = EtsyConnector({}, live_mode=True)
+
+        result = connector.publish_product({"product_id": 1, "title": "Geen credentials", "variants": [{"sku": "SKU", "default_sale_price": 12.95}]})
+
+        self.assertFalse(result.success)
+        self.assertIn("api_key", result.message)
+        self.assertIn("access_token", result.message)
+        self.assertIn("shop_id", result.message)
+        self.assertIn("taxonomy_id", result.message)
+
+    def test_etsy_money_value_uses_amount_and_divisor(self) -> None:
+        connector = EtsyConnector({}, live_mode=False)
+
+        amount = connector._money_value({"amount": 2495, "divisor": 100})
+
+        self.assertEqual(amount, 24.95)
 
     def test_mock_product_translation_generates_without_openai_call(self) -> None:
         class Settings:
