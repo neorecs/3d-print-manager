@@ -15,11 +15,11 @@ Live betekent hier eerst: intern gebruiken met echte producten, echte voorraad, 
 | Next.js is hoofdfrontend | klaar | Gebruik `http://10.5.1.150:38502/` als hoofdscherm. |
 | Backend healthcheck | klaar in compose | NAS-compose controleert `/health`. |
 | Frontend healthcheck | klaar in compose | NAS-compose controleert de Next.js startpagina. |
-| PostgreSQL database | deels klaar | Draait al, maar backup/herstel moet nog bewezen worden. |
+| PostgreSQL database | klaar | Draait op PostgreSQL; backup en hersteltest zijn gecontroleerd. |
 | Secrets buiten Git | klaar als werkwijze | Controleer Dockhand env voor `DATABASE_URL` en `CREDENTIAL_ENCRYPTION_KEY`. |
 | Connector mockmodus | klaar | `CONNECTORS_LIVE_MODE=false` houden tot live platformtest. |
-| Backup aanwezig | deels klaar | `postgres_backup` service is toegevoegd; controleer na deploy of er een `.dump` en `.sha256` bestand staat. |
-| Hersteltest uitgevoerd | open | Een backup terugzetten naar testdatabase en resultaat noteren. |
+| Backup aanwezig | klaar | `postgres_backup` service draait; `.dump` en `.sha256` zijn gecontroleerd. |
+| Hersteltest uitgevoerd | klaar | Backup is teruggezet naar tijdelijke testdatabase en daarna opgeschoond. |
 | Etsy live test | open | Pas na backup/herstel en juiste credentials. |
 | Shopify live test | open | Pas na backup/herstel en juiste credentials. |
 | Administratiecontrole | deels klaar | Basis aanwezig; fiscale instellingen laten controleren. |
@@ -91,6 +91,35 @@ Bewaar ook:
    - Bambu-printers.
 5. Noteer uitkomst in dit document of in een apart log.
 
+### Uitgevoerde hersteltest
+
+Datum: 2026-06-29
+
+Backupbestand:
+
+```text
+print_manager_20260629T203756Z.dump
+```
+
+Resultaat:
+
+- checksum: OK;
+- restore naar tijdelijke database: OK;
+- tijdelijke database na controle verwijderd: OK.
+
+Gecontroleerde tellingen:
+
+| Tabel | Aantal |
+| --- | ---: |
+| products | 3 |
+| product_variants | 3 |
+| product_inventory | 1 |
+| orders | 3 |
+| filament_spools | 1 |
+| print_jobs | 2 |
+| accounting_sales | 0 |
+| bambu_printers | 1 |
+
 ## Go/no-go voor Etsy/Shopify
 
 Go alleen als:
@@ -115,9 +144,7 @@ No-go als:
 ## Aanbevolen volgorde vanaf nu
 
 1. NAS healthchecks actief krijgen.
-2. PostgreSQL backup controleren na deploy.
-3. Restore-test uitvoeren en noteren.
-4. Productcatalogus met echte producten vullen.
-5. Voorraad/filament echt invoeren.
-6. Shopify als eerste live lezen/importeren testen.
-7. Daarna pas Etsy OAuth/publicatie onderzoeken.
+2. Productcatalogus met echte producten vullen.
+3. Voorraad/filament echt invoeren.
+4. Shopify als eerste live lezen/importeren testen.
+5. Daarna pas Etsy OAuth/publicatie onderzoeken.

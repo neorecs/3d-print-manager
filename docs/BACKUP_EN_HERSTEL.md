@@ -79,3 +79,12 @@ Zonder geslaagde hersteltest:
 - geen echte Etsy/Shopify live import;
 - geen echte platformpublicatie;
 - geen brede echte AI-modus met productiedata.
+
+## Laatste hersteltest
+
+Datum: 2026-06-29
+
+- Backup: `print_manager_20260629T203756Z.dump`
+- Checksum: OK
+- Restore naar tijdelijke database: OK
+- Tijdelijke database verwijderd: OK

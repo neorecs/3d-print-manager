@@ -33,8 +33,8 @@ def system_readiness_payload() -> dict:
         "blockers": blockers,
         "next_checks": [
             "Controleer of de postgres_backup container dagelijks een .dump en .sha256 bestand maakt.",
-            "Test minimaal een keer herstel naar een lege database.",
-            "Voeg Etsy/Shopify credentials pas toe nadat mockmodus en backups kloppen.",
-            "Zet CONNECTORS_LIVE_MODE pas aan wanneer je bewust echte platformcalls wilt testen.",
+            "Laat CONNECTORS_LIVE_MODE uit totdat de Etsy/Shopify OAuth-flow bewust getest wordt.",
+            "Voeg platformtokens pas toe via de app nadat de juiste callback-URL bekend is.",
+            "Test eerst lezen/importeren met een beperkt platformaccount voordat je publicatie of sync activeert.",
         ],
     }
