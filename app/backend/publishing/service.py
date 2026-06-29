@@ -7,7 +7,17 @@ from sqlalchemy.orm import Session
 
 from api.utils import to_dict
 from connectors.factory import get_platform_connector
-from models import Platform, Product, ProductMedia, ProductPlatformPublication, ProductPublicationMedia, ProductVariant, ProductVariantPlatformLink
+from models import (
+    Platform,
+    Product,
+    ProductMedia,
+    ProductPlatformPublication,
+    ProductPublicationMedia,
+    ProductTranslation,
+    ProductVariant,
+    ProductVariantPlatformLink,
+    SalesMarket,
+)
 
 
 def get_required(db: Session, model: type, item_id: int):
@@ -175,6 +185,12 @@ def validate_publication_record(db: Session, publication: ProductPlatformPublica
 
     errors = []
     warnings = []
+    market_checks = validate_market_translations(db, product)
+    for market_check in market_checks:
+        if market_check["severity"] == "error":
+            errors.append(market_check["message"])
+        elif market_check["severity"] == "warning":
+            warnings.append(market_check["message"])
 
     if not product.internal_title and not product.name:
         errors.append("Producttitel ontbreekt.")
@@ -226,12 +242,68 @@ def validate_publication_record(db: Session, publication: ProductPlatformPublica
         if not product.seo_title or not product.seo_description:
             warnings.append(f"{platform.name}: SEO-titel of SEO-omschrijving ontbreekt.")
 
+    ready = not errors
     return {
         "publication_id": publication.id,
         "product_id": product.id,
         "platform_id": platform.id,
         "platform": platform.name,
-        "ready": not errors,
+        "ready": ready,
+        "valid": ready,
         "errors": errors,
         "warnings": warnings,
+        "market_checks": market_checks,
+    }
+
+
+def validate_market_translations(db: Session, product: Product) -> list[dict]:
+    active_markets = db.scalars(select(SalesMarket).where(SalesMarket.active.is_(True)).order_by(SalesMarket.country_code)).all()
+    translations = {
+        item.language_code.strip().lower(): item
+        for item in db.scalars(select(ProductTranslation).where(ProductTranslation.product_id == product.id)).all()
+    }
+    checks = []
+    for market in active_markets:
+        required_languages = [market.primary_language.strip().lower()]
+        optional_languages = [
+            language.strip().lower()
+            for language in (market.additional_languages or "").split(",")
+            if language.strip()
+        ]
+        for language in required_languages:
+            if language == "nl":
+                checks.append(market_translation_check(market, language, "ok", "Nederlandse brontekst aanwezig."))
+            elif language in translations:
+                checks.append(market_translation_check(market, language, "ok", f"Vertaling '{language}' aanwezig."))
+            else:
+                checks.append(
+                    market_translation_check(
+                        market,
+                        language,
+                        "error",
+                        f"{market.country_name}: verplichte vertaling '{language}' ontbreekt.",
+                    )
+                )
+        for language in optional_languages:
+            if language in translations:
+                checks.append(market_translation_check(market, language, "ok", f"Optionele vertaling '{language}' aanwezig."))
+            else:
+                checks.append(
+                    market_translation_check(
+                        market,
+                        language,
+                        "warning",
+                        f"{market.country_name}: extra vertaling '{language}' is nog niet aanwezig.",
+                    )
+                )
+    return checks
+
+
+def market_translation_check(market: SalesMarket, language: str, severity: str, message: str) -> dict:
+    return {
+        "country_code": market.country_code,
+        "country_name": market.country_name,
+        "language_code": language,
+        "severity": severity,
+        "message": message,
     }

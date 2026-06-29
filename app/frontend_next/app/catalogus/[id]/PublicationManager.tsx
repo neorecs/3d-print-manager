@@ -20,9 +20,17 @@ type PublicationDraft = {
 };
 
 type PublicationCheck = {
+  ready?: boolean;
   valid?: boolean;
   errors?: string[];
   warnings?: string[];
+  market_checks?: Array<{
+    country_code: string;
+    country_name: string;
+    language_code: string;
+    severity: string;
+    message: string;
+  }>;
   required_fields_missing?: string[];
   detail?: string;
 };
@@ -355,11 +363,25 @@ function PublicationFields({
 function CheckResult({ check }: { check: PublicationCheck }) {
   const errors = check.errors || check.required_fields_missing || [];
   const warnings = check.warnings || [];
+  const ready = check.ready ?? check.valid ?? false;
+  const marketChecks = check.market_checks || [];
   return (
-    <div className={`mt-4 rounded-md border px-3 py-3 text-sm ${check.valid ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-amber-200 bg-amber-50 text-amber-900"}`}>
-      <div className="font-bold">{check.valid ? "Publicatiecontrole geslaagd" : "Publicatiecontrole vraagt aandacht"}</div>
+    <div className={`mt-4 rounded-md border px-3 py-3 text-sm ${ready ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-amber-200 bg-amber-50 text-amber-900"}`}>
+      <div className="font-bold">{ready ? "Publicatiecontrole geslaagd" : "Publicatiecontrole vraagt aandacht"}</div>
       {errors.length ? <ul className="mt-2 list-disc space-y-1 pl-5">{errors.map((item) => <li key={item}>{item}</li>)}</ul> : null}
       {warnings.length ? <ul className="mt-2 list-disc space-y-1 pl-5">{warnings.map((item) => <li key={item}>{item}</li>)}</ul> : null}
+      {marketChecks.length ? (
+        <div className="mt-3 rounded-md border border-white/70 bg-white/60 p-3">
+          <div className="font-bold">Doellanden en talen</div>
+          <ul className="mt-2 space-y-1">
+            {marketChecks.map((item) => (
+              <li key={`${item.country_code}-${item.language_code}`} className={item.severity === "error" ? "font-semibold text-red-700" : item.severity === "warning" ? "font-semibold text-amber-800" : "text-emerald-800"}>
+                {item.country_code} / {item.language_code}: {item.message}
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
     </div>
   );
 }

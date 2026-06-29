@@ -597,6 +597,7 @@ Status 2026-06-27:
 - Catalogus toont nu interne product-ID's duidelijker in het productoverzicht.
 - Productvertalingen zijn toegevoegd met `product_translations`, een productdetailpaneel en automatische AI/mockgeneratie voor Duits, Frans en Engels. Bij AI-concepten kan de gebruiker direct na opslaan vertalingen laten maken; Nederlands blijft de brontekst.
 - Verkoopmarkten zijn toegevoegd met `sales_markets`, standaardrecords voor NL/BE/DE en een Next.js beheerblok onder Verkoopkanalen. Dit is de basis om publicatiechecks later per land en taal af te dwingen.
+- Publicatiecontrole gebruikt nu actieve doellanden: Duitsland vereist een Duitse productvertaling, Nederlandse markten gebruiken de brontekst en Belgische extra Franse tekst wordt als waarschuwing getoond.
 - Nog verfijnen: echte live-test met Shopify/Etsy credentials, voorraad-sync-logdetail, Etsy OAuth token refresh, Etsy foto-upload, uitgebreidere foutdetails per orderregel en platformregel.
 
 ## Niet doen in V2
