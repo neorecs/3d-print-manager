@@ -491,6 +491,22 @@ export type AIProductStatus = {
   note: string;
 };
 
+export type SystemReadiness = {
+  connectors_live_mode: boolean;
+  live_calls_blocked: boolean;
+  credential_encryption_configured: boolean;
+  database_configured: boolean;
+  ai_enabled: boolean;
+  ai_configured: boolean;
+  openai_model: string;
+  platform_subscription_required_now: boolean;
+  safe_without_platform_subscription: boolean;
+  backup_plan_documented: boolean;
+  ready_for_real_tokens: boolean;
+  blockers: string[];
+  next_checks: string[];
+};
+
 export type InventoryData = {
   inventory: ProductInventory[];
   movements: InventoryMovement[];

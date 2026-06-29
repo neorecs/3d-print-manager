@@ -40,6 +40,7 @@ import {
   SalesChannelsData,
   SalesMarket,
   StockRecommendation,
+  SystemReadiness,
   VatPeriod,
   VatSummary,
 } from "./types";
@@ -323,6 +324,28 @@ export async function getAIProductStatus(): Promise<AIProductStatus> {
       model: "mockmodus",
       ready: false,
       note: "AI-status is niet bereikbaar. De frontend gebruikt gratis mockmodus zonder OpenAI API-call.",
+    };
+  }
+}
+
+export async function getSystemReadiness(): Promise<SystemReadiness> {
+  try {
+    return await apiGet<SystemReadiness>("/system/readiness");
+  } catch {
+    return {
+      connectors_live_mode: false,
+      live_calls_blocked: true,
+      credential_encryption_configured: false,
+      database_configured: false,
+      ai_enabled: false,
+      ai_configured: false,
+      openai_model: "onbekend",
+      platform_subscription_required_now: false,
+      safe_without_platform_subscription: true,
+      backup_plan_documented: true,
+      ready_for_real_tokens: false,
+      blockers: ["Systeemstatus kon niet worden opgehaald bij de backend."],
+      next_checks: ["Controleer of backend en database draaien."],
     };
   }
 }
