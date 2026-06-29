@@ -18,7 +18,7 @@ Live betekent hier eerst: intern gebruiken met echte producten, echte voorraad, 
 | PostgreSQL database | deels klaar | Draait al, maar backup/herstel moet nog bewezen worden. |
 | Secrets buiten Git | klaar als werkwijze | Controleer Dockhand env voor `DATABASE_URL` en `CREDENTIAL_ENCRYPTION_KEY`. |
 | Connector mockmodus | klaar | `CONNECTORS_LIVE_MODE=false` houden tot live platformtest. |
-| Backup aanwezig | open | Dagelijkse PostgreSQL backup op NAS instellen. |
+| Backup aanwezig | deels klaar | `postgres_backup` service is toegevoegd; controleer na deploy of er een `.dump` en `.sha256` bestand staat. |
 | Hersteltest uitgevoerd | open | Een backup terugzetten naar testdatabase en resultaat noteren. |
 | Etsy live test | open | Pas na backup/herstel en juiste credentials. |
 | Shopify live test | open | Pas na backup/herstel en juiste credentials. |
@@ -115,7 +115,7 @@ No-go als:
 ## Aanbevolen volgorde vanaf nu
 
 1. NAS healthchecks actief krijgen.
-2. PostgreSQL backup automatiseren.
+2. PostgreSQL backup controleren na deploy.
 3. Restore-test uitvoeren en noteren.
 4. Productcatalogus met echte producten vullen.
 5. Voorraad/filament echt invoeren.

@@ -49,7 +49,7 @@ Belangrijk: meerdere `deels klaar` punten zijn functioneel als prototype, maar t
 
 ## Belangrijkste open werk richting echte v1.0
 
-1. PostgreSQL backup automatiseren op de NAS.
+1. PostgreSQL backup na NAS-deploy controleren.
 2. Restore-test uitvoeren en resultaat noteren.
 3. Echte Etsy connector live testen en aanvullen: OAuth/tokenverversing, taxonomyvelden, productfoto-upload en orderimportdetails.
 4. Shopify live testen met echte credentials: productpublicatie, bulkvarianten, orderimport en voorraad-sync.
@@ -62,6 +62,7 @@ Belangrijk: meerdere `deels klaar` punten zijn functioneel als prototype, maar t
 - Next.js is de hoofdinterface.
 - Dashboardkaarten klikken door naar de juiste werkmodules.
 - NAS Next.js compose heeft backend- en frontend-healthchecks.
+- NAS Next.js compose heeft een `postgres_backup` service voor dagelijkse PostgreSQL dumps.
 - V1.0 livegang-runbook is toegevoegd in `docs/V1_LIVEGANG_RUNBOOK.md`.
 - Connectoren blijven standaard veilig in mockmodus.
-- Nog niet live-klaar voor echte platformorders: backup en restore-test ontbreken nog.
+- Nog niet live-klaar voor echte platformorders: backup moet na deploy gecontroleerd worden en restore-test ontbreekt nog.

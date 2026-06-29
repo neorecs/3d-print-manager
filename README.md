@@ -134,6 +134,8 @@ De NAS-compose bevat healthchecks voor:
 
 Het v1.0 livegang-runbook staat in `docs/V1_LIVEGANG_RUNBOOK.md`. Gebruik dat document als go/no-go lijst voordat echte platformtokens, echte orders of live publicaties worden gebruikt.
 
+De NAS-compose bevat ook een `postgres_backup` service. Deze maakt bij start een PostgreSQL backup en daarna standaard dagelijks. Details staan in `docs/BACKUP_EN_HERSTEL.md`.
+
 ## Platformconnectors
 
 De connectorlaag draait standaard in mockmodus:
