@@ -3,6 +3,8 @@ import { MetricCard } from "@/components/MetricCard";
 import { PageHeader } from "@/components/PageHeader";
 import { SectionCard } from "@/components/SectionCard";
 
+export const dynamic = "force-dynamic";
+
 export default function SettingsPage() {
   return (
     <AppShell>
