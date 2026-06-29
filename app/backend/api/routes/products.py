@@ -1,5 +1,7 @@
 from fastapi import APIRouter
 from api.routes_shared import *
+from services.product_service import generate_product_translations_for_product
+from services.upload_service import delete_uploaded_media_file
 
 router = APIRouter()
 
@@ -110,20 +112,6 @@ def clear_primary_product_media(db: Session, product_id: int, exclude_media_id: 
             item.is_primary = False
 
 
-def delete_uploaded_media_file(file_path: str | None) -> None:
-    if not file_path or not file_path.startswith("/uploads/product_media/"):
-        return
-    relative_path = file_path.removeprefix("/uploads/")
-    target = Path("uploads") / relative_path
-    try:
-        resolved_root = UPLOAD_ROOT.resolve()
-        resolved_target = target.resolve()
-        if resolved_root in resolved_target.parents and resolved_target.is_file():
-            resolved_target.unlink()
-    except OSError:
-        return
-
-
 @router.get("/products/{product_id}/tags")
 def list_product_tags(product_id: int, db: Session = Depends(get_db)):
     query = select(ProductTag).where(ProductTag.product_id == product_id).order_by(ProductTag.tag)
@@ -184,49 +172,7 @@ def save_product_translation(product_id: int, payload: ProductTranslationCreate,
 def generate_product_translations(product_id: int, payload: ProductTranslationGenerate | None = None, db: Session = Depends(get_db)):
     payload = payload or ProductTranslationGenerate()
     product = get_or_404(db, Product, product_id)
-    tags = [item.tag for item in db.scalars(select(ProductTag).where(ProductTag.product_id == product_id)).all()]
-    source = {
-        "name": product.name,
-        "title": product.internal_title or product.name,
-        "short_description": product.short_description,
-        "long_description": product.long_description,
-        "sales_description": product.sales_description,
-        "seo_title": product.seo_title,
-        "seo_description": product.seo_description,
-        "tags": tags,
-    }
-    generated = []
-    skipped = []
-    for language_code in [code.strip().lower() for code in payload.language_codes if code.strip()]:
-        existing = db.scalar(select(ProductTranslation).where(ProductTranslation.product_id == product_id, ProductTranslation.language_code == language_code))
-        if existing and not payload.overwrite:
-            skipped.append(language_code)
-            continue
-        translated = generate_product_translation(source, language_code, get_settings())
-        data = {
-            "language_code": language_code,
-            "title": translated.get("title"),
-            "short_description": translated.get("short_description"),
-            "long_description": translated.get("long_description"),
-            "sales_description": translated.get("sales_description"),
-            "seo_title": translated.get("seo_title"),
-            "seo_description": translated.get("seo_description"),
-            "tags": translated.get("tags"),
-            "source": translated.get("source") or "ai_translation",
-            "status": "concept",
-        }
-        if existing:
-            for key, value in data.items():
-                setattr(existing, key, value)
-            item = existing
-        else:
-            item = ProductTranslation(product_id=product_id, **data)
-            db.add(item)
-        generated.append(item)
-    if generated:
-        mark_product_publications_sync_needed(db, product_id)
-    db.commit()
-    return {"generated": [to_dict(item) for item in generated], "skipped": skipped}
+    return generate_product_translations_for_product(db, product, payload)
 
 
 @router.get("/products/{product_id}/publications")

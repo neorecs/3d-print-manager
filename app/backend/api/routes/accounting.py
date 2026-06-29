@@ -241,20 +241,6 @@ def close_vat_period(payload: VatPeriodCloseCreate, db: Session = Depends(get_db
     return to_dict(item)
 
 
-def seed_default_fiscal_settings(db: Session) -> None:
-    defaults = {
-        "btw_regime": ("standaard", "Voorlopig standaard btw-regime; controleer dit met boekhouder/fiscalist."),
-        "kor_enabled": ("false", "Kleineondernemersregeling niet actief tenzij bewust aangezet."),
-        "default_country": ("NL", "Standaardland voor btw-controle."),
-        "eu_sales_enabled": ("false", "EU-verkoopregels later expliciet controleren."),
-        "default_vat_rate": ("21", "Standaard btw-percentage voor voorlopige boekingen."),
-    }
-    for name, (value, note) in defaults.items():
-        if not db.scalar(select(AccountingFiscalSetting).where(AccountingFiscalSetting.setting_name == name)):
-            db.add(AccountingFiscalSetting(setting_name=name, value=value, note=note))
-    db.commit()
-
-
 @router.get("/accounting/fiscal-settings")
 def list_accounting_fiscal_settings(db: Session = Depends(get_db)):
     seed_default_fiscal_settings(db)
@@ -307,23 +293,6 @@ def update_cost_setting(item_id: int, payload: CostSettingCreate, db: Session = 
     return to_dict(item)
 
 
-def seed_default_cost_settings(db: Session) -> None:
-    defaults = {
-        "packaging_cost_per_order": 0.75,
-        "platform_fee_percent": 6.5,
-        "platform_fee_fixed": 0.30,
-        "shipping_cost_per_order": 0.00,
-        "electricity_cost_per_hour": 0.35,
-    }
-    changed = False
-    for name, value in defaults.items():
-        if not db.scalar(select(CostSetting).where(CostSetting.setting_name == name)):
-            db.add(CostSetting(setting_name=name, value=value))
-            changed = True
-    if changed:
-        db.commit()
-
-
 @router.get("/orders/{item_id}/profit")
 def get_order_profit(item_id: int, db: Session = Depends(get_db)):
     get_or_404(db, Order, item_id)
@@ -341,52 +310,6 @@ def recalculate_order_profit(item_id: int, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(calculation)
     return to_dict(calculation)
-
-
-def calculate_order_profit(db: Session, order_id: int) -> OrderProfitCalculation:
-    order = get_or_404(db, Order, order_id)
-    seed_default_cost_settings(db)
-    settings = {
-        item.setting_name: float(item.value)
-        for item in db.scalars(select(CostSetting)).all()
-    }
-    items = db.scalars(select(OrderItem).where(OrderItem.order_id == order_id)).all()
-
-    sale_amount = sum(float(item.unit_sale_price or 0) * item.quantity_ordered for item in items)
-    if sale_amount == 0 and order.total_amount is not None:
-        sale_amount = float(order.total_amount)
-
-    filament_cost = 0.0
-    electricity_hours = 0.0
-    for item in items:
-        if not item.product_variant_id:
-            continue
-        variant = db.get(ProductVariant, item.product_variant_id)
-        if not variant:
-            continue
-        grams = float(variant.estimated_filament_grams or 0) * item.quantity_ordered
-        filament_cost += grams * get_filament_price_per_gram(db, variant.material, variant.color)
-        electricity_hours += ((variant.estimated_print_time_minutes or 0) * item.quantity_ordered) / 60
-
-    packaging_cost = settings.get("packaging_cost_per_order", 0)
-    platform_fee = sale_amount * (settings.get("platform_fee_percent", 0) / 100) + settings.get("platform_fee_fixed", 0)
-    shipping_cost = settings.get("shipping_cost_per_order", 0)
-    electricity_cost = electricity_hours * settings.get("electricity_cost_per_hour", 0)
-    estimated_profit = sale_amount - filament_cost - packaging_cost - platform_fee - shipping_cost - electricity_cost
-
-    calculation = db.scalar(select(OrderProfitCalculation).where(OrderProfitCalculation.order_id == order_id))
-    if not calculation:
-        calculation = OrderProfitCalculation(order_id=order_id)
-        db.add(calculation)
-
-    calculation.sale_amount = round(sale_amount, 2)
-    calculation.filament_cost = round(filament_cost, 2)
-    calculation.packaging_cost = round(packaging_cost, 2)
-    calculation.platform_fee = round(platform_fee, 2)
-    calculation.shipping_cost = round(shipping_cost, 2)
-    calculation.electricity_cost = round(electricity_cost, 2)
-    calculation.estimated_profit = round(estimated_profit, 2)
-    return calculation
 
 
 

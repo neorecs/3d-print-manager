@@ -1,5 +1,6 @@
 from fastapi import APIRouter
 from api.routes_shared import *
+from services.platform_service import connector_status_payload, normalize_language_list, sync_platform_inventory_payload
 
 router = APIRouter()
 
@@ -74,15 +75,6 @@ def update_sales_market(item_id: int, payload: SalesMarketCreate, db: Session = 
     return to_dict(item)
 
 
-def normalize_language_list(value: str | None) -> str | None:
-    languages = []
-    for language in (value or "").split(","):
-        cleaned = language.strip().lower()
-        if cleaned and cleaned not in languages:
-            languages.append(cleaned)
-    return ", ".join(languages) if languages else None
-
-
 @router.get("/platforms/{platform_id}/credentials")
 def list_platform_credentials(platform_id: int, db: Session = Depends(get_db)):
     get_or_404(db, Platform, platform_id)
@@ -129,54 +121,12 @@ def delete_platform_credential(item_id: int, db: Session = Depends(get_db)):
 @router.get("/platforms/{platform_id}/connector-status")
 def platform_connector_status(platform_id: int, db: Session = Depends(get_db)):
     platform = get_or_404(db, Platform, platform_id)
-    connector = get_platform_connector(db, platform)
-    status = connector.status()
-    return {
-        "platform_id": platform.id,
-        "platform": platform.name,
-        "platform_type": status.platform_type,
-        "mode": status.mode,
-        "required_credentials": status.required_credentials,
-        "configured_credentials": status.configured_credentials,
-        "missing_credentials": status.missing_credentials,
-        "ready_for_live": status.ready_for_live,
-    }
+    return connector_status_payload(db, platform)
 
 
 @router.post("/platforms/{platform_id}/sync-inventory")
 def sync_platform_inventory(platform_id: int, db: Session = Depends(get_db)):
     platform = get_or_404(db, Platform, platform_id)
-    if (platform.type or "").lower() != "shopify":
-        raise HTTPException(status_code=400, detail="Voorraad-sync is nu alleen voor Shopify beschikbaar")
-
-    connector = get_platform_connector(db, platform)
-    links = {
-        link.product_variant_id: link
-        for link in db.scalars(
-            select(ProductVariantPlatformLink).where(ProductVariantPlatformLink.platform_id == platform.id)
-        ).all()
-    }
-    prepared = []
-    missing_variant_ids = []
-    for inventory in db.scalars(select(ProductInventory).order_by(ProductInventory.id)).all():
-        link = links.get(inventory.product_variant_id)
-        if not link or not link.external_inventory_id:
-            missing_variant_ids.append(inventory.product_variant_id)
-            continue
-        prepared.append(
-            {
-                "product_inventory_id": inventory.id,
-                "product_variant_id": inventory.product_variant_id,
-                "sku": link.external_sku,
-                "external_inventory_id": link.external_inventory_id,
-                "quantity": inventory.free_stock,
-            }
-        )
-
-    result = connector.sync_inventory(prepared)
-    result["prepared"] = len(prepared)
-    result["missing_inventory_links"] = sorted(set(missing_variant_ids))
-    result["mode"] = connector.status().mode
-    return result
+    return sync_platform_inventory_payload(db, platform)
 
 
