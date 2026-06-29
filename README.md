@@ -127,6 +127,13 @@ CREDENTIAL_ENCRYPTION_KEY=
 
 Zet secrets niet in Git. De Next.js service gebruikt intern standaard `http://backend:8000`.
 
+De NAS-compose bevat healthchecks voor:
+
+- backend: `/health`
+- frontend_next: Next.js startpagina
+
+Het v1.0 livegang-runbook staat in `docs/V1_LIVEGANG_RUNBOOK.md`. Gebruik dat document als go/no-go lijst voordat echte platformtokens, echte orders of live publicaties worden gebruikt.
+
 ## Platformconnectors
 
 De connectorlaag draait standaard in mockmodus:

@@ -88,3 +88,13 @@ Daarna voeg je per platform credentials toe, maar laat je `CONNECTORS_LIVE_MODE=
 - Administratiebasis testen.
 - AI Product Assistent in mockmodus gebruiken.
 - Etsy/Shopify velden klaarzetten zonder te publiceren.
+
+## Relatie met v1.0 livegang
+
+De volledige go/no-go lijst staat in `docs/V1_LIVEGANG_RUNBOOK.md`.
+
+Kort gezegd:
+
+1. Eerst intern live met echte producten, voorraad en printers.
+2. Daarna backup en restore-test bewijzen.
+3. Daarna pas per verkoopplatform een bewuste live test uitvoeren.

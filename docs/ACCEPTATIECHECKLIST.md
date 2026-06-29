@@ -49,8 +49,19 @@ Belangrijk: meerdere `deels klaar` punten zijn functioneel als prototype, maar t
 
 ## Belangrijkste open werk richting echte v1.0
 
-1. Echte Etsy connector live testen en aanvullen: OAuth/tokenverversing, taxonomyvelden, productfoto-upload en orderimportdetails.
-2. Shopify live testen met echte credentials: productpublicatie, bulkvarianten, orderimport en voorraad-sync.
-3. Vaste productiekey instellen buiten Docker Compose fallback voordat echte tokens worden opgeslagen.
-4. Verdere service-splitsing voor planning, analytics, costs en exports.
-5. Meer testdekking voor API-endpoints, exports, kostenberekening en connectorfouten.
+1. PostgreSQL backup automatiseren op de NAS.
+2. Restore-test uitvoeren en resultaat noteren.
+3. Echte Etsy connector live testen en aanvullen: OAuth/tokenverversing, taxonomyvelden, productfoto-upload en orderimportdetails.
+4. Shopify live testen met echte credentials: productpublicatie, bulkvarianten, orderimport en voorraad-sync.
+5. Vaste productiekey instellen buiten Docker Compose fallback voordat echte tokens worden opgeslagen.
+6. Verdere service-splitsing voor planning, analytics, costs en exports.
+7. Meer testdekking voor API-endpoints, exports, kostenberekening en connectorfouten.
+
+## Livegangstatus 2026-06-29
+
+- Next.js is de hoofdinterface.
+- Dashboardkaarten klikken door naar de juiste werkmodules.
+- NAS Next.js compose heeft backend- en frontend-healthchecks.
+- V1.0 livegang-runbook is toegevoegd in `docs/V1_LIVEGANG_RUNBOOK.md`.
+- Connectoren blijven standaard veilig in mockmodus.
+- Nog niet live-klaar voor echte platformorders: backup en restore-test ontbreken nog.
