@@ -10,8 +10,11 @@ Versie 0.12 prototype:
 - PostgreSQL database
 - SQLAlchemy modellen
 - Alembic migration
-- Streamlit dashboard/prototype
-- Next.js frontend in opbouw onder `app/frontend_next`
+- FastAPI routes opgesplitst per domein onder `app/backend/api/routes/`
+- Businesslogica ondergebracht in services en domeinmodules
+- Centrale statuswaarden onder `app/backend/domain/statuses.py`
+- Streamlit dashboard/prototype als fallback
+- Next.js frontend onder `app/frontend_next`
 - Docker Compose
 - Dummydata voor testen zonder Etsy- of Shopify-koppelingen
 - Producten aanmaken en bewerken via Streamlit
@@ -109,7 +112,7 @@ De Next.js frontend gebruikt de FastAPI backend via:
 NEXT_PUBLIC_API_BASE_URL=http://localhost:38080
 ```
 
-Streamlit blijft beschikbaar tot de belangrijkste schermen zijn gemigreerd naar Next.js.
+Streamlit blijft beschikbaar als fallback. Nieuwe productiewaardige schermen en verbeteringen horen in Next.js. De uitfaseringslijst staat in `docs/STREAMLIT_UITFASERING.md`.
 
 ## NAS Next.js stack
 
@@ -166,9 +169,25 @@ docker compose exec -T backend python -m unittest discover -s tests -v
 De huidige suite controleert:
 
 - voorraadreservering en alleen tekort naar printplanning;
+- herhaald orderverwerken zonder dubbele reservering;
+- blokkeren van negatieve vrije productvoorraad;
 - printresultaten verwerken naar order, vrije voorraad en afgekeurde prints;
 - publicatievalidatie en mock-publicatie via de connectorlaag;
+- Etsy/Shopify connectorfouten zonder live calls in mockmodus;
 - voorraadadvies op basis van verkoop, veiligheidsvoorraad en vrije voorraad.
+
+De tests zijn opgesplitst per domein:
+
+```text
+app/backend/tests/
+  support.py
+  test_ai_product_assistant.py
+  test_connectors_etsy.py
+  test_connectors_shopify.py
+  test_inventory.py
+  test_planning.py
+  test_publishing.py
+```
 
 ## Acceptatiechecklist
 
@@ -194,9 +213,26 @@ Invoke-RestMethod -Method Post http://localhost:38080/seed
 app/
   backend/
     api/
+      routes/
+        health.py
+        ai.py
+        accounting.py
+        products.py
+        orders.py
+        inventory.py
+        planning.py
+        platforms.py
+        bambu.py
+        uploads.py
     models/
     schemas/
+    domain/
+      statuses.py
     services/
+      accounting_service.py
+      platform_service.py
+      product_service.py
+      upload_service.py
     connectors/
       etsy/
       shopify/
@@ -221,6 +257,9 @@ docker-compose.yml
 - De backend staat los van de frontend.
 - Streamlit is tijdelijk prototype/fallback.
 - Next.js wordt de officiële frontend voor productiewaardige workflows.
+- API-routes blijven dun: request ontvangen, service aanroepen, response teruggeven.
+- Businessregels horen in `services/`, domeinmodules of module-specifieke servicebestanden.
+- Statusstrings worden centraal beheerd in `app/backend/domain/statuses.py`.
 - De interne productcatalogus is leidend.
 - Platformproducten zijn gekoppelde publicaties.
 - Bambu Studio blijft verantwoordelijk voor slicing en printvoorbereiding.
