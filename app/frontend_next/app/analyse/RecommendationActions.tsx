@@ -31,15 +31,15 @@ export function RecommendationActions({ recommendationId }: { recommendationId: 
 
   return (
     <div className="space-y-2">
-      {error ? <div className="text-sm font-semibold text-red-700">{error}</div> : null}
+      {error ? <div className="text-sm font-semibold text-red-300">{error}</div> : null}
       <div className="flex flex-wrap justify-end gap-2">
-        <button className="rounded-md border border-line bg-white px-3 py-2 text-sm font-bold text-slate-700 disabled:opacity-60" disabled={busy !== null} onClick={() => run("accept")} type="button">
+        <button className="rounded-md border border-line bg-slate-950/35 px-3 py-2 text-sm text-ink font-bold text-slate-300 disabled:opacity-60" disabled={busy !== null} onClick={() => run("accept")} type="button">
           {busy === "accept" ? "..." : "Accepteren"}
         </button>
-        <button className="rounded-md border border-line bg-white px-3 py-2 text-sm font-bold text-slate-700 disabled:opacity-60" disabled={busy !== null} onClick={() => run("ignore")} type="button">
+        <button className="rounded-md border border-line bg-slate-950/35 px-3 py-2 text-sm text-ink font-bold text-slate-300 disabled:opacity-60" disabled={busy !== null} onClick={() => run("ignore")} type="button">
           {busy === "ignore" ? "..." : "Negeren"}
         </button>
-        <button className="rounded-md bg-brand px-3 py-2 text-sm font-bold text-white disabled:opacity-60" disabled={busy !== null} onClick={() => run("convert-to-print-job")} type="button">
+        <button className="rounded-md bg-brand px-3 py-2 text-sm font-black text-slate-950 disabled:opacity-60" disabled={busy !== null} onClick={() => run("convert-to-print-job")} type="button">
           {busy === "convert-to-print-job" ? "..." : "Printtaak maken"}
         </button>
       </div>
@@ -73,10 +73,10 @@ export function GenerateRecommendationsButton() {
 
   return (
     <div className="flex flex-col items-end gap-2">
-      <button className="rounded-md bg-brand px-4 py-2 text-sm font-bold text-white disabled:opacity-60" disabled={busy} onClick={generate} type="button">
+      <button className="rounded-md bg-brand px-4 py-2 text-sm font-black text-slate-950 disabled:opacity-60" disabled={busy} onClick={generate} type="button">
         {busy ? "Genereren..." : "Voorraadadvies genereren"}
       </button>
-      {error ? <span className="text-sm font-semibold text-red-700">{error}</span> : null}
+      {error ? <span className="text-sm font-semibold text-red-300">{error}</span> : null}
     </div>
   );
 }

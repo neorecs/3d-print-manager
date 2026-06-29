@@ -69,8 +69,8 @@ export function ProductEditForm({ product }: { product: Product }) {
 
   return (
     <form className="space-y-4" onSubmit={handleSubmit}>
-      {message ? <div className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-700">{message}</div> : null}
-      {error ? <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm font-semibold text-red-700">{error}</div> : null}
+      {message ? <div className="rounded-md border border-emerald-400/25 bg-emerald-400/10 px-3 py-2 text-sm font-semibold text-emerald-300">{message}</div> : null}
+      {error ? <div className="rounded-md border border-red-400/25 bg-red-400/10 px-3 py-2 text-sm font-semibold text-red-300">{error}</div> : null}
 
       <div className="grid gap-4 md:grid-cols-2">
         <TextField label="Interne naam" value={name} onChange={setName} required />
@@ -78,9 +78,9 @@ export function ProductEditForm({ product }: { product: Product }) {
         <TextField label="Categorie" value={category} onChange={setCategory} />
         <TextField label="Producttype" value={productType} onChange={setProductType} />
         <label className="space-y-2">
-          <span className="text-sm font-bold text-slate-700">Status</span>
+          <span className="text-sm font-bold text-slate-300">Status</span>
           <select
-            className="w-full rounded-md border border-line bg-white px-3 py-2 text-sm outline-none focus:border-brand"
+            className="w-full rounded-md border border-line bg-slate-950/35 px-3 py-2 text-sm text-ink outline-none focus:border-brand"
             value={status}
             onChange={(event) => setStatus(event.target.value)}
           >
@@ -101,7 +101,7 @@ export function ProductEditForm({ product }: { product: Product }) {
 
       <div className="flex justify-end">
         <button
-          className="rounded-md bg-brand px-4 py-2 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-60"
+          className="rounded-md bg-brand px-4 py-2 text-sm font-black text-slate-950 disabled:cursor-not-allowed disabled:opacity-60"
           disabled={saving || !name}
           type="submit"
         >
@@ -125,9 +125,9 @@ function TextField({
 }) {
   return (
     <label className="space-y-2">
-      <span className="text-sm font-bold text-slate-700">{label}</span>
+      <span className="text-sm font-bold text-slate-300">{label}</span>
       <input
-        className="w-full rounded-md border border-line bg-white px-3 py-2 text-sm outline-none focus:border-brand"
+        className="w-full rounded-md border border-line bg-slate-950/35 px-3 py-2 text-sm text-ink outline-none focus:border-brand"
         onChange={(event) => onChange(event.target.value)}
         required={required}
         value={value}
@@ -147,9 +147,9 @@ function TextArea({
 }) {
   return (
     <label className="space-y-2">
-      <span className="text-sm font-bold text-slate-700">{label}</span>
+      <span className="text-sm font-bold text-slate-300">{label}</span>
       <textarea
-        className="min-h-28 w-full resize-y rounded-md border border-line bg-white px-3 py-2 text-sm leading-6 outline-none focus:border-brand"
+        className="min-h-28 w-full resize-y rounded-md border border-line bg-slate-950/35 px-3 py-2 text-sm text-ink leading-6 outline-none focus:border-brand"
         onChange={(event) => onChange(event.target.value)}
         value={value}
       />

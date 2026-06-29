@@ -121,7 +121,7 @@ export function CorrectionButton({ id, type, disabled = false }: { id: number; t
     router.refresh();
   }
   return (
-    <button className="font-bold text-brand hover:text-white disabled:text-muted" disabled={disabled || busy} onClick={run} type="button">
+    <button className="font-bold text-brand hover:text-slate-950 disabled:text-muted" disabled={disabled || busy} onClick={run} type="button">
       {busy ? "Bezig..." : type === "sale" ? "Credit" : "Correctie"}
     </button>
   );
@@ -139,14 +139,14 @@ export function ArchiveDocumentButton({ id, disabled = false }: { id: number; di
     }
     router.refresh();
   }
-  return <button className="font-bold text-brand hover:text-white disabled:text-muted" disabled={disabled} onClick={run} type="button">Archiveren</button>;
+  return <button className="font-bold text-brand hover:text-slate-950 disabled:text-muted" disabled={disabled} onClick={run} type="button">Archiveren</button>;
 }
 
 function Text({ label, value, onChange, placeholder, required = false }: { label: string; value: string; onChange: (value: string) => void; placeholder?: string; required?: boolean }) {
   return (
     <label className="space-y-2">
       <span className="text-sm font-bold text-slate-300">{label}</span>
-      <input className="w-full rounded-md border border-line bg-slate-950/35 px-3 py-2 text-ink text-sm outline-none focus:border-brand" onChange={(event) => onChange(event.target.value)} placeholder={placeholder} required={required} value={value} />
+      <input className="w-full rounded-md border border-line bg-slate-950/35 px-3 py-2 text-sm text-ink outline-none focus:border-brand" onChange={(event) => onChange(event.target.value)} placeholder={placeholder} required={required} value={value} />
     </label>
   );
 }
@@ -155,7 +155,7 @@ function Select({ label, value, onChange, options }: { label: string; value: str
   return (
     <label className="space-y-2">
       <span className="text-sm font-bold text-slate-300">{label}</span>
-      <select className="w-full rounded-md border border-line bg-slate-950/35 px-3 py-2 text-ink text-sm outline-none focus:border-brand" onChange={(event) => onChange(event.target.value)} value={value}>
+      <select className="w-full rounded-md border border-line bg-slate-950/35 px-3 py-2 text-sm text-ink outline-none focus:border-brand" onChange={(event) => onChange(event.target.value)} value={value}>
         {options.map((option) => <option key={option} value={option}>{option}</option>)}
       </select>
     </label>
@@ -165,4 +165,3 @@ function Select({ label, value, onChange, options }: { label: string; value: str
 function Notice({ tone, text }: { tone: "good" | "bad"; text: string }) {
   return <div className={`rounded-md border px-3 py-2 text-sm font-semibold ${tone === "good" ? "border-emerald-400/25 bg-emerald-400/10 text-emerald-300" : "border-red-400/25 bg-red-400/10 text-red-300"}`}>{text}</div>;
 }
-

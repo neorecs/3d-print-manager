@@ -94,4 +94,3 @@ function SalesChannelsContent({ data }: { data: SalesChannelsData }) {
     </div>
   );
 }
-

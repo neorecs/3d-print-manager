@@ -117,7 +117,7 @@ export function ProductCreateForm() {
   return (
     <form className="space-y-5" onSubmit={handleSubmit}>
       {error ? (
-        <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
+        <div className="rounded-md border border-red-400/25 bg-red-400/10 px-4 py-3 text-sm font-semibold text-red-300">
           {error}
         </div>
       ) : null}
@@ -129,9 +129,9 @@ export function ProductCreateForm() {
           <TextField label="Categorie" value={category} onChange={setCategory} placeholder="Bijv. Decoratie" />
           <TextField label="Producttype" value={productType} onChange={setProductType} placeholder="Bijv. Sleutelhanger, beeldje, houder" />
           <label className="space-y-2">
-            <span className="text-sm font-bold text-slate-700">Status</span>
+            <span className="text-sm font-bold text-slate-300">Status</span>
             <select
-              className="w-full rounded-md border border-line bg-white px-3 py-2 text-sm outline-none focus:border-brand"
+              className="w-full rounded-md border border-line bg-slate-950/35 px-3 py-2 text-sm text-ink outline-none focus:border-brand"
               value={status}
               onChange={(event) => setStatus(event.target.value)}
             >
@@ -153,7 +153,7 @@ export function ProductCreateForm() {
       </FormBlock>
 
       <FormBlock title="Eerste variant" description="Maak meteen een eerste SKU met materiaal, kleur, printtijd en prijs.">
-        <label className="flex items-center gap-3 rounded-md border border-line bg-slate-50 px-3 py-3 text-sm font-semibold">
+        <label className="flex items-center gap-3 rounded-md border border-line bg-panelSoft px-3 py-3 text-sm font-semibold">
           <input checked={includeVariant} onChange={(event) => setIncludeVariant(event.target.checked)} type="checkbox" />
           Eerste variant direct aanmaken
         </label>
@@ -172,11 +172,11 @@ export function ProductCreateForm() {
       </FormBlock>
 
       <div className="flex flex-wrap justify-end gap-3">
-        <a className="rounded-md border border-line bg-white px-4 py-2 text-sm font-bold text-slate-700" href="/catalogus">
+        <a className="rounded-md border border-line bg-slate-950/35 px-4 py-2 text-sm font-bold text-slate-300" href="/catalogus">
           Annuleren
         </a>
         <button
-          className="rounded-md bg-brand px-4 py-2 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-60"
+          className="rounded-md bg-brand px-4 py-2 text-sm font-black text-slate-950 disabled:cursor-not-allowed disabled:opacity-60"
           disabled={saving || !name}
           type="submit"
         >
@@ -189,7 +189,7 @@ export function ProductCreateForm() {
 
 function FormBlock({ title, description, children }: { title: string; description: string; children: React.ReactNode }) {
   return (
-    <section className="rounded-lg border border-line bg-white shadow-card">
+    <section className="rounded-lg border border-line bg-panel shadow-card">
       <div className="border-b border-line px-4 py-4">
         <h2 className="text-base font-bold text-ink">{title}</h2>
         <p className="mt-1 text-sm leading-6 text-muted">{description}</p>
@@ -216,9 +216,9 @@ function TextField({
 }) {
   return (
     <label className="space-y-2">
-      <span className="text-sm font-bold text-slate-700">{label}</span>
+      <span className="text-sm font-bold text-slate-300">{label}</span>
       <input
-        className="w-full rounded-md border border-line bg-white px-3 py-2 text-sm outline-none focus:border-brand"
+        className="w-full rounded-md border border-line bg-slate-950/35 px-3 py-2 text-sm text-ink outline-none focus:border-brand"
         inputMode={inputMode}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
@@ -242,9 +242,9 @@ function TextArea({
 }) {
   return (
     <label className="space-y-2">
-      <span className="text-sm font-bold text-slate-700">{label}</span>
+      <span className="text-sm font-bold text-slate-300">{label}</span>
       <textarea
-        className="min-h-28 w-full resize-y rounded-md border border-line bg-white px-3 py-2 text-sm leading-6 outline-none focus:border-brand"
+        className="min-h-28 w-full resize-y rounded-md border border-line bg-slate-950/35 px-3 py-2 text-sm text-ink leading-6 outline-none focus:border-brand"
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
         value={value}

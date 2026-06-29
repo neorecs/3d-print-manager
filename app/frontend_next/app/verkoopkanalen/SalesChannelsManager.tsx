@@ -104,7 +104,7 @@ export function SalesChannelsManager({ platforms }: { platforms: Platform[] }) {
           <TextField label="Naam" value={newDraft.name} onChange={(value) => updateNew("name", value)} placeholder="Bijv. Mijn Shopify" />
           <TextField label="Type" value={newDraft.type} onChange={(value) => updateNew("type", value)} placeholder="shopify, etsy, woocommerce" />
           <TextField label="API basis-URL" value={newDraft.api_base_url} onChange={(value) => updateNew("api_base_url", value)} placeholder="Optioneel" />
-          <label className="flex items-center gap-3 rounded-md border border-line bg-slate-950/35 px-3 py-2 text-ink text-sm font-semibold">
+          <label className="flex items-center gap-3 rounded-md border border-line bg-slate-950/35 px-3 py-2 text-sm text-ink font-semibold">
             <input checked={newDraft.active} onChange={(event) => updateNew("active", event.target.checked)} type="checkbox" />
             Actief
           </label>
@@ -136,7 +136,7 @@ export function SalesChannelsManager({ platforms }: { platforms: Platform[] }) {
                 <TextField label="Naam" value={draft.name} onChange={(value) => updateExisting(platform.id, "name", value)} />
                 <TextField label="Type" value={draft.type} onChange={(value) => updateExisting(platform.id, "type", value)} />
                 <TextField label="API basis-URL" value={draft.api_base_url} onChange={(value) => updateExisting(platform.id, "api_base_url", value)} />
-                <label className="flex items-center gap-3 rounded-md border border-line bg-slate-950/35 px-3 py-2 text-ink text-sm font-semibold">
+                <label className="flex items-center gap-3 rounded-md border border-line bg-slate-950/35 px-3 py-2 text-sm text-ink font-semibold">
                   <input checked={draft.active} onChange={(event) => updateExisting(platform.id, "active", event.target.checked)} type="checkbox" />
                   Actief
                 </label>
@@ -158,8 +158,7 @@ function TextField({ label, value, onChange, placeholder }: { label: string; val
   return (
     <label className="space-y-2">
       <span className="text-sm font-bold text-slate-300">{label}</span>
-      <input className="w-full rounded-md border border-line bg-slate-950/35 px-3 py-2 text-ink text-sm outline-none focus:border-brand" onChange={(event) => onChange(event.target.value)} placeholder={placeholder} value={value} />
+      <input className="w-full rounded-md border border-line bg-slate-950/35 px-3 py-2 text-sm text-ink outline-none focus:border-brand" onChange={(event) => onChange(event.target.value)} placeholder={placeholder} value={value} />
     </label>
   );
 }
-

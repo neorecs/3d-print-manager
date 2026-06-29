@@ -363,7 +363,7 @@ export function PrintPlanningManager({
                       <NumberField label="Filament gram" value={draft.estimated_filament_grams} onChange={(value) => updateDraft(job.id, "estimated_filament_grams", value)} />
                       <label className="space-y-2">
                         <span className="text-sm font-bold text-slate-300">Status</span>
-                        <select className="w-full rounded-md border border-line bg-slate-950/35 px-3 py-2 text-ink text-sm outline-none focus:border-brand" value={draft.status} onChange={(event) => updateDraft(job.id, "status", event.target.value)}>
+                        <select className="w-full rounded-md border border-line bg-slate-950/35 px-3 py-2 text-sm text-ink outline-none focus:border-brand" value={draft.status} onChange={(event) => updateDraft(job.id, "status", event.target.value)}>
                           {printJobStatuses.map((status) => (
                             <option key={status} value={status}>{status.replace(/_/g, " ")}</option>
                           ))}
@@ -471,7 +471,7 @@ function NumberField({ label, value, onChange }: { label: string; value: string;
     <label className="space-y-2">
       <span className="text-sm font-bold text-slate-300">{label}</span>
       <input
-        className="w-full rounded-md border border-line bg-slate-950/35 px-3 py-2 text-ink text-sm outline-none focus:border-brand"
+        className="w-full rounded-md border border-line bg-slate-950/35 px-3 py-2 text-sm text-ink outline-none focus:border-brand"
         inputMode="numeric"
         onChange={(event) => onChange(event.target.value)}
         value={value}
@@ -479,5 +479,3 @@ function NumberField({ label, value, onChange }: { label: string; value: string;
     </label>
   );
 }
-
-

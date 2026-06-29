@@ -55,8 +55,8 @@ export function OrderActions({ orderId, accountingSale }: { orderId: number; acc
 
   return (
     <div className="space-y-3">
-      {message ? <div className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-700">{message}</div> : null}
-      {error ? <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm font-semibold text-red-700">{error}</div> : null}
+      {message ? <div className="rounded-md border border-emerald-400/25 bg-emerald-400/10 px-3 py-2 text-sm font-semibold text-emerald-300">{message}</div> : null}
+      {error ? <div className="rounded-md border border-red-400/25 bg-red-400/10 px-3 py-2 text-sm font-semibold text-red-300">{error}</div> : null}
       {accountingSale ? (
         <div className="rounded-md border border-sky-200 bg-sky-50 px-3 py-2 text-sm font-semibold text-sky-800">
           Verkoopboeking #{accountingSale.id} bestaat al: {accountingSale.invoice_number || "zonder factuurnummer"}.
@@ -65,7 +65,7 @@ export function OrderActions({ orderId, accountingSale }: { orderId: number; acc
       <div className="flex flex-wrap gap-2">
         {(Object.keys(actionLabels) as OrderAction[]).map((action) => (
           <button
-            className="rounded-md border border-line bg-white px-3 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+            className="rounded-md border border-line bg-slate-950/35 px-3 py-2 text-sm text-ink font-bold text-slate-300 hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-60"
             disabled={busyAction !== null || (action === "create-accounting-sale" && Boolean(accountingSale))}
             key={action}
             onClick={() => runAction(action)}

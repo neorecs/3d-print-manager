@@ -172,10 +172,10 @@ export function InventoryManager({
 
   return (
     <div className="space-y-5">
-      {message ? <div className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-700">{message}</div> : null}
-      {error ? <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm font-semibold text-red-700">{error}</div> : null}
+      {message ? <div className="rounded-md border border-emerald-400/25 bg-emerald-400/10 px-3 py-2 text-sm font-semibold text-emerald-300">{message}</div> : null}
+      {error ? <div className="rounded-md border border-red-400/25 bg-red-400/10 px-3 py-2 text-sm font-semibold text-red-300">{error}</div> : null}
 
-      <form className="rounded-lg border border-line bg-slate-50 p-4" onSubmit={createInventory}>
+      <form className="rounded-lg border border-line bg-slate-950/25 p-4" onSubmit={createInventory}>
         <div className="mb-4">
           <h3 className="font-bold text-ink">Voorraadregel toevoegen</h3>
           <p className="mt-1 text-sm text-muted">Maak per productvariant een voorraadregel met vrije voorraad, reserveringen, minimum en opslaglocatie.</p>
@@ -185,7 +185,7 @@ export function InventoryManager({
             <InventoryFields draft={newDraft} variants={variants} onChange={updateNew} />
             <div className="mt-4 flex justify-end">
               <button
-                className="rounded-md bg-brand px-4 py-2 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-60"
+                className="rounded-md bg-brand px-4 py-2 text-sm font-black text-slate-950 disabled:cursor-not-allowed disabled:opacity-60"
                 disabled={savingKey === "new" || !newDraft.product_variant_id}
                 type="submit"
               >
@@ -194,7 +194,7 @@ export function InventoryManager({
             </div>
           </>
         ) : (
-          <div className="rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">
+          <div className="rounded-md border border-amber-400/25 bg-amber-400/10 px-4 py-3 text-sm font-semibold text-amber-800">
             Maak eerst minimaal een variant aan. Voorraad wordt altijd aan een variant gekoppeld.
           </div>
         )}
@@ -209,7 +209,7 @@ export function InventoryManager({
             const lowStock = freeStock <= minimum;
 
             return (
-              <details className="rounded-lg border border-line bg-white p-4" key={item.id}>
+              <details className="rounded-lg border border-line bg-panelSoft p-4" key={item.id}>
                 <summary className="cursor-pointer list-none">
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
@@ -219,13 +219,13 @@ export function InventoryManager({
                       </div>
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-700">
+                      <span className="rounded-full bg-slate-800 px-2.5 py-1 text-xs font-bold text-slate-300">
                         vrij: {Math.max(item.quantity_on_hand - item.quantity_reserved, 0)}
                       </span>
                       {lowStock ? (
                         <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-bold text-amber-800">lage voorraad</span>
                       ) : (
-                        <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-bold text-emerald-800">voldoende</span>
+                        <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-bold text-emerald-300">voldoende</span>
                       )}
                     </div>
                   </div>
@@ -236,12 +236,12 @@ export function InventoryManager({
                     variants={variants}
                     onChange={(field, value) => updateExisting(item.id, field, value)}
                   />
-                  <div className="mt-4 rounded-md bg-slate-50 px-3 py-2 text-sm text-muted">
+                  <div className="mt-4 rounded-md bg-panelSoft px-3 py-2 text-sm text-muted">
                     Vrije voorraad: <strong className="text-ink">{freeStock}</strong>. Minimum: <strong className="text-ink">{minimum}</strong>.
                   </div>
                   <div className="mt-4 flex justify-end">
                     <button
-                      className="rounded-md bg-brand px-4 py-2 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-60"
+                      className="rounded-md bg-brand px-4 py-2 text-sm font-black text-slate-950 disabled:cursor-not-allowed disabled:opacity-60"
                       disabled={savingKey === String(item.id)}
                       onClick={() => saveInventory(item.id)}
                       type="button"
@@ -254,7 +254,7 @@ export function InventoryManager({
             );
           })
         ) : (
-          <div className="rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">
+          <div className="rounded-md border border-amber-400/25 bg-amber-400/10 px-4 py-3 text-sm font-semibold text-amber-800">
             Nog geen productvoorraad. Voeg hierboven de eerste voorraadregel toe.
           </div>
         )}
@@ -275,9 +275,9 @@ function InventoryFields({
   return (
     <div className="grid gap-4 md:grid-cols-2">
       <label className="space-y-2 md:col-span-2">
-        <span className="text-sm font-bold text-slate-700">Variant</span>
+        <span className="text-sm font-bold text-slate-300">Variant</span>
         <select
-          className="w-full rounded-md border border-line bg-white px-3 py-2 text-sm outline-none focus:border-brand"
+          className="w-full rounded-md border border-line bg-slate-950/35 px-3 py-2 text-sm text-ink outline-none focus:border-brand"
           onChange={(event) => onChange("product_variant_id", event.target.value)}
           value={draft.product_variant_id}
         >
@@ -313,9 +313,9 @@ function TextField({
 }) {
   return (
     <label className="space-y-2">
-      <span className="text-sm font-bold text-slate-700">{label}</span>
+      <span className="text-sm font-bold text-slate-300">{label}</span>
       <input
-        className="w-full rounded-md border border-line bg-white px-3 py-2 text-sm outline-none focus:border-brand"
+        className="w-full rounded-md border border-line bg-slate-950/35 px-3 py-2 text-sm text-ink outline-none focus:border-brand"
         inputMode={inputMode}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}

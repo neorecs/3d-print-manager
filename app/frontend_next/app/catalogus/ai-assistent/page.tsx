@@ -20,7 +20,7 @@ export default async function AIProductAssistantPage() {
       <PageHeader
         title="AI Product Assistent"
         description="Maak productconcepten voor titel, omschrijving, tags, SEO en varianten. Mockmodus blijft gratis."
-        actions={<a className="rounded-md border border-line bg-white px-4 py-2 text-sm font-bold text-slate-700" href="/catalogus">Naar catalogus</a>}
+        actions={<a className="rounded-md border border-line bg-slate-950/35 px-4 py-2 text-sm font-bold text-slate-300" href="/catalogus">Naar catalogus</a>}
       />
       <SectionCard title="Productconcept maken" description="Controleer altijd zelf de output voordat je iets opslaat of publiceert.">
         {error || !status ? <EmptyState title="AI-status niet bereikbaar" description={error || "Geen AI-status beschikbaar"} /> : <AIProductAssistant status={status} />}

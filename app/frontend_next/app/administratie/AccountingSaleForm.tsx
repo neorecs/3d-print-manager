@@ -113,7 +113,7 @@ export function AccountingSaleForm() {
           <span className="text-sm font-bold text-slate-300">Factuur of bewijs</span>
           <input
             accept="application/pdf,image/jpeg,image/png,image/webp"
-            className="w-full rounded-md border border-line bg-slate-950/35 px-3 py-2 text-ink text-sm"
+            className="w-full rounded-md border border-line bg-slate-950/35 px-3 py-2 text-sm text-ink"
             onChange={(event) => setFile(event.target.files?.[0] || null)}
             type="file"
           />
@@ -153,7 +153,7 @@ function TextField({
     <label className="space-y-2">
       <span className="text-sm font-bold text-slate-300">{label}</span>
       <input
-        className="w-full rounded-md border border-line bg-slate-950/35 px-3 py-2 text-ink text-sm outline-none focus:border-brand"
+        className="w-full rounded-md border border-line bg-slate-950/35 px-3 py-2 text-sm text-ink outline-none focus:border-brand"
         inputMode={inputMode}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
@@ -169,7 +169,7 @@ function SelectField({ label, value, onChange, options }: { label: string; value
   return (
     <label className="space-y-2">
       <span className="text-sm font-bold text-slate-300">{label}</span>
-      <select className="w-full rounded-md border border-line bg-slate-950/35 px-3 py-2 text-ink text-sm outline-none focus:border-brand" value={value} onChange={(event) => onChange(event.target.value)}>
+      <select className="w-full rounded-md border border-line bg-slate-950/35 px-3 py-2 text-sm text-ink outline-none focus:border-brand" value={value} onChange={(event) => onChange(event.target.value)}>
         {options.map((option) => (
           <option key={option} value={option}>{option}</option>
         ))}
@@ -183,7 +183,7 @@ function TextArea({ label, value, onChange, placeholder }: { label: string; valu
     <label className="block space-y-2">
       <span className="text-sm font-bold text-slate-300">{label}</span>
       <textarea
-        className="min-h-24 w-full rounded-md border border-line bg-slate-950/35 px-3 py-2 text-ink text-sm outline-none focus:border-brand"
+        className="min-h-24 w-full rounded-md border border-line bg-slate-950/35 px-3 py-2 text-sm text-ink outline-none focus:border-brand"
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
         value={value}
@@ -191,4 +191,3 @@ function TextArea({ label, value, onChange, placeholder }: { label: string; valu
     </label>
   );
 }
-

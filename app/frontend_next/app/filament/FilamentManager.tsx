@@ -293,7 +293,7 @@ function FilamentFields({
         <div className="text-sm font-bold text-slate-300">Berekende prijs per gram</div>
         <div className="mt-1 text-lg font-bold text-ink">{formatCurrency(pricePerGram)}</div>
       </div>
-      <label className="flex items-center gap-3 rounded-md border border-line bg-slate-950/35 px-3 py-2 text-ink text-sm font-semibold">
+      <label className="flex items-center gap-3 rounded-md border border-line bg-slate-950/35 px-3 py-2 text-sm text-ink font-semibold">
         <input checked={draft.active} onChange={(event) => onChange("active", event.target.checked)} type="checkbox" />
         Rol actief
       </label>
@@ -318,7 +318,7 @@ function TextField({
     <label className="space-y-2">
       <span className="text-sm font-bold text-slate-300">{label}</span>
       <input
-        className="w-full rounded-md border border-line bg-slate-950/35 px-3 py-2 text-ink text-sm outline-none focus:border-brand"
+        className="w-full rounded-md border border-line bg-slate-950/35 px-3 py-2 text-sm text-ink outline-none focus:border-brand"
         inputMode={inputMode}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
@@ -327,5 +327,3 @@ function TextField({
     </label>
   );
 }
-
-

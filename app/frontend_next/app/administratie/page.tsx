@@ -65,11 +65,11 @@ function AccountingContent({ data, filters }: { data: AccountingData; filters: {
         <form className="grid gap-4 md:grid-cols-[1fr_1fr_auto_auto]" action="/administratie">
           <label className="space-y-2">
             <span className="text-sm font-bold text-slate-300">Vanaf</span>
-            <input className="w-full rounded-md border border-line bg-slate-950/35 px-3 py-2 text-ink text-sm outline-none focus:border-brand" defaultValue={filters.startDate || ""} name="start_date" type="date" />
+            <input className="w-full rounded-md border border-line bg-slate-950/35 px-3 py-2 text-sm text-ink outline-none focus:border-brand" defaultValue={filters.startDate || ""} name="start_date" type="date" />
           </label>
           <label className="space-y-2">
             <span className="text-sm font-bold text-slate-300">Tot en met</span>
-            <input className="w-full rounded-md border border-line bg-slate-950/35 px-3 py-2 text-ink text-sm outline-none focus:border-brand" defaultValue={filters.endDate || ""} name="end_date" type="date" />
+            <input className="w-full rounded-md border border-line bg-slate-950/35 px-3 py-2 text-sm text-ink outline-none focus:border-brand" defaultValue={filters.endDate || ""} name="end_date" type="date" />
           </label>
           <div className="flex items-end">
             <button className="w-full rounded-md bg-brand px-4 py-2 text-sm font-black text-slate-950" type="submit">Filter toepassen</button>
@@ -326,4 +326,3 @@ function buildAccountingQuery(filters: { startDate?: string; endDate?: string })
   const query = params.toString();
   return query ? `?${query}` : "";
 }
-

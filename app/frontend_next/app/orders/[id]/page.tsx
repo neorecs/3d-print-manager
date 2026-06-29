@@ -25,7 +25,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
       <PageHeader
         title={data?.order.internal_order_number || "Orderdetail"}
         description="Controleer orderregels, voorraadreserveringen en printtaken voor deze order."
-        actions={<a className="rounded-md border border-line bg-white px-4 py-2 text-sm font-bold text-slate-700" href="/orders">Terug naar orders</a>}
+        actions={<a className="rounded-md border border-line bg-slate-950/35 px-4 py-2 text-sm font-bold text-slate-300" href="/orders">Terug naar orders</a>}
       />
       {error || !data ? <OrderError message={error || "Geen orderdata beschikbaar"} /> : <OrderContent data={data} />}
     </AppShell>
@@ -82,16 +82,16 @@ function OrderContent({ data }: { data: OrderDetailData }) {
             <SmallStat label="Netto" value={formatCurrency(data.accountingSale.net_amount)} />
             <SmallStat label="Btw" value={formatCurrency(data.accountingSale.vat_amount)} />
             <SmallStat label="Bruto" value={formatCurrency(data.accountingSale.gross_amount)} />
-            <div className="rounded-md border border-line bg-slate-50 px-3 py-3 md:col-span-2 xl:col-span-6">
+            <div className="rounded-md border border-line bg-panelSoft px-3 py-3 md:col-span-2 xl:col-span-6">
               <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                 <div>
                   <div className="text-xs font-bold uppercase text-muted">Status en controle</div>
                   <div className="mt-1 flex flex-wrap items-center gap-2">
                     <StatusBadge status={data.accountingSale.status} />
-                    <span className="text-sm text-slate-700">{data.accountingSale.note || "Controleer deze boeking voordat je aangifte voorbereidt."}</span>
+                    <span className="text-sm text-slate-300">{data.accountingSale.note || "Controleer deze boeking voordat je aangifte voorbereidt."}</span>
                   </div>
                 </div>
-                <a className="rounded-md border border-line bg-white px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50" href="/administratie">
+                <a className="rounded-md border border-line bg-slate-950/35 px-4 py-2 text-sm font-bold text-slate-300 hover:bg-white/5" href="/administratie">
                   Naar administratie
                 </a>
               </div>
@@ -152,7 +152,7 @@ function OrderContent({ data }: { data: OrderDetailData }) {
 
 function InfoRow({ label, value }: { label: string; value: string | React.ReactNode }) {
   return (
-    <div className="rounded-md border border-line bg-slate-50 px-3 py-3">
+    <div className="rounded-md border border-line bg-panelSoft px-3 py-3">
       <div className="text-xs font-bold uppercase text-muted">{label}</div>
       <div className="mt-1 font-semibold text-ink">{value}</div>
     </div>
@@ -176,7 +176,7 @@ function OrderItemRow({ item, product, variant }: { item: OrderItem; product?: P
 
 function PrintJobRow({ job, variant }: { job: PrintJob; variant?: ProductVariant }) {
   return (
-    <div className="rounded-lg border border-line bg-white p-4">
+    <div className="rounded-lg border border-line bg-panelSoft p-4">
       <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
         <div>
           <div className="font-bold text-ink">Printtaak #{job.id}</div>
@@ -198,7 +198,7 @@ function PrintJobRow({ job, variant }: { job: PrintJob; variant?: ProductVariant
 
 function SmallStat({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="rounded-md border border-line bg-slate-50 px-3 py-3">
+    <div className="rounded-md border border-line bg-panelSoft px-3 py-3">
       <div className="text-xs font-bold uppercase text-muted">{label}</div>
       <div className="mt-1 text-lg font-bold text-ink">{value}</div>
     </div>

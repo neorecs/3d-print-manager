@@ -59,7 +59,7 @@ export function TranslationManager({ product, translations }: Props) {
 
   return (
     <div className="space-y-4">
-      <div className="rounded-lg border border-line bg-slate-50 p-4">
+      <div className="rounded-lg border border-line bg-slate-950/25 p-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <div className="font-bold text-ink">Vertaalde teksten maken</div>
@@ -67,14 +67,14 @@ export function TranslationManager({ product, translations }: Props) {
               Maakt titel, omschrijvingen, SEO en tags voor gekozen talen. Nederlands blijft de interne brontekst.
             </p>
           </div>
-          <button className="rounded-md bg-brand px-4 py-2 text-sm font-bold text-white disabled:opacity-60" disabled={busy || !selectedLanguages.length} onClick={generateTranslations} type="button">
+          <button className="rounded-md bg-brand px-4 py-2 text-sm font-black text-slate-950 disabled:opacity-60" disabled={busy || !selectedLanguages.length} onClick={generateTranslations} type="button">
             {busy ? "Genereren..." : "Vertalingen genereren"}
           </button>
         </div>
         <div className="mt-3 flex flex-wrap gap-2">
           {LANGUAGES.map((language) => (
             <label
-              className={`rounded-md border px-3 py-2 text-sm font-bold ${selectedLanguages.includes(language.code) ? "border-brand bg-red-50 text-brand" : "border-line bg-white text-slate-700"}`}
+              className={`rounded-md border px-3 py-2 text-sm font-bold ${selectedLanguages.includes(language.code) ? "border-brand bg-brand/10 text-brand" : "border-line bg-slate-950/35 text-slate-300"}`}
               key={language.code}
             >
               <input checked={selectedLanguages.includes(language.code)} className="mr-2" onChange={() => toggleLanguage(language.code)} type="checkbox" />
@@ -82,19 +82,19 @@ export function TranslationManager({ product, translations }: Props) {
             </label>
           ))}
         </div>
-        <label className="mt-3 flex items-center gap-2 text-sm font-semibold text-slate-700">
+        <label className="mt-3 flex items-center gap-2 text-sm font-semibold text-slate-300">
           <input checked={overwrite} onChange={(event) => setOverwrite(event.target.checked)} type="checkbox" />
           Bestaande vertalingen overschrijven
         </label>
       </div>
 
-      {message ? <div className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-700">{message}</div> : null}
-      {error ? <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm font-semibold text-red-700">{error}</div> : null}
+      {message ? <div className="rounded-md border border-emerald-400/25 bg-emerald-400/10 px-3 py-2 text-sm font-semibold text-emerald-300">{message}</div> : null}
+      {error ? <div className="rounded-md border border-red-400/25 bg-red-400/10 px-3 py-2 text-sm font-semibold text-red-300">{error}</div> : null}
 
       {translations.length ? (
         <div className="space-y-3">
           {translations.map((translation) => (
-            <article className="rounded-lg border border-line bg-white p-4" key={translation.id}>
+            <article className="rounded-lg border border-line bg-panelSoft p-4" key={translation.id}>
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <div className="text-xs font-bold uppercase text-muted">{translation.language_code}</div>
@@ -102,7 +102,7 @@ export function TranslationManager({ product, translations }: Props) {
                 </div>
                 <StatusBadge status={translation.source || "manual"} />
               </div>
-              <p className="mt-3 text-sm leading-6 text-slate-700">{translation.short_description || translation.sales_description || "Geen tekst"}</p>
+              <p className="mt-3 text-sm leading-6 text-slate-300">{translation.short_description || translation.sales_description || "Geen tekst"}</p>
               <div className="mt-3 text-sm text-muted">Tags: {translation.tags || "-"}</div>
             </article>
           ))}

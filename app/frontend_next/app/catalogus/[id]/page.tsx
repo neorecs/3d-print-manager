@@ -30,7 +30,7 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
         title={data?.product.internal_title || data?.product.name || "Productdetail"}
         description="Beheer de interne productbasis en controleer varianten, foto's, voorraad en platformpublicaties."
         actions={
-          <a className="rounded-md border border-line bg-white px-4 py-2 text-sm font-bold text-slate-700" href="/catalogus">
+          <a className="rounded-md border border-line bg-slate-950/35 px-4 py-2 text-sm font-bold text-slate-300" href="/catalogus">
             Terug naar catalogus
           </a>
         }

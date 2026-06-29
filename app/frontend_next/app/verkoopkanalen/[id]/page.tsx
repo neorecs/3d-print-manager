@@ -119,5 +119,3 @@ function ListBlock({ title, values, warning }: { title: string; values: string[]
     </div>
   );
 }
-
-

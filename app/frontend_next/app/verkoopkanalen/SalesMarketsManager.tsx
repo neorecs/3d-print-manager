@@ -191,13 +191,13 @@ function MarketFields({ draft, onChange }: { draft: MarketDraft; onChange: (fiel
       <TextField label="Hoofdtaal" value={draft.primary_language} onChange={(value) => onChange("primary_language", value)} placeholder="nl, de, fr" />
       <TextField label="Extra talen" value={draft.additional_languages} onChange={(value) => onChange("additional_languages", value)} placeholder="Bijv. fr, en" />
       <TextField label="Valuta" value={draft.currency} onChange={(value) => onChange("currency", value)} placeholder="EUR" />
-      <label className="flex items-center gap-3 rounded-md border border-line bg-slate-950/35 px-3 py-2 text-ink text-sm font-semibold">
+      <label className="flex items-center gap-3 rounded-md border border-line bg-slate-950/35 px-3 py-2 text-sm text-ink font-semibold">
         <input checked={draft.active} onChange={(event) => onChange("active", event.target.checked)} type="checkbox" />
         Actief verkoopland
       </label>
       <label className="space-y-2 md:col-span-2">
         <span className="text-sm font-bold text-slate-300">Notitie</span>
-        <textarea className="min-h-20 w-full rounded-md border border-line bg-slate-950/35 px-3 py-2 text-ink text-sm outline-none focus:border-brand" onChange={(event) => onChange("note", event.target.value)} value={draft.note} />
+        <textarea className="min-h-20 w-full rounded-md border border-line bg-slate-950/35 px-3 py-2 text-sm text-ink outline-none focus:border-brand" onChange={(event) => onChange("note", event.target.value)} value={draft.note} />
       </label>
     </div>
   );
@@ -207,8 +207,7 @@ function TextField({ label, value, onChange, placeholder }: { label: string; val
   return (
     <label className="space-y-2">
       <span className="text-sm font-bold text-slate-300">{label}</span>
-      <input className="w-full rounded-md border border-line bg-slate-950/35 px-3 py-2 text-ink text-sm outline-none focus:border-brand" onChange={(event) => onChange(event.target.value)} placeholder={placeholder} value={value} />
+      <input className="w-full rounded-md border border-line bg-slate-950/35 px-3 py-2 text-sm text-ink outline-none focus:border-brand" onChange={(event) => onChange(event.target.value)} placeholder={placeholder} value={value} />
     </label>
   );
 }
-

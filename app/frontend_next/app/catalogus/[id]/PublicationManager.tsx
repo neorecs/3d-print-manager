@@ -230,10 +230,10 @@ export function PublicationManager({
 
   return (
     <div className="space-y-5">
-      {message ? <div className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-700">{message}</div> : null}
-      {error ? <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm font-semibold text-red-700">{error}</div> : null}
+      {message ? <div className="rounded-md border border-emerald-400/25 bg-emerald-400/10 px-3 py-2 text-sm font-semibold text-emerald-300">{message}</div> : null}
+      {error ? <div className="rounded-md border border-red-400/25 bg-red-400/10 px-3 py-2 text-sm font-semibold text-red-300">{error}</div> : null}
 
-      <form className="rounded-lg border border-line bg-slate-50 p-4" onSubmit={createPublication}>
+      <form className="rounded-lg border border-line bg-slate-950/25 p-4" onSubmit={createPublication}>
         <div className="mb-4">
           <h3 className="font-bold text-ink">Platformpublicatie toevoegen</h3>
           <p className="mt-1 text-sm text-muted">Maak een Etsy-, Shopify- of andere platformkoppeling voor dit interne product.</p>
@@ -243,7 +243,7 @@ export function PublicationManager({
             <PublicationFields draft={newDraft} platforms={platforms} onChange={updateNew} />
             <div className="mt-4 flex justify-end">
               <button
-                className="rounded-md bg-brand px-4 py-2 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-60"
+                className="rounded-md bg-brand px-4 py-2 text-sm font-black text-slate-950 disabled:cursor-not-allowed disabled:opacity-60"
                 disabled={savingKey === "new" || !newDraft.platform_id}
                 type="submit"
               >
@@ -252,7 +252,7 @@ export function PublicationManager({
             </div>
           </>
         ) : (
-          <div className="rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">
+          <div className="rounded-md border border-amber-400/25 bg-amber-400/10 px-4 py-3 text-sm font-semibold text-amber-800">
             Maak eerst een platform aan voordat je publicaties kunt koppelen.
           </div>
         )}
@@ -264,7 +264,7 @@ export function PublicationManager({
             const draft = drafts[publication.id] || draftFromPublication(publication);
             const check = checks[publication.id];
             return (
-              <details className="rounded-lg border border-line bg-white p-4" key={publication.id}>
+              <details className="rounded-lg border border-line bg-panelSoft p-4" key={publication.id}>
                 <summary className="cursor-pointer list-none">
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
@@ -281,21 +281,21 @@ export function PublicationManager({
                     onChange={(field, value) => updateExisting(publication.id, field, value)}
                   />
                   {check ? <CheckResult check={check} /> : null}
-                  {publication.last_error ? <p className="mt-3 text-sm font-semibold text-red-700">{publication.last_error}</p> : null}
+                  {publication.last_error ? <p className="mt-3 text-sm font-semibold text-red-300">{publication.last_error}</p> : null}
                   <div className="mt-4 flex flex-wrap justify-end gap-2">
-                    <button className="rounded-md border border-line bg-white px-3 py-2 text-sm font-bold text-slate-700" disabled={savingKey === `check-${publication.id}`} onClick={() => runCheck(publication.id)} type="button">
+                    <button className="rounded-md border border-line bg-slate-950/35 px-3 py-2 text-sm text-ink font-bold text-slate-300" disabled={savingKey === `check-${publication.id}`} onClick={() => runCheck(publication.id)} type="button">
                       Controleer
                     </button>
-                    <button className="rounded-md border border-line bg-white px-3 py-2 text-sm font-bold text-slate-700" disabled={savingKey === `pause-${publication.id}`} onClick={() => runAction(publication.id, "pause")} type="button">
+                    <button className="rounded-md border border-line bg-slate-950/35 px-3 py-2 text-sm text-ink font-bold text-slate-300" disabled={savingKey === `pause-${publication.id}`} onClick={() => runAction(publication.id, "pause")} type="button">
                       Pauzeren
                     </button>
-                    <button className="rounded-md border border-line bg-white px-3 py-2 text-sm font-bold text-slate-700" disabled={savingKey === `sync-${publication.id}`} onClick={() => runAction(publication.id, "sync")} type="button">
+                    <button className="rounded-md border border-line bg-slate-950/35 px-3 py-2 text-sm text-ink font-bold text-slate-300" disabled={savingKey === `sync-${publication.id}`} onClick={() => runAction(publication.id, "sync")} type="button">
                       Sync
                     </button>
-                    <button className="rounded-md border border-line bg-white px-3 py-2 text-sm font-bold text-slate-700" disabled={savingKey === `publish-${publication.id}`} onClick={() => runAction(publication.id, "publish")} type="button">
+                    <button className="rounded-md border border-line bg-slate-950/35 px-3 py-2 text-sm text-ink font-bold text-slate-300" disabled={savingKey === `publish-${publication.id}`} onClick={() => runAction(publication.id, "publish")} type="button">
                       Publiceren
                     </button>
-                    <button className="rounded-md bg-brand px-3 py-2 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-60" disabled={savingKey === String(publication.id)} onClick={() => savePublication(publication.id)} type="button">
+                    <button className="rounded-md bg-brand px-3 py-2 text-sm font-black text-slate-950 disabled:cursor-not-allowed disabled:opacity-60" disabled={savingKey === String(publication.id)} onClick={() => savePublication(publication.id)} type="button">
                       {savingKey === String(publication.id) ? "Opslaan..." : "Opslaan"}
                     </button>
                   </div>
@@ -304,7 +304,7 @@ export function PublicationManager({
             );
           })
         ) : (
-          <div className="rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">
+          <div className="rounded-md border border-amber-400/25 bg-amber-400/10 px-4 py-3 text-sm font-semibold text-amber-800">
             Nog geen platformpublicaties. Voeg hierboven de eerste platformkoppeling toe.
           </div>
         )}
@@ -325,16 +325,16 @@ function PublicationFields({
   return (
     <div className="grid gap-4 md:grid-cols-2">
       <label className="space-y-2">
-        <span className="text-sm font-bold text-slate-700">Platform</span>
-        <select className="w-full rounded-md border border-line bg-white px-3 py-2 text-sm outline-none focus:border-brand" value={draft.platform_id} onChange={(event) => onChange("platform_id", event.target.value)}>
+        <span className="text-sm font-bold text-slate-300">Platform</span>
+        <select className="w-full rounded-md border border-line bg-slate-950/35 px-3 py-2 text-sm text-ink outline-none focus:border-brand" value={draft.platform_id} onChange={(event) => onChange("platform_id", event.target.value)}>
           {platforms.map((platform) => (
             <option key={platform.id} value={platform.id}>{platform.name} ({platform.type})</option>
           ))}
         </select>
       </label>
       <label className="space-y-2">
-        <span className="text-sm font-bold text-slate-700">Publicatiestatus</span>
-        <select className="w-full rounded-md border border-line bg-white px-3 py-2 text-sm outline-none focus:border-brand" value={draft.publication_status} onChange={(event) => onChange("publication_status", event.target.value)}>
+        <span className="text-sm font-bold text-slate-300">Publicatiestatus</span>
+        <select className="w-full rounded-md border border-line bg-slate-950/35 px-3 py-2 text-sm text-ink outline-none focus:border-brand" value={draft.publication_status} onChange={(event) => onChange("publication_status", event.target.value)}>
           {publicationStatuses.map((status) => (
             <option key={status} value={status}>{status.replace(/_/g, " ")}</option>
           ))}
@@ -349,9 +349,9 @@ function PublicationFields({
       <TextField label="Extern listing ID" value={draft.external_listing_id} onChange={(value) => onChange("external_listing_id", value)} />
       <TextField label="Laatste foutmelding" value={draft.last_error} onChange={(value) => onChange("last_error", value)} />
       <label className="space-y-2 md:col-span-2">
-        <span className="text-sm font-bold text-slate-700">Platformomschrijving</span>
+        <span className="text-sm font-bold text-slate-300">Platformomschrijving</span>
         <textarea
-          className="min-h-32 w-full resize-y rounded-md border border-line bg-white px-3 py-2 text-sm leading-6 outline-none focus:border-brand"
+          className="min-h-32 w-full resize-y rounded-md border border-line bg-slate-950/35 px-3 py-2 text-sm text-ink leading-6 outline-none focus:border-brand"
           onChange={(event) => onChange("platform_description", event.target.value)}
           value={draft.platform_description}
         />
@@ -366,16 +366,16 @@ function CheckResult({ check }: { check: PublicationCheck }) {
   const ready = check.ready ?? check.valid ?? false;
   const marketChecks = check.market_checks || [];
   return (
-    <div className={`mt-4 rounded-md border px-3 py-3 text-sm ${ready ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-amber-200 bg-amber-50 text-amber-900"}`}>
+    <div className={`mt-4 rounded-md border px-3 py-3 text-sm ${ready ? "border-emerald-400/25 bg-emerald-400/10 text-emerald-300" : "border-amber-400/25 bg-amber-400/10 text-amber-900"}`}>
       <div className="font-bold">{ready ? "Publicatiecontrole geslaagd" : "Publicatiecontrole vraagt aandacht"}</div>
       {errors.length ? <ul className="mt-2 list-disc space-y-1 pl-5">{errors.map((item) => <li key={item}>{item}</li>)}</ul> : null}
       {warnings.length ? <ul className="mt-2 list-disc space-y-1 pl-5">{warnings.map((item) => <li key={item}>{item}</li>)}</ul> : null}
       {marketChecks.length ? (
-        <div className="mt-3 rounded-md border border-white/70 bg-white/60 p-3">
+        <div className="mt-3 rounded-md border border-line bg-slate-950/35 p-3">
           <div className="font-bold">Doellanden en talen</div>
           <ul className="mt-2 space-y-1">
             {marketChecks.map((item) => (
-              <li key={`${item.country_code}-${item.language_code}`} className={item.severity === "error" ? "font-semibold text-red-700" : item.severity === "warning" ? "font-semibold text-amber-800" : "text-emerald-800"}>
+              <li key={`${item.country_code}-${item.language_code}`} className={item.severity === "error" ? "font-semibold text-red-300" : item.severity === "warning" ? "font-semibold text-amber-800" : "text-emerald-300"}>
                 {item.country_code} / {item.language_code}: {item.message}
               </li>
             ))}
@@ -401,9 +401,9 @@ function TextField({
 }) {
   return (
     <label className="space-y-2">
-      <span className="text-sm font-bold text-slate-700">{label}</span>
+      <span className="text-sm font-bold text-slate-300">{label}</span>
       <input
-        className="w-full rounded-md border border-line bg-white px-3 py-2 text-sm outline-none focus:border-brand"
+        className="w-full rounded-md border border-line bg-slate-950/35 px-3 py-2 text-sm text-ink outline-none focus:border-brand"
         inputMode={inputMode}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
