@@ -32,7 +32,7 @@ def system_readiness_payload() -> dict:
         "ready_for_real_tokens": encryption_configured and database_configured and not connectors_live_mode,
         "blockers": blockers,
         "next_checks": [
-            "Maak een dagelijkse PostgreSQL backup op de NAS.",
+            "Controleer of de postgres_backup container dagelijks een .dump en .sha256 bestand maakt.",
             "Test minimaal een keer herstel naar een lege database.",
             "Voeg Etsy/Shopify credentials pas toe nadat mockmodus en backups kloppen.",
             "Zet CONNECTORS_LIVE_MODE pas aan wanneer je bewust echte platformcalls wilt testen.",
