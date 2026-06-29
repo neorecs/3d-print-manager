@@ -4,6 +4,7 @@ import unittest
 from datetime import datetime, timezone
 from pathlib import Path
 
+from fastapi import HTTPException
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
@@ -27,6 +28,7 @@ from core.credentials import decrypt_credential, encrypt_credential, is_encrypte
 from connectors.shopify.connector import ShopifyConnector  # noqa: E402
 from connectors.etsy.connector import EtsyConnector  # noqa: E402
 from database import Base  # noqa: E402
+from inventory.service import adjust_product_inventory as adjust_inventory_service  # noqa: E402
 from services.ai_product_assistant import generate_product_translation  # noqa: E402
 from models import (  # noqa: E402
     InventoryMovement,
@@ -153,6 +155,72 @@ class BusinessRuleTestCase(unittest.TestCase):
         self.assertEqual(movement.free_stock_before, 6)
         self.assertEqual(movement.free_stock_after, 0)
         self.assertEqual(movement.source, "order_inventory_check")
+
+    def test_reprocessing_order_inventory_does_not_double_reserve(self) -> None:
+        platform = self.make_platform()
+        product, variant = self.make_product_variant("INV-REPROCESS")
+        inventory = ProductInventory(
+            product_id=product.id,
+            product_variant_id=variant.id,
+            color=variant.color,
+            material=variant.material,
+            quantity_on_hand=6,
+            quantity_reserved=0,
+        )
+        order = Order(
+            internal_order_number="T-ORDER-REPROCESS",
+            platform_id=platform.id,
+            external_order_id="EXT-REPROCESS",
+            order_date=datetime.now(timezone.utc),
+            total_amount=129.50,
+            currency="EUR",
+        )
+        self.db.add_all([inventory, order])
+        self.db.commit()
+        order_item = OrderItem(order_id=order.id, sku=variant.sku, quantity_ordered=4, unit_sale_price=12.95)
+        self.db.add(order_item)
+        self.db.commit()
+
+        process_order_inventory(order.id, self.db)
+        process_order_inventory(order.id, self.db)
+
+        self.db.refresh(inventory)
+        self.db.refresh(order_item)
+        movements = self.db.scalars(select(InventoryMovement).order_by(InventoryMovement.id)).all()
+        self.assertEqual(inventory.quantity_reserved, 4)
+        self.assertEqual(order_item.quantity_from_inventory, 4)
+        self.assertEqual(order_item.quantity_to_print, 0)
+        self.assertEqual(
+            [(movement.movement_type, movement.quantity) for movement in movements],
+            [
+                ("gereserveerd_voor_order", 4),
+                ("reservering_vrijgegeven", 4),
+                ("gereserveerd_voor_order", 4),
+            ],
+        )
+        self.assertEqual(movements[-1].free_stock_after, 2)
+
+    def test_inventory_adjustment_cannot_make_free_stock_negative(self) -> None:
+        product, variant = self.make_product_variant("INV-NEGATIVE")
+        inventory = ProductInventory(
+            product_id=product.id,
+            product_variant_id=variant.id,
+            color=variant.color,
+            material=variant.material,
+            quantity_on_hand=4,
+            quantity_reserved=3,
+        )
+        self.db.add(inventory)
+        self.db.commit()
+
+        with self.assertRaises(HTTPException):
+            adjust_inventory_service(self.db, inventory, -2)
+
+        self.db.refresh(inventory)
+        movements = self.db.scalars(select(InventoryMovement)).all()
+        self.assertEqual(inventory.quantity_on_hand, 4)
+        self.assertEqual(inventory.quantity_reserved, 3)
+        self.assertEqual(movements, [])
 
     def test_print_result_sends_extra_successes_to_inventory_and_failed_to_movements(self) -> None:
         product, variant = self.make_product_variant("PRINT-RESULT")

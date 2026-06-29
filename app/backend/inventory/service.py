@@ -48,6 +48,11 @@ def inventory_snapshot(inventory: ProductInventory) -> dict[str, int]:
     }
 
 
+def validate_positive_quantity(quantity: int) -> None:
+    if quantity <= 0:
+        raise HTTPException(status_code=400, detail="Aantal moet groter zijn dan 0")
+
+
 def add_inventory_movement(
     db: Session,
     inventory: ProductInventory,
@@ -134,18 +139,19 @@ def process_order_item_inventory(db: Session, item: OrderItem) -> dict:
     if item.quantity_from_inventory > 0:
         before = inventory_snapshot(inventory)
         released = min(inventory.quantity_reserved, item.quantity_from_inventory)
-        inventory.quantity_reserved -= released
-        add_inventory_movement(
-            db,
-            inventory,
-            "reservering_vrijgegeven",
-            released,
-            before=before,
-            order_id=item.order_id,
-            order_item_id=item.id,
-            note="Herberekening ordervoorraad",
-            source="order_inventory_recheck",
-        )
+        if released > 0:
+            inventory.quantity_reserved -= released
+            add_inventory_movement(
+                db,
+                inventory,
+                "reservering_vrijgegeven",
+                released,
+                before=before,
+                order_id=item.order_id,
+                order_item_id=item.id,
+                note="Herberekening ordervoorraad",
+                source="order_inventory_recheck",
+            )
 
     free_stock = max(0, inventory.quantity_on_hand - inventory.quantity_reserved)
     reserve_quantity = min(item.quantity_ordered, free_stock)
@@ -183,6 +189,11 @@ def process_order_item_inventory(db: Session, item: OrderItem) -> dict:
 
 def adjust_product_inventory(db: Session, inventory: ProductInventory, quantity: int) -> dict:
     before = inventory_snapshot(inventory)
+    new_quantity_on_hand = inventory.quantity_on_hand + quantity
+    if new_quantity_on_hand < 0:
+        raise HTTPException(status_code=400, detail="Voorraad op hand mag niet negatief worden")
+    if new_quantity_on_hand < inventory.quantity_reserved:
+        raise HTTPException(status_code=400, detail="Vrije voorraad mag niet negatief worden")
     inventory.quantity_on_hand += quantity
     add_inventory_movement(
         db,
@@ -198,6 +209,7 @@ def adjust_product_inventory(db: Session, inventory: ProductInventory, quantity:
 
 
 def reserve_product_inventory(db: Session, inventory: ProductInventory, quantity: int) -> dict:
+    validate_positive_quantity(quantity)
     if inventory.free_stock < quantity:
         raise HTTPException(status_code=400, detail="Niet genoeg vrije voorraad")
     before = inventory_snapshot(inventory)
@@ -216,6 +228,7 @@ def reserve_product_inventory(db: Session, inventory: ProductInventory, quantity
 
 
 def release_product_inventory(db: Session, inventory: ProductInventory, quantity: int) -> dict:
+    validate_positive_quantity(quantity)
     before = inventory_snapshot(inventory)
     inventory.quantity_reserved = max(0, inventory.quantity_reserved - quantity)
     released = before["quantity_reserved"] - inventory.quantity_reserved
