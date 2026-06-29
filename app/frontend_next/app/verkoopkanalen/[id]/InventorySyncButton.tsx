@@ -38,7 +38,7 @@ export function InventorySyncButton({ platformId, platformType }: Props) {
 
   return (
     <div className="space-y-3">
-      <button className="rounded-md bg-brand px-4 py-2 text-sm font-bold text-white disabled:opacity-60" disabled={busy} onClick={syncInventory} type="button">
+      <button className="rounded-md bg-brand px-4 py-2 text-sm font-black text-slate-950 disabled:opacity-60" disabled={busy} onClick={syncInventory} type="button">
         {busy ? "Voorraad synchroniseren..." : "Shopify voorraad synchroniseren"}
       </button>
       <p className="text-sm leading-6 text-muted">
@@ -49,3 +49,4 @@ export function InventorySyncButton({ platformId, platformType }: Props) {
     </div>
   );
 }
+

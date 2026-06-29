@@ -64,7 +64,7 @@ function SalesChannelsContent({ data }: { data: SalesChannelsData }) {
                     <td>{status.mode}</td>
                     <td><StatusBadge status={status.ready_for_live ? "live klaar" : "configuratie nodig"} /></td>
                     <td>{status.missing_credentials.length ? status.missing_credentials.join(", ") : "-"}</td>
-                    <td><Link className="font-bold text-brand hover:text-ink" href={`/verkoopkanalen/${status.platform_id}`}>Openen</Link></td>
+                    <td><Link className="font-bold text-brand hover:text-white" href={`/verkoopkanalen/${status.platform_id}`}>Openen</Link></td>
                   </tr>
                 ))}
               </tbody>
@@ -79,7 +79,7 @@ function SalesChannelsContent({ data }: { data: SalesChannelsData }) {
             {[...syncNeeded, ...errors].slice(0, 12).map((publication) => {
               const product = data.products.find((row) => row.id === publication.product_id);
               return (
-                <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-line bg-white px-4 py-3" key={`${publication.id}-${publication.publication_status}`}>
+                <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-line bg-panelSoft px-4 py-3" key={`${publication.id}-${publication.publication_status}`}>
                   <div>
                     <a className="font-bold text-ink hover:text-brand" href={`/catalogus/${publication.product_id}`}>{product?.internal_title || product?.name || `Product ${publication.product_id}`}</a>
                     <div className="mt-1 text-sm text-muted">{publication.last_error || publication.platform_title || "Geen foutmelding"}</div>
@@ -94,3 +94,4 @@ function SalesChannelsContent({ data }: { data: SalesChannelsData }) {
     </div>
   );
 }
+

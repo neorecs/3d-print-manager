@@ -97,8 +97,8 @@ export function AccountingPurchaseForm() {
 
   return (
     <form className="space-y-4" onSubmit={submit}>
-      {message ? <div className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-700">{message}</div> : null}
-      {error ? <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm font-semibold text-red-700">{error}</div> : null}
+      {message ? <div className="rounded-md border border-emerald-400/25 bg-emerald-400/10 px-3 py-2 text-sm font-semibold text-emerald-300">{message}</div> : null}
+      {error ? <div className="rounded-md border border-red-400/25 bg-red-400/10 px-3 py-2 text-sm font-semibold text-red-300">{error}</div> : null}
 
       <div className="grid gap-4 md:grid-cols-2">
         <TextField label="Leverancier" value={draft.supplier_name} onChange={(value) => update("supplier_name", value)} placeholder="Bijv. Bambu Lab, Amazon, PostNL" required />
@@ -109,10 +109,10 @@ export function AccountingPurchaseForm() {
         <TextField label="Btw percentage" value={draft.vat_rate} onChange={(value) => update("vat_rate", value)} inputMode="decimal" />
         <SelectField label="Betaalstatus" value={draft.payment_status} onChange={(value) => update("payment_status", value)} options={["betaald", "open", "onbekend"]} />
         <label className="space-y-2">
-          <span className="text-sm font-bold text-slate-700">Bon of factuur</span>
+          <span className="text-sm font-bold text-slate-300">Bon of factuur</span>
           <input
             accept="application/pdf,image/jpeg,image/png,image/webp"
-            className="w-full rounded-md border border-line bg-white px-3 py-2 text-sm"
+            className="w-full rounded-md border border-line bg-slate-950/35 px-3 py-2 text-ink text-sm"
             onChange={(event) => setFile(event.target.files?.[0] || null)}
             type="file"
           />
@@ -123,7 +123,7 @@ export function AccountingPurchaseForm() {
       <TextArea label="Notitie" value={draft.note} onChange={(value) => update("note", value)} placeholder="Interne notitie voor jezelf of boekhouder" />
 
       <div className="flex justify-end">
-        <button className="rounded-md bg-brand px-4 py-2 text-sm font-bold text-white disabled:opacity-60" disabled={busy} type="submit">
+        <button className="rounded-md bg-brand px-4 py-2 text-sm font-black text-slate-950 disabled:opacity-60" disabled={busy} type="submit">
           {busy ? "Opslaan..." : "Inkoopboeking opslaan"}
         </button>
       </div>
@@ -150,9 +150,9 @@ function TextField({
 }) {
   return (
     <label className="space-y-2">
-      <span className="text-sm font-bold text-slate-700">{label}</span>
+      <span className="text-sm font-bold text-slate-300">{label}</span>
       <input
-        className="w-full rounded-md border border-line bg-white px-3 py-2 text-sm outline-none focus:border-brand"
+        className="w-full rounded-md border border-line bg-slate-950/35 px-3 py-2 text-ink text-sm outline-none focus:border-brand"
         inputMode={inputMode}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
@@ -167,8 +167,8 @@ function TextField({
 function SelectField({ label, value, onChange, options }: { label: string; value: string; onChange: (value: string) => void; options: string[] }) {
   return (
     <label className="space-y-2">
-      <span className="text-sm font-bold text-slate-700">{label}</span>
-      <select className="w-full rounded-md border border-line bg-white px-3 py-2 text-sm outline-none focus:border-brand" value={value} onChange={(event) => onChange(event.target.value)}>
+      <span className="text-sm font-bold text-slate-300">{label}</span>
+      <select className="w-full rounded-md border border-line bg-slate-950/35 px-3 py-2 text-ink text-sm outline-none focus:border-brand" value={value} onChange={(event) => onChange(event.target.value)}>
         {options.map((option) => (
           <option key={option} value={option}>{option}</option>
         ))}
@@ -180,9 +180,9 @@ function SelectField({ label, value, onChange, options }: { label: string; value
 function TextArea({ label, value, onChange, placeholder }: { label: string; value: string; onChange: (value: string) => void; placeholder?: string }) {
   return (
     <label className="block space-y-2">
-      <span className="text-sm font-bold text-slate-700">{label}</span>
+      <span className="text-sm font-bold text-slate-300">{label}</span>
       <textarea
-        className="min-h-24 w-full rounded-md border border-line bg-white px-3 py-2 text-sm outline-none focus:border-brand"
+        className="min-h-24 w-full rounded-md border border-line bg-slate-950/35 px-3 py-2 text-ink text-sm outline-none focus:border-brand"
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
         value={value}
@@ -190,3 +190,4 @@ function TextArea({ label, value, onChange, placeholder }: { label: string; valu
     </label>
   );
 }
+

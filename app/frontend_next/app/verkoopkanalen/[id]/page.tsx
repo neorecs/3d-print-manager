@@ -98,7 +98,7 @@ function SalesChannelDetailContent({ data }: { data: SalesChannelDetailData }) {
 
 function InfoBlock({ title, value }: { title: string; value: string }) {
   return (
-    <div className="rounded-lg border border-line bg-slate-50 p-4">
+    <div className="rounded-lg border border-line bg-slate-950/25 p-4">
       <div className="text-xs font-bold uppercase tracking-wide text-muted">{title}</div>
       <div className="mt-2 font-bold text-ink">{value}</div>
     </div>
@@ -107,11 +107,11 @@ function InfoBlock({ title, value }: { title: string; value: string }) {
 
 function ListBlock({ title, values, warning }: { title: string; values: string[]; warning?: boolean }) {
   return (
-    <div className="rounded-lg border border-line bg-slate-50 p-4">
+    <div className="rounded-lg border border-line bg-slate-950/25 p-4">
       <div className="text-xs font-bold uppercase tracking-wide text-muted">{title}</div>
       <div className="mt-3 flex flex-wrap gap-2">
         {values.length ? values.map((value) => (
-          <span className={`rounded-full px-2.5 py-1 text-xs font-bold ring-1 ${warning ? "bg-amber-50 text-amber-700 ring-amber-200" : "bg-white text-slate-700 ring-line"}`} key={value}>
+          <span className={`rounded-full px-2.5 py-1 text-xs font-bold ring-1 ${warning ? "bg-amber-400/10 text-amber-200 ring-amber-400/25" : "bg-slate-950/35 text-slate-300 ring-line"}`} key={value}>
             {value}
           </span>
         )) : <span className="text-sm text-muted">Geen</span>}
@@ -119,3 +119,5 @@ function ListBlock({ title, values, warning }: { title: string; values: string[]
     </div>
   );
 }
+
+

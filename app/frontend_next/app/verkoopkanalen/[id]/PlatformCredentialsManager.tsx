@@ -70,12 +70,12 @@ export function PlatformCredentialsManager({ platform, status, credentials }: Pr
       {message ? <div className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-700">{message}</div> : null}
       {error ? <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm font-semibold text-red-700">{error}</div> : null}
 
-      <form className="rounded-lg border border-line bg-slate-50 p-4" onSubmit={saveCredential}>
+      <form className="rounded-lg border border-line bg-slate-950/25 p-4" onSubmit={saveCredential}>
         <div className="grid gap-4 md:grid-cols-[minmax(180px,280px)_1fr_auto] md:items-end">
           <label className="space-y-2">
-            <span className="text-sm font-bold text-slate-700">Credentialnaam</span>
+            <span className="text-sm font-bold text-slate-300">Credentialnaam</span>
             <input
-              className="w-full rounded-md border border-line bg-white px-3 py-2 text-sm outline-none focus:border-brand"
+              className="w-full rounded-md border border-line bg-slate-950/35 px-3 py-2 text-ink text-sm outline-none focus:border-brand"
               list="credential-key-suggestions"
               onChange={(event) => setKeyName(event.target.value)}
               placeholder="Bijv. access_token"
@@ -86,16 +86,16 @@ export function PlatformCredentialsManager({ platform, status, credentials }: Pr
             </datalist>
           </label>
           <label className="space-y-2">
-            <span className="text-sm font-bold text-slate-700">Token of geheime waarde</span>
+            <span className="text-sm font-bold text-slate-300">Token of geheime waarde</span>
             <input
-              className="w-full rounded-md border border-line bg-white px-3 py-2 text-sm outline-none focus:border-brand"
+              className="w-full rounded-md border border-line bg-slate-950/35 px-3 py-2 text-ink text-sm outline-none focus:border-brand"
               onChange={(event) => setSecretValue(event.target.value)}
               placeholder="Wordt versleuteld opgeslagen en niet teruggetoond"
               type="password"
               value={secretValue}
             />
           </label>
-          <button className="rounded-md bg-brand px-4 py-2 text-sm font-bold text-white disabled:opacity-60" disabled={busyKey === "save"} type="submit">
+          <button className="rounded-md bg-brand px-4 py-2 text-sm font-black text-slate-950 disabled:opacity-60" disabled={busyKey === "save"} type="submit">
             {busyKey === "save" ? "Opslaan..." : "Opslaan"}
           </button>
         </div>
@@ -133,3 +133,4 @@ export function PlatformCredentialsManager({ platform, status, credentials }: Pr
     </div>
   );
 }
+

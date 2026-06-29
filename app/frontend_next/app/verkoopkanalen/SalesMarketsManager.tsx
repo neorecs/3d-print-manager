@@ -120,12 +120,12 @@ export function SalesMarketsManager({ markets }: { markets: SalesMarket[] }) {
 
   return (
     <div className="space-y-5">
-      {message ? <div className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-700">{message}</div> : null}
-      {error ? <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm font-semibold text-red-700">{error}</div> : null}
+      {message ? <div className="rounded-md border border-emerald-400/25 bg-emerald-400/10 px-3 py-2 text-sm font-semibold text-emerald-300">{message}</div> : null}
+      {error ? <div className="rounded-md border border-red-400/25 bg-red-400/10 px-3 py-2 text-sm font-semibold text-red-300">{error}</div> : null}
 
       <div className="grid gap-3 md:grid-cols-3">
         {markets.map((market) => (
-          <article className="rounded-lg border border-line bg-white p-4" key={market.id}>
+          <article className="rounded-lg border border-line bg-panelSoft p-4" key={market.id}>
             <div className="flex items-start justify-between gap-3">
               <div>
                 <div className="text-xs font-bold uppercase text-muted">{market.country_code}</div>
@@ -133,7 +133,7 @@ export function SalesMarketsManager({ markets }: { markets: SalesMarket[] }) {
               </div>
               <StatusBadge status={market.active ? "actief" : "inactief"} />
             </div>
-            <div className="mt-3 text-sm leading-6 text-slate-700">
+            <div className="mt-3 text-sm leading-6 text-slate-300">
               Talen: <strong>{languageSummary(market)}</strong>
               <br />
               Valuta: <strong>{market.currency}</strong>
@@ -143,11 +143,11 @@ export function SalesMarketsManager({ markets }: { markets: SalesMarket[] }) {
         ))}
       </div>
 
-      <form className="rounded-lg border border-line bg-slate-50 p-4" onSubmit={createMarket}>
+      <form className="rounded-lg border border-line bg-slate-950/25 p-4" onSubmit={createMarket}>
         <h3 className="font-bold text-ink">Doelland toevoegen</h3>
         <MarketFields draft={newDraft} onChange={updateNew} />
         <div className="mt-4 flex justify-end">
-          <button className="rounded-md bg-brand px-4 py-2 text-sm font-bold text-white disabled:opacity-60" disabled={busyKey === "new"} type="submit">
+          <button className="rounded-md bg-brand px-4 py-2 text-sm font-black text-slate-950 disabled:opacity-60" disabled={busyKey === "new"} type="submit">
             {busyKey === "new" ? "Aanmaken..." : "Doelland aanmaken"}
           </button>
         </div>
@@ -157,7 +157,7 @@ export function SalesMarketsManager({ markets }: { markets: SalesMarket[] }) {
         {markets.map((market) => {
           const draft = drafts[market.id] || draftFromMarket(market);
           return (
-            <details className="rounded-lg border border-line bg-white p-4" key={market.id}>
+            <details className="rounded-lg border border-line bg-panelSoft p-4" key={market.id}>
               <summary className="cursor-pointer list-none">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
@@ -170,7 +170,7 @@ export function SalesMarketsManager({ markets }: { markets: SalesMarket[] }) {
               <div className="mt-4 border-t border-line pt-4">
                 <MarketFields draft={draft} onChange={(field, value) => updateExisting(market.id, field, value)} />
                 <div className="mt-4 flex justify-end">
-                  <button className="rounded-md bg-brand px-4 py-2 text-sm font-bold text-white disabled:opacity-60" disabled={busyKey === String(market.id)} onClick={() => saveMarket(market.id)} type="button">
+                  <button className="rounded-md bg-brand px-4 py-2 text-sm font-black text-slate-950 disabled:opacity-60" disabled={busyKey === String(market.id)} onClick={() => saveMarket(market.id)} type="button">
                     {busyKey === String(market.id) ? "Opslaan..." : "Doelland opslaan"}
                   </button>
                 </div>
@@ -191,13 +191,13 @@ function MarketFields({ draft, onChange }: { draft: MarketDraft; onChange: (fiel
       <TextField label="Hoofdtaal" value={draft.primary_language} onChange={(value) => onChange("primary_language", value)} placeholder="nl, de, fr" />
       <TextField label="Extra talen" value={draft.additional_languages} onChange={(value) => onChange("additional_languages", value)} placeholder="Bijv. fr, en" />
       <TextField label="Valuta" value={draft.currency} onChange={(value) => onChange("currency", value)} placeholder="EUR" />
-      <label className="flex items-center gap-3 rounded-md border border-line bg-white px-3 py-2 text-sm font-semibold">
+      <label className="flex items-center gap-3 rounded-md border border-line bg-slate-950/35 px-3 py-2 text-ink text-sm font-semibold">
         <input checked={draft.active} onChange={(event) => onChange("active", event.target.checked)} type="checkbox" />
         Actief verkoopland
       </label>
       <label className="space-y-2 md:col-span-2">
-        <span className="text-sm font-bold text-slate-700">Notitie</span>
-        <textarea className="min-h-20 w-full rounded-md border border-line bg-white px-3 py-2 text-sm outline-none focus:border-brand" onChange={(event) => onChange("note", event.target.value)} value={draft.note} />
+        <span className="text-sm font-bold text-slate-300">Notitie</span>
+        <textarea className="min-h-20 w-full rounded-md border border-line bg-slate-950/35 px-3 py-2 text-ink text-sm outline-none focus:border-brand" onChange={(event) => onChange("note", event.target.value)} value={draft.note} />
       </label>
     </div>
   );
@@ -206,8 +206,9 @@ function MarketFields({ draft, onChange }: { draft: MarketDraft; onChange: (fiel
 function TextField({ label, value, onChange, placeholder }: { label: string; value: string; onChange: (value: string) => void; placeholder?: string }) {
   return (
     <label className="space-y-2">
-      <span className="text-sm font-bold text-slate-700">{label}</span>
-      <input className="w-full rounded-md border border-line bg-white px-3 py-2 text-sm outline-none focus:border-brand" onChange={(event) => onChange(event.target.value)} placeholder={placeholder} value={value} />
+      <span className="text-sm font-bold text-slate-300">{label}</span>
+      <input className="w-full rounded-md border border-line bg-slate-950/35 px-3 py-2 text-ink text-sm outline-none focus:border-brand" onChange={(event) => onChange(event.target.value)} placeholder={placeholder} value={value} />
     </label>
   );
 }
+
