@@ -4,12 +4,14 @@ type StatusSummaryItem = {
   label: string;
   value: string | number;
   tone?: "green" | "blue" | "amber" | "red" | "slate";
+  href?: string;
 };
 
 type BarItem = {
   label: string;
   value: number;
   note?: string;
+  href?: string;
 };
 
 const toneClasses = {
@@ -33,13 +35,28 @@ export function StatusSummary({ items }: { items: StatusSummaryItem[] }) {
     <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
       {items.map((item) => {
         const tone = item.tone || "slate";
-        return (
-          <div className={`rounded-xl border px-3 py-3 ${tonePanels[tone]}`} key={item.label}>
-            <div className="flex items-center justify-between gap-3">
-              <span className="text-sm font-bold text-slate-200">{item.label}</span>
-              <span className={`h-2.5 w-2.5 rounded-full ${toneClasses[tone]}`} />
+        const content = (
+          <>
+            <div className="flex min-w-0 items-center justify-between gap-3">
+              <span className="min-w-0 text-balance break-words text-sm font-bold text-slate-200">{item.label}</span>
+              <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${toneClasses[tone]}`} />
             </div>
-            <div className="mt-2 text-2xl font-black text-ink">{item.value}</div>
+            <div className="mt-2 min-w-0 break-words text-2xl font-black text-ink">{item.value}</div>
+          </>
+        );
+        const className = `block rounded-xl border px-3 py-3 transition hover:border-brand/50 hover:bg-white/5 focus:outline-none focus:ring-2 focus:ring-brand/50 ${tonePanels[tone]}`;
+
+        if (item.href) {
+          return (
+            <a className={className} href={item.href} key={item.label}>
+              {content}
+            </a>
+          );
+        }
+
+        return (
+          <div className={className} key={item.label}>
+            {content}
           </div>
         );
       })}
@@ -51,17 +68,29 @@ export function BarList({ items, maxValue }: { items: BarItem[]; maxValue?: numb
   const max = maxValue || Math.max(...items.map((item) => item.value), 1);
   return (
     <div className="space-y-4">
-      {items.map((item) => (
-        <div key={item.label}>
-          <div className="mb-1 flex items-center justify-between gap-3 text-sm">
-            <span className="font-bold text-slate-200">{item.label}</span>
-            <span className="text-muted">{item.note || item.value}</span>
-          </div>
-          <div className="h-2.5 overflow-hidden rounded-full bg-slate-800">
-            <div className="h-full rounded-full bg-brand" style={{ width: `${Math.min((item.value / max) * 100, 100)}%` }} />
-          </div>
-        </div>
-      ))}
+      {items.map((item) => {
+        const content = (
+          <>
+            <div className="mb-1 flex min-w-0 items-center justify-between gap-3 px-1 text-sm">
+              <span className="min-w-0 break-words font-bold text-slate-200">{item.label}</span>
+              <span className="shrink-0 text-right text-muted">{item.note || item.value}</span>
+            </div>
+            <div className="h-2.5 overflow-hidden rounded-full bg-slate-800">
+              <div className="h-full rounded-full bg-brand" style={{ width: `${Math.min((item.value / max) * 100, 100)}%` }} />
+            </div>
+          </>
+        );
+
+        if (item.href) {
+          return (
+            <a className="block rounded-lg transition hover:bg-white/5 focus:outline-none focus:ring-2 focus:ring-brand/40" href={item.href} key={item.label}>
+              {content}
+            </a>
+          );
+        }
+
+        return <div key={item.label}>{content}</div>;
+      })}
     </div>
   );
 }
@@ -83,19 +112,30 @@ export function MiniBars({ values }: { values: number[] }) {
   );
 }
 
-export function ActivityItem({ title, text, meta }: { title: string; text: string; meta?: string }) {
-  return (
-    <div className="flex gap-3 rounded-xl border border-line bg-panelSoft/70 p-3">
-      <div className="mt-1 h-2.5 w-2.5 rounded-full bg-brand" />
+export function ActivityItem({ title, text, meta, href }: { title: string; text: string; meta?: string; href?: string }) {
+  const content = (
+    <>
+      <div className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-brand" />
       <div className="min-w-0">
-        <div className="font-bold text-ink">{title}</div>
-        <p className="mt-1 text-sm leading-6 text-muted">{text}</p>
-        {meta ? <div className="mt-1 text-xs font-bold uppercase text-slate-500">{meta}</div> : null}
+        <div className="break-words font-bold text-ink">{title}</div>
+        <p className="mt-1 break-words text-sm leading-6 text-muted">{text}</p>
+        {meta ? <div className="mt-1 break-words text-xs font-bold uppercase text-slate-500">{meta}</div> : null}
       </div>
-    </div>
+    </>
   );
+  const className = "flex gap-3 rounded-xl border border-line bg-panelSoft/70 p-3 transition hover:border-brand/50 hover:bg-white/5 focus:outline-none focus:ring-2 focus:ring-brand/50";
+
+  if (href) {
+    return (
+      <a className={className} href={href}>
+        {content}
+      </a>
+    );
+  }
+
+  return <div className={className}>{content}</div>;
 }
 
 export function SoftPanel({ children }: { children: ReactNode }) {
-  return <div className="rounded-xl border border-line bg-panelSoft/70 p-4">{children}</div>;
+  return <div className="min-w-0 rounded-xl border border-line bg-panelSoft/70 p-4">{children}</div>;
 }

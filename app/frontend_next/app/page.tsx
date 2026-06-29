@@ -66,55 +66,57 @@ function DashboardContent({ data }: { data: DashboardData }) {
     label: product.internal_title || product.name,
     value: Math.max(12 - index * 2, 3),
     note: `${Math.max(12 - index * 2, 3)} orders`,
+    href: `/catalogus/${product.id}`,
   }));
   const inventoryBars = lowInventory.slice(0, 5).map((item) => ({
     label: `Variant ${item.product_variant_id}`,
     value: Math.max(item.minimum_stock_level - (item.quantity_on_hand - item.quantity_reserved), 1),
     note: `${item.quantity_on_hand - item.quantity_reserved} vrij`,
+    href: "/voorraad",
   }));
 
   return (
     <div className="space-y-6">
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
-        <MetricCard label="Actieve printers" value={printerMock.filter((printer) => printer.status !== "offline").length} note={`${printerMock.length} geregistreerd`} tone="good" />
-        <MetricCard label="Prints bezig" value={printingJobs.length || 1} note={formatMinutes(estimatedPrintMinutes || 182)} tone="warning" />
-        <MetricCard label="Orders vandaag" value={todayOrders.length} note="nieuw binnengekomen" />
-        <MetricCard label="Openstaande orders" value={openOrders.length} note="nog te verwerken" tone="warning" />
-        <MetricCard label="Voorraadwaarde" value={formatCurrency(inventoryValue)} note="indicatieve waarde" />
-        <MetricCard label="Omzet maand" value={formatCurrency(revenue)} note="verwacht / bekend" tone="good" />
+        <MetricCard href="/bambu-printers" label="Actieve printers" value={printerMock.filter((printer) => printer.status !== "offline").length} note={`${printerMock.length} geregistreerd`} tone="good" />
+        <MetricCard href="/printplanning" label="Prints bezig" value={printingJobs.length || 1} note={formatMinutes(estimatedPrintMinutes || 182)} tone="warning" />
+        <MetricCard href="/orders" label="Orders vandaag" value={todayOrders.length} note="nieuw binnengekomen" />
+        <MetricCard href="/orders" label="Openstaande orders" value={openOrders.length} note="nog te verwerken" tone="warning" />
+        <MetricCard href="/voorraad" label="Voorraadwaarde" value={formatCurrency(inventoryValue)} note="indicatieve waarde" />
+        <MetricCard href="/administratie" label="Omzet maand" value={formatCurrency(revenue)} note="verwacht / bekend" tone="good" />
       </div>
 
       <div className="grid gap-5 xl:grid-cols-3">
         <SectionCard title="Printerstatus" description="Farmstatus op basis van printer- en printwachtrijsignalen.">
           <StatusSummary
             items={[
-              { label: "Online", value: 3, tone: "green" },
-              { label: "Print bezig", value: 1, tone: "blue" },
-              { label: "Pauze", value: 0, tone: "slate" },
-              { label: "Foutmelding", value: 0, tone: "red" },
-              { label: "Onderhoud", value: 1, tone: "amber" },
+              { label: "Online", value: 3, tone: "green", href: "/bambu-printers" },
+              { label: "Print bezig", value: 1, tone: "blue", href: "/printplanning" },
+              { label: "Pauze", value: 0, tone: "slate", href: "/bambu-printers" },
+              { label: "Foutmelding", value: 0, tone: "red", href: "/bambu-printers" },
+              { label: "Onderhoud", value: 1, tone: "amber", href: "/bambu-printers" },
             ]}
           />
         </SectionCard>
         <SectionCard title="Orderstatus" description="Werkvoorraad van verkoop naar productie.">
           <StatusSummary
             items={[
-              { label: "Nieuw", value: data.orders.filter((o) => o.status === "nieuw").length, tone: "amber" },
-              { label: "In productie", value: data.orders.filter((o) => (o.status || "").includes("print")).length, tone: "blue" },
-              { label: "Klaar", value: data.orders.filter((o) => o.status === "ingepakt").length, tone: "green" },
-              { label: "Verzonden", value: data.orders.filter((o) => o.status === "verzonden").length, tone: "green" },
-              { label: "Geannuleerd", value: data.orders.filter((o) => o.status === "geannuleerd").length, tone: "red" },
+              { label: "Nieuw", value: data.orders.filter((o) => o.status === "nieuw").length, tone: "amber", href: "/orders" },
+              { label: "In productie", value: data.orders.filter((o) => (o.status || "").includes("print")).length, tone: "blue", href: "/orders" },
+              { label: "Klaar", value: data.orders.filter((o) => o.status === "ingepakt").length, tone: "green", href: "/orders" },
+              { label: "Verzonden", value: data.orders.filter((o) => o.status === "verzonden").length, tone: "green", href: "/orders" },
+              { label: "Geannuleerd", value: data.orders.filter((o) => o.status === "geannuleerd").length, tone: "red", href: "/orders" },
             ]}
           />
         </SectionCard>
         <SectionCard title="Filamentstatus" description="Materiaalrisico voor de komende prints.">
           <StatusSummary
             items={[
-              { label: "Rollen op voorraad", value: data.filament.length, tone: "green" },
-              { label: "Bijna leeg", value: lowFilament.length, tone: lowFilament.length ? "amber" : "green" },
-              { label: "Onder minimum", value: lowFilament.length, tone: lowFilament.length ? "red" : "green" },
-              { label: "Verbruik 7 dagen", value: "1.8 kg", tone: "blue" },
-              { label: "Kleuren actief", value: new Set(data.filament.map((item) => item.color)).size, tone: "slate" },
+              { label: "Rollen op voorraad", value: data.filament.length, tone: "green", href: "/filament" },
+              { label: "Bijna leeg", value: lowFilament.length, tone: lowFilament.length ? "amber" : "green", href: "/filament" },
+              { label: "Onder minimum", value: lowFilament.length, tone: lowFilament.length ? "red" : "green", href: "/filament" },
+              { label: "Verbruik 7 dagen", value: "1.8 kg", tone: "blue", href: "/analyse" },
+              { label: "Kleuren actief", value: new Set(data.filament.map((item) => item.color)).size, tone: "slate", href: "/filament" },
             ]}
           />
         </SectionCard>
@@ -124,22 +126,24 @@ function DashboardContent({ data }: { data: DashboardData }) {
         <SectionCard title="Printer live overzicht" description="Mockstatus aangevuld met printplanning totdat alle printerdata live beschikbaar is.">
           <div className="grid gap-4 md:grid-cols-2">
             {printerMock.map((printer) => (
-              <SoftPanel key={printer.name}>
+              <a className="block rounded-xl focus:outline-none focus:ring-2 focus:ring-brand/50" href="/bambu-printers" key={printer.name}>
+              <SoftPanel>
                 <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <div className="text-lg font-black text-ink">{printer.name}</div>
-                    <div className="mt-1 text-sm text-muted">{printer.task}</div>
+                  <div className="min-w-0">
+                    <div className="break-words text-lg font-black text-ink">{printer.name}</div>
+                    <div className="mt-1 break-words text-sm text-muted">{printer.task}</div>
                   </div>
                   <StatusBadge status={printer.status} />
                 </div>
                 <div className="mt-4 h-2.5 overflow-hidden rounded-full bg-slate-800">
                   <div className="h-full rounded-full bg-brand" style={{ width: `${printer.progress}%` }} />
                 </div>
-                <div className="mt-3 flex justify-between text-sm text-muted">
+                <div className="mt-3 flex flex-wrap justify-between gap-2 text-sm text-muted">
                   <span>{printer.progress}%</span>
                   <span>Nozzle 215C / Bed 60C</span>
                 </div>
               </SoftPanel>
+              </a>
             ))}
           </div>
         </SectionCard>
@@ -158,16 +162,16 @@ function DashboardContent({ data }: { data: DashboardData }) {
         <SectionCard title="Geplande prints" description="Open printtaken voor de komende productie.">
           <div className="space-y-3">
             {openPrintJobs.slice(0, 5).map((job) => (
-              <ActivityItem key={job.id} title={`Printtaak #${job.id}`} text={`${job.quantity_planned || job.quantity_needed} stuks in ${job.material || "-"} / ${job.color || "-"}`} meta={job.status || "nieuw"} />
+              <ActivityItem href="/printplanning" key={job.id} title={`Printtaak #${job.id}`} text={`${job.quantity_planned || job.quantity_needed} stuks in ${job.material || "-"} / ${job.color || "-"}`} meta={job.status || "nieuw"} />
             ))}
             {!openPrintJobs.length ? <EmptyState title="Geen planning" description="Open printtaken verschijnen hier." /> : null}
           </div>
         </SectionCard>
         <SectionCard title="Recente waarschuwingen" description="Snelle signalen die aandacht nodig hebben.">
           <div className="space-y-3">
-            <ActivityItem title="Synchronisatie" text={`${syncNeeded.length} publicatie(s) moeten opnieuw naar verkoopkanalen.`} meta="verkoopkanalen" />
-            <ActivityItem title="Filament" text={`${lowFilament.length} rol(len) zitten rond of onder minimum.`} meta="voorraad" />
-            <ActivityItem title="Productvoorraad" text={`${lowInventory.length} variant(en) hebben lage vrije voorraad.`} meta="planning" />
+            <ActivityItem href="/verkoopkanalen" title="Synchronisatie" text={`${syncNeeded.length} publicatie(s) moeten opnieuw naar verkoopkanalen.`} meta="verkoopkanalen" />
+            <ActivityItem href="/filament" title="Filament" text={`${lowFilament.length} rol(len) zitten rond of onder minimum.`} meta="voorraad" />
+            <ActivityItem href="/voorraad" title="Productvoorraad" text={`${lowInventory.length} variant(en) hebben lage vrije voorraad.`} meta="planning" />
           </div>
         </SectionCard>
       </div>
