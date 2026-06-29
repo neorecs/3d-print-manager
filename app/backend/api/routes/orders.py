@@ -1,5 +1,6 @@
 from fastapi import APIRouter
 from api.routes_shared import *
+from domain.statuses import INVENTORY_NONE, ORDER_NEW, ORDER_PLANNED, PRINT_JOB_NEW
 
 router = APIRouter()
 
@@ -235,7 +236,7 @@ def upsert_imported_order(db: Session, platform: Platform, payload: dict) -> dic
             internal_order_number=f"{prefix}-{platform.id}-{order_number}",
             platform_id=platform.id,
             external_order_id=external_order_id,
-            status="nieuw",
+            status=ORDER_NEW,
         )
         db.add(order)
         db.flush()
@@ -257,7 +258,7 @@ def upsert_imported_order(db: Session, platform: Platform, payload: dict) -> dic
         item.sku = item_payload.get("sku")
         item.quantity_ordered = int(item_payload.get("quantity_ordered") or 0)
         item.unit_sale_price = item_payload.get("unit_sale_price")
-        item.inventory_status = item.inventory_status or "niet_op_voorraad"
+        item.inventory_status = item.inventory_status or INVENTORY_NONE
         link_order_item_by_sku(db, item)
 
     return {"action": action, "order": to_dict(order)}
@@ -286,7 +287,7 @@ def create_dummy_order(db: Session, platform_type: str) -> Order:
         order_date=datetime.now(timezone.utc),
         total_amount=19.90,
         currency="EUR",
-        status="nieuw",
+        status=ORDER_NEW,
     )
     db.add(order)
     db.flush()
@@ -297,7 +298,7 @@ def create_dummy_order(db: Session, platform_type: str) -> Order:
         sku=variant.sku,
         quantity_ordered=2,
         unit_sale_price=variant.default_sale_price,
-        inventory_status="niet_op_voorraad",
+        inventory_status=INVENTORY_NONE,
     )
     link_order_item_by_sku(db, item)
     db.add(item)
@@ -375,7 +376,7 @@ def create_print_jobs_for_order(item_id: int, db: Session = Depends(get_db)):
             quantity_to_inventory=0,
             estimated_print_time_minutes=estimated_time,
             estimated_filament_grams=estimated_filament,
-            status="nieuw",
+            status=PRINT_JOB_NEW,
         )
         db.add(print_job)
         db.flush()
@@ -383,7 +384,7 @@ def create_print_jobs_for_order(item_id: int, db: Session = Depends(get_db)):
         created.append(to_dict(print_job))
 
     if created or updated:
-        order.status = "ingepland"
+        order.status = ORDER_PLANNED
     db.commit()
     return {"status": "created", "created": created, "updated": updated}
 

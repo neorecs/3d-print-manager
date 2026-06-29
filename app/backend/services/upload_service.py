@@ -6,6 +6,7 @@ from fastapi import HTTPException, UploadFile
 from sqlalchemy.orm import Session
 
 from api.utils import to_dict
+from domain.statuses import ACCOUNTING_DOCUMENT_STORED
 from models import AccountingDocument, AccountingPurchase, AccountingSale, Product, ProductMedia
 from publishing.service import mark_product_publications_sync_needed
 
@@ -59,7 +60,7 @@ def upload_accounting_document_file(
         file_path=f"/uploads/accounting_documents/{target_group}/{target_id}/{filename}",
         original_filename=original_name,
         mime_type=file.content_type,
-        status="bewaard",
+        status=ACCOUNTING_DOCUMENT_STORED,
         note=note,
     )
     db.add(item)

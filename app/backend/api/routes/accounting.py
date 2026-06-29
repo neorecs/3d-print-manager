@@ -1,5 +1,6 @@
 from fastapi import APIRouter
 from api.routes_shared import *
+from domain.statuses import ACCOUNTING_BOOKED, ACCOUNTING_CLOSED, ACCOUNTING_CORRECTED, ACCOUNTING_DOCUMENT_ARCHIVED
 
 router = APIRouter()
 
@@ -30,7 +31,7 @@ def credit_accounting_sale(item_id: int, payload: AccountingCorrectionCreate, db
     original = get_or_404(db, AccountingSale, item_id)
     if original.entry_type in {"credit", "correction"}:
         raise HTTPException(status_code=400, detail="Deze boeking is zelf al een correctie")
-    if original.status == "gecorrigeerd" or db.scalar(select(AccountingSale.id).where(AccountingSale.correction_of_sale_id == original.id)):
+    if original.status == ACCOUNTING_CORRECTED or db.scalar(select(AccountingSale.id).where(AccountingSale.correction_of_sale_id == original.id)):
         raise HTTPException(status_code=400, detail="Deze verkoopboeking is al gecorrigeerd")
     correction_date = parse_optional_date(payload.correction_date) or date.today()
     item = AccountingSale(
@@ -46,13 +47,13 @@ def credit_accounting_sale(item_id: int, payload: AccountingCorrectionCreate, db
         vat_amount=-float(original.vat_amount or 0),
         gross_amount=-float(original.gross_amount or 0),
         currency=original.currency,
-        status="geboekt",
+        status=ACCOUNTING_BOOKED,
         source="correction",
         entry_type="credit",
         correction_of_sale_id=original.id,
         note=payload.reason,
     )
-    original.status = "gecorrigeerd"
+    original.status = ACCOUNTING_CORRECTED
     db.add(item)
     db.commit()
     db.refresh(item)
@@ -86,7 +87,7 @@ def correct_accounting_purchase(item_id: int, payload: AccountingCorrectionCreat
     original = get_or_404(db, AccountingPurchase, item_id)
     if original.entry_type in {"credit", "correction"}:
         raise HTTPException(status_code=400, detail="Deze boeking is zelf al een correctie")
-    if original.payment_status == "gecorrigeerd" or db.scalar(select(AccountingPurchase.id).where(AccountingPurchase.correction_of_purchase_id == original.id)):
+    if original.payment_status == ACCOUNTING_CORRECTED or db.scalar(select(AccountingPurchase.id).where(AccountingPurchase.correction_of_purchase_id == original.id)):
         raise HTTPException(status_code=400, detail="Deze inkoopboeking is al gecorrigeerd")
     correction_date = parse_optional_date(payload.correction_date) or date.today()
     item = AccountingPurchase(
@@ -100,13 +101,13 @@ def correct_accounting_purchase(item_id: int, payload: AccountingCorrectionCreat
         vat_amount=-float(original.vat_amount or 0),
         gross_amount=-float(original.gross_amount or 0),
         currency=original.currency,
-        payment_status="gecorrigeerd",
+        payment_status=ACCOUNTING_CORRECTED,
         source="correction",
         entry_type="correction",
         correction_of_purchase_id=original.id,
         note=payload.reason,
     )
-    original.payment_status = "gecorrigeerd"
+    original.payment_status = ACCOUNTING_CORRECTED
     db.add(item)
     db.commit()
     db.refresh(item)
@@ -122,7 +123,7 @@ def list_accounting_documents(db: Session = Depends(get_db)):
 @router.post("/accounting/documents/{item_id}/archive")
 def archive_accounting_document(item_id: int, db: Session = Depends(get_db)):
     item = get_or_404(db, AccountingDocument, item_id)
-    item.status = "gearchiveerd"
+    item.status = ACCOUNTING_DOCUMENT_ARCHIVED
     item.note = f"{item.note or ''}\nGearchiveerd op {date.today().isoformat()}.".strip()
     db.commit()
     db.refresh(item)
@@ -224,7 +225,7 @@ def close_vat_period(payload: VatPeriodCloseCreate, db: Session = Depends(get_db
         raise HTTPException(status_code=400, detail="Start- en einddatum zijn verplicht")
     summary = accounting_vat_summary_data(db, start, end)
     item = db.scalar(select(VatPeriod).where(VatPeriod.period_name == payload.period_name))
-    if item and item.status == "afgesloten":
+    if item and item.status == ACCOUNTING_CLOSED:
         raise HTTPException(status_code=400, detail="Deze btw-periode is al afgesloten")
     if not item:
         item = VatPeriod(period_name=payload.period_name, start_date=start, end_date=end)
@@ -234,7 +235,7 @@ def close_vat_period(payload: VatPeriodCloseCreate, db: Session = Depends(get_db
     item.sales_vat = summary["sales_vat"]
     item.purchase_vat = summary["purchase_vat"]
     item.vat_due = summary["vat_due"]
-    item.status = "afgesloten"
+    item.status = ACCOUNTING_CLOSED
     item.note = payload.note or summary["note"]
     db.commit()
     db.refresh(item)

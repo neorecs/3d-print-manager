@@ -1,5 +1,6 @@
 from fastapi import APIRouter
 from api.routes_shared import *
+from domain.statuses import PUBLICATION_PAUSED, PUBLICATION_PUBLISHED, PUBLICATION_SYNC_NEEDED
 from services.product_service import generate_product_translations_for_product
 from services.upload_service import delete_uploaded_media_file
 
@@ -253,8 +254,8 @@ def update_publication_media(
                 active=payload_item.active,
             )
         )
-    if publication.publication_status == "gepubliceerd":
-        publication.publication_status = "synchronisatie_nodig"
+    if publication.publication_status == PUBLICATION_PUBLISHED:
+        publication.publication_status = PUBLICATION_SYNC_NEEDED
     db.commit()
     return list_publication_media(item_id, db)
 
@@ -274,7 +275,7 @@ def sync_product_publication(item_id: int, db: Session = Depends(get_db)):
 @router.post("/product-publications/{item_id}/pause")
 def pause_product_publication(item_id: int, db: Session = Depends(get_db)):
     item = get_or_404(db, ProductPlatformPublication, item_id)
-    item.publication_status = "gepauzeerd"
+    item.publication_status = PUBLICATION_PAUSED
     db.commit()
     return to_dict(item)
 

@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 
 from api.utils import to_dict
 from connectors.factory import get_platform_connector
+from domain.statuses import PUBLICATION_ERROR, PUBLICATION_PUBLISHED, PUBLICATION_READY, PUBLICATION_SYNC_NEEDED
 from models import (
     Platform,
     Product,
@@ -36,16 +37,16 @@ def split_platform_tags(tags: str | None) -> list[str]:
 def mark_product_publications_sync_needed(db: Session, product_id: int) -> None:
     query = select(ProductPlatformPublication).where(
         ProductPlatformPublication.product_id == product_id,
-        ProductPlatformPublication.publication_status.in_(["gepubliceerd", "klaar_voor_publicatie"]),
+        ProductPlatformPublication.publication_status.in_([PUBLICATION_PUBLISHED, PUBLICATION_READY]),
     )
     for publication in db.scalars(query).all():
-        publication.publication_status = "synchronisatie_nodig"
+        publication.publication_status = PUBLICATION_SYNC_NEEDED
 
 
 def publish_publication(db: Session, publication: ProductPlatformPublication) -> dict:
     validation = validate_publication_record(db, publication)
     if not validation["ready"]:
-        publication.publication_status = "fout"
+        publication.publication_status = PUBLICATION_ERROR
         publication.last_error = "; ".join(validation["errors"])
         db.commit()
         raise HTTPException(status_code=400, detail=validation)
@@ -60,7 +61,7 @@ def publish_publication(db: Session, publication: ProductPlatformPublication) ->
 def sync_publication(db: Session, publication: ProductPlatformPublication) -> dict:
     validation = validate_publication_record(db, publication)
     if not validation["ready"]:
-        publication.publication_status = "fout"
+        publication.publication_status = PUBLICATION_ERROR
         publication.last_error = "; ".join(validation["errors"])
         db.commit()
         raise HTTPException(status_code=400, detail=validation)
@@ -74,12 +75,12 @@ def sync_publication(db: Session, publication: ProductPlatformPublication) -> di
 
 def apply_connector_result(db: Session, publication: ProductPlatformPublication, result) -> None:
     if not result.success:
-        publication.publication_status = "fout"
+        publication.publication_status = PUBLICATION_ERROR
         publication.last_error = result.message
         db.commit()
         raise HTTPException(status_code=400, detail=result.message)
 
-    publication.publication_status = "gepubliceerd"
+    publication.publication_status = PUBLICATION_PUBLISHED
     publication.last_error = None
     publication.external_product_id = result.external_product_id or publication.external_product_id
     publication.external_listing_id = result.external_listing_id or publication.external_listing_id

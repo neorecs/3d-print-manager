@@ -7,6 +7,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from api.utils import to_dict
+from domain.statuses import ACCOUNTING_CONCEPT, ACCOUNTING_DOCUMENT_ARCHIVED
 from models import (
     AccountingDocument,
     AccountingFiscalSetting,
@@ -86,8 +87,8 @@ def accounting_vat_summary_data(db: Session, start: date | None = None, end: dat
     sales_vat = sum(float(item.vat_amount or 0) for item in sales)
     purchase_net = sum(float(item.net_amount or 0) for item in purchases)
     purchase_vat = sum(float(item.vat_amount or 0) for item in purchases)
-    missing_sale_docs = sum(1 for item in sales if not db.scalar(select(AccountingDocument.id).where(AccountingDocument.sale_id == item.id, AccountingDocument.status != "gearchiveerd")))
-    missing_purchase_docs = sum(1 for item in purchases if not db.scalar(select(AccountingDocument.id).where(AccountingDocument.purchase_id == item.id, AccountingDocument.status != "gearchiveerd")))
+    missing_sale_docs = sum(1 for item in sales if not db.scalar(select(AccountingDocument.id).where(AccountingDocument.sale_id == item.id, AccountingDocument.status != ACCOUNTING_DOCUMENT_ARCHIVED)))
+    missing_purchase_docs = sum(1 for item in purchases if not db.scalar(select(AccountingDocument.id).where(AccountingDocument.purchase_id == item.id, AccountingDocument.status != ACCOUNTING_DOCUMENT_ARCHIVED)))
     return {
         "sales_net": round(sales_net, 2),
         "sales_vat": round(sales_vat, 2),
@@ -170,7 +171,7 @@ def create_accounting_sale_from_order(db: Session, order: Order) -> dict:
         vat_amount=vat_amount,
         gross_amount=round(gross_amount, 2),
         currency=order.currency or "EUR",
-        status="concept",
+        status=ACCOUNTING_CONCEPT,
         source="order_import",
         note=(
             "Automatisch gemaakt vanuit order. Btw voorlopig berekend met standaardtarief 21%; "

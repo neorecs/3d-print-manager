@@ -3,6 +3,15 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from api.utils import to_dict
+from domain.statuses import (
+    INVENTORY_FULL,
+    INVENTORY_NONE,
+    INVENTORY_PARTIAL,
+    ORDER_FULLY_FROM_INVENTORY,
+    ORDER_FULLY_TO_PRINT,
+    ORDER_NEW,
+    ORDER_PARTLY_TO_PRINT,
+)
 from models import InventoryMovement, Order, OrderItem, ProductInventory, ProductVariant
 
 
@@ -89,15 +98,15 @@ def process_order_inventory(db: Session, order: Order) -> dict:
 
     statuses = {result["inventory_status"] for result in results}
     if not results:
-        order.status = "nieuw"
-    elif statuses == {"volledig_op_voorraad"}:
-        order.status = "volledig_uit_voorraad"
-    elif "deels_op_voorraad" in statuses:
-        order.status = "deels_te_printen"
-    elif statuses == {"niet_op_voorraad"}:
-        order.status = "volledig_te_printen"
+        order.status = ORDER_NEW
+    elif statuses == {INVENTORY_FULL}:
+        order.status = ORDER_FULLY_FROM_INVENTORY
+    elif INVENTORY_PARTIAL in statuses:
+        order.status = ORDER_PARTLY_TO_PRINT
+    elif statuses == {INVENTORY_NONE}:
+        order.status = ORDER_FULLY_TO_PRINT
     else:
-        order.status = "deels_te_printen"
+        order.status = ORDER_PARTLY_TO_PRINT
 
     db.commit()
     return {"status": "processed", "order": to_dict(order), "items": results}
@@ -107,7 +116,7 @@ def process_order_item_inventory(db: Session, item: OrderItem) -> dict:
     if not item.product_id or not item.product_variant_id:
         item.quantity_from_inventory = 0
         item.quantity_to_print = item.quantity_ordered
-        item.inventory_status = "niet_op_voorraad"
+        item.inventory_status = INVENTORY_NONE
         return to_dict(item)
 
     inventory = db.scalar(
@@ -119,7 +128,7 @@ def process_order_item_inventory(db: Session, item: OrderItem) -> dict:
     if not inventory:
         item.quantity_from_inventory = 0
         item.quantity_to_print = item.quantity_ordered
-        item.inventory_status = "niet_op_voorraad"
+        item.inventory_status = INVENTORY_NONE
         return to_dict(item)
 
     if item.quantity_from_inventory > 0:
@@ -160,11 +169,11 @@ def process_order_item_inventory(db: Session, item: OrderItem) -> dict:
     item.quantity_from_inventory = reserve_quantity
     item.quantity_to_print = quantity_to_print
     if reserve_quantity == item.quantity_ordered:
-        item.inventory_status = "volledig_op_voorraad"
+        item.inventory_status = INVENTORY_FULL
     elif reserve_quantity > 0:
-        item.inventory_status = "deels_op_voorraad"
+        item.inventory_status = INVENTORY_PARTIAL
     else:
-        item.inventory_status = "niet_op_voorraad"
+        item.inventory_status = INVENTORY_NONE
 
     data = to_dict(item)
     data["free_stock_before_reservation"] = free_stock

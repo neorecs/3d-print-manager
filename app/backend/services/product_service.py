@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 
 from api.utils import to_dict
 from core.config import get_settings
+from domain.statuses import PUBLICATION_CONCEPT
 from models import Product, ProductTag, ProductTranslation
 from publishing.service import mark_product_publications_sync_needed
 from schemas.common import ProductTranslationGenerate
@@ -39,7 +40,7 @@ def generate_product_translations_for_product(db: Session, product: Product, pay
             "seo_description": translated.get("seo_description"),
             "tags": translated.get("tags"),
             "source": translated.get("source") or "ai_translation",
-            "status": "concept",
+            "status": PUBLICATION_CONCEPT,
         }
         if existing:
             for key, value in data.items():

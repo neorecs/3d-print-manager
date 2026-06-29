@@ -1,5 +1,19 @@
 from fastapi import APIRouter
 from api.routes_shared import *
+from domain.statuses import (
+    ORDER_PRINTED,
+    PRINT_JOB_FAILED,
+    PRINT_JOB_NEW,
+    PRINT_JOB_PARTLY_FAILED,
+    PRINT_JOB_PLANNED,
+    PRINT_JOB_PRINTED,
+    PRINT_JOB_PROCESSED,
+    RECOMMENDATION_ACCEPTED,
+    RECOMMENDATION_ADJUSTED,
+    RECOMMENDATION_CONVERTED,
+    RECOMMENDATION_IGNORED,
+    RECOMMENDATION_NEW,
+)
 
 router = APIRouter()
 
@@ -38,7 +52,7 @@ def complete_print_job(item_id: int, payload: PrintJobComplete, db: Session = De
     if quantity_to_order > payload.quantity_succeeded:
         raise HTTPException(status_code=400, detail="Aantal naar order kan niet hoger zijn dan aantal gelukt")
 
-    already_processed = item.status in {"geprint", "deels_mislukt", "mislukt", "verwerkt"}
+    already_processed = item.status in {PRINT_JOB_PRINTED, PRINT_JOB_PARTLY_FAILED, PRINT_JOB_FAILED, PRINT_JOB_PROCESSED}
     previous_to_inventory = item.quantity_to_inventory if already_processed else 0
     previous_failed = item.quantity_failed if already_processed else 0
     item.quantity_succeeded = payload.quantity_succeeded
@@ -46,11 +60,11 @@ def complete_print_job(item_id: int, payload: PrintJobComplete, db: Session = De
     item.quantity_to_order = quantity_to_order
     item.quantity_to_inventory = max(0, payload.quantity_succeeded - quantity_to_order)
     if payload.quantity_succeeded == 0 and payload.quantity_failed > 0:
-        item.status = "mislukt"
+        item.status = PRINT_JOB_FAILED
     elif payload.quantity_failed > 0:
-        item.status = "deels_mislukt"
+        item.status = PRINT_JOB_PARTLY_FAILED
     else:
-        item.status = "geprint"
+        item.status = PRINT_JOB_PRINTED
 
     inventory = ensure_product_inventory_for_print_job(db, item)
     inventory_delta = item.quantity_to_inventory - previous_to_inventory
@@ -136,8 +150,8 @@ def update_order_status_after_print(db: Session, print_job: PrintJob) -> None:
         .join(OrderItem, PrintJob.order_item_id == OrderItem.id)
         .where(OrderItem.order_id == order_id)
     ).all()
-    if jobs and all(job.status in {"geprint", "deels_mislukt"} for job in jobs):
-        order.status = "geprint"
+    if jobs and all(job.status in {PRINT_JOB_PRINTED, PRINT_JOB_PARTLY_FAILED} for job in jobs):
+        order.status = ORDER_PRINTED
 
 
 @router.get("/print-batches")
@@ -150,7 +164,7 @@ def list_print_batches(db: Session = Depends(get_db)):
 def suggest_print_batches(db: Session = Depends(get_db)):
     jobs = db.scalars(
         select(PrintJob)
-        .where(PrintJob.status.in_(["nieuw", "gepland"]))
+        .where(PrintJob.status.in_([PRINT_JOB_NEW, PRINT_JOB_PLANNED]))
         .order_by(PrintJob.material, PrintJob.color, PrintJob.id)
     ).all()
     groups: dict[tuple[str, str], dict] = {}
@@ -230,7 +244,7 @@ def create_print_batch(payload: PrintBatchCreate, db: Session = Depends(get_db))
         planned_date=date.fromisoformat(payload.planned_date) if payload.planned_date else None,
         material=payload.material,
         color=payload.color,
-        status="gepland",
+        status=PRINT_JOB_PLANNED,
     )
     db.add(item)
     db.flush()
@@ -550,7 +564,7 @@ def generate_stock_recommendations(payload: StockRecommendationGenerate | None =
             select(StockRecommendation).where(
                 StockRecommendation.product_id == row["product_id"],
                 StockRecommendation.product_variant_id == row["product_variant_id"],
-                StockRecommendation.status.in_(["nieuw", "aangepast"]),
+                StockRecommendation.status.in_([RECOMMENDATION_NEW, RECOMMENDATION_ADJUSTED]),
             )
         )
         if existing:
@@ -571,7 +585,7 @@ def generate_stock_recommendations(payload: StockRecommendationGenerate | None =
                 recommended_stock_level=recommended_stock_level,
                 recommended_print_quantity=recommended_print_quantity,
                 reason=reason,
-                status="nieuw",
+                status=RECOMMENDATION_NEW,
             )
             db.add(existing)
             generated.append(existing)
@@ -598,7 +612,7 @@ def get_free_stock_for_variant(db: Session, product_id: int, product_variant_id:
 @router.post("/stock-recommendations/{item_id}/accept")
 def accept_stock_recommendation(item_id: int, db: Session = Depends(get_db)):
     item = get_or_404(db, StockRecommendation, item_id)
-    item.status = "geaccepteerd"
+    item.status = RECOMMENDATION_ACCEPTED
     db.commit()
     return to_dict(item)
 
@@ -616,7 +630,7 @@ def update_stock_recommendation(item_id: int, payload: StockRecommendationUpdate
         f"{explanation} Advies aangepast naar {payload.recommended_print_quantity} extra printen "
         f"met veiligheidsvoorraad {payload.safety_stock}."
     )
-    item.status = "aangepast"
+    item.status = RECOMMENDATION_ADJUSTED
     db.commit()
     db.refresh(item)
     return to_dict(item)
@@ -625,7 +639,7 @@ def update_stock_recommendation(item_id: int, payload: StockRecommendationUpdate
 @router.post("/stock-recommendations/{item_id}/ignore")
 def ignore_stock_recommendation(item_id: int, db: Session = Depends(get_db)):
     item = get_or_404(db, StockRecommendation, item_id)
-    item.status = "genegeerd"
+    item.status = RECOMMENDATION_IGNORED
     db.commit()
     return to_dict(item)
 
@@ -649,9 +663,9 @@ def convert_stock_recommendation(item_id: int, db: Session = Depends(get_db)):
         estimated_filament_grams=int((variant.estimated_filament_grams or 0) * item.recommended_print_quantity)
         if variant
         else None,
-        status="nieuw",
+        status=PRINT_JOB_NEW,
     )
-    item.status = "omgezet_naar_printtaak"
+    item.status = RECOMMENDATION_CONVERTED
     db.add(print_job)
     db.commit()
     db.refresh(print_job)
