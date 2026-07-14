@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from api.routes import accounting, ai, bambu, health, inventory, orders, planning, platforms, products, system, uploads
+from api.routes import accounting, ai, auth, bambu, health, inventory, orders, planning, platforms, products, system, uploads
 from api.routes.orders import process_order_inventory
 from api.routes.planning import (
     complete_print_job,
@@ -15,6 +15,7 @@ from publishing.service import validate_publication_record
 
 router = APIRouter()
 router.include_router(health.router)
+router.include_router(auth.router)
 router.include_router(ai.router)
 router.include_router(accounting.router)
 router.include_router(bambu.router)

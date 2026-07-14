@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ReactNode } from "react";
+import { LogoutButton } from "./LogoutButton";
 
 const navigation = [
   {
@@ -91,8 +92,11 @@ export function AppShell({ children }: { children: ReactNode }) {
               <div className="text-sm font-bold text-slate-200">Nieuwe Next.js cockpit</div>
               <div className="text-xs text-muted">Productie, voorraad, verkoop en printers in een beheerlaag</div>
             </div>
-            <div className="rounded-full border border-brand/25 bg-brand/10 px-3 py-1 text-xs font-black text-brand">
-              Prototype V2
+            <div className="flex items-center gap-3">
+              <div className="rounded-full border border-brand/25 bg-brand/10 px-3 py-1 text-xs font-black text-brand">
+                Prototype V2
+              </div>
+              <LogoutButton />
             </div>
           </div>
           <div className="professional-scrollbar flex gap-2 overflow-x-auto border-t border-line px-4 py-2 lg:hidden">

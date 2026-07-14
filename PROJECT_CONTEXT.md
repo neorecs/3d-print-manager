@@ -15,6 +15,7 @@ De gebruiker wil het verdere projectplan hier aanleveren. Dat plan moet worden g
 ## Projectplan
 
 Het volledige projectplan is vastgelegd in `docs/PROJECTPLAN.md`.
+Het login- en wereldwijde-toegangspoor is vastgelegd in `docs/PROJECTPLAN_AUTH_LOGIN.md`.
 
 ## Eerste ontwikkelfase
 

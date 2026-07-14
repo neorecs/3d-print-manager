@@ -8,6 +8,29 @@ class PlatformCreate(BaseModel):
     active: bool = True
 
 
+class AuthLogin(BaseModel):
+    email: str
+    password: str
+
+
+class AuthBootstrapAdmin(BaseModel):
+    bootstrap_secret: str
+    email: str
+    password: str
+    display_name: str | None = "Beheerder"
+
+
+class AuthMfaSetup(BaseModel):
+    email: str
+    password: str
+
+
+class AuthMfaConfirm(BaseModel):
+    email: str
+    password: str
+    code: str
+
+
 class PlatformCredentialCreate(BaseModel):
     key_name: str
     encrypted_value: str
