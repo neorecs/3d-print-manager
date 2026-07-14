@@ -133,8 +133,36 @@ De NAS-compose bevat healthchecks voor:
 - frontend_next: Next.js startpagina
 
 Het v1.0 livegang-runbook staat in `docs/V1_LIVEGANG_RUNBOOK.md`. Gebruik dat document als go/no-go lijst voordat echte platformtokens, echte orders of live publicaties worden gebruikt.
+Het auth/loginspoor staat in `docs/PROJECTPLAN_AUTH_LOGIN.md`.
 
 De NAS-compose bevat ook een `postgres_backup` service. Deze maakt bij start een PostgreSQL backup en daarna standaard dagelijks. Details staan in `docs/BACKUP_EN_HERSTEL.md`.
+
+## Loginbeveiliging
+
+De Next.js frontend heeft een eerste opt-in loginlaag. Zet deze variabelen in de frontend/NAS environment:
+
+```env
+AUTH_ENABLED=true
+AUTH_SECRET=
+AUTH_ADMIN_EMAIL=
+AUTH_ADMIN_NAME=Beheerder
+AUTH_ADMIN_PASSWORD=
+AUTH_BACKEND_LOGIN=false
+```
+
+Gebruik een lange willekeurige waarde voor `AUTH_SECRET` en een sterk adminwachtwoord. Als `AUTH_ENABLED` niet op `true` staat, blijft de bestaande interne werking zonder login actief. De login beschermt de Next.js pagina's en Next.js API-routes en beperkt herhaalde loginpogingen; houd de FastAPI backend daarnaast alleen intern bereikbaar.
+
+Voor databasegebruikers kan de backend een eerste admin aanmaken via `/auth/bootstrap-admin` wanneer `AUTH_BOOTSTRAP_SECRET` tijdelijk is ingesteld. Zet daarna `AUTH_BACKEND_LOGIN=true` op de Next.js service zodat de login tegen de FastAPI `users` tabel controleert. Verwijder of leeg `AUTH_BOOTSTRAP_SECRET` na het aanmaken van de eerste admin.
+
+Voorbeeld bootstrap-call:
+
+```powershell
+Invoke-RestMethod -Method Post http://localhost:38080/auth/bootstrap-admin `
+  -ContentType "application/json" `
+  -Body '{"bootstrap_secret":"tijdelijke-secret","email":"admin@example.com","password":"lang-sterk-wachtwoord","display_name":"Beheerder"}'
+```
+
+De backend legt loginpogingen en het aanmaken van de eerste admin vast in `audit_logs`. MFA/TOTP kan backendmatig worden voorbereid via `/auth/mfa/setup` en bevestigd via `/auth/mfa/confirm`; MFA is nog niet verplicht in de loginflow.
 
 ## Platformconnectors
 
@@ -184,6 +212,12 @@ De huidige suite controleert:
 - publicatievalidatie en mock-publicatie via de connectorlaag;
 - Etsy/Shopify connectorfouten zonder live calls in mockmodus;
 - voorraadadvies op basis van verkoop, veiligheidsvoorraad en vrije voorraad.
+
+Voor een snelle containercheck van alleen de auth/loginbasis:
+
+```powershell
+docker compose -f docker-compose.test.yml run --rm backend_tests
+```
 
 De tests zijn opgesplitst per domein:
 

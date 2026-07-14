@@ -1,0 +1,8 @@
+services:
+  backend_tests:
+    build: ./app/backend
+    environment:
+      DATABASE_URL: "sqlite+pysqlite:///:memory:"
+      CONNECTORS_LIVE_MODE: "false"
+      CREDENTIAL_ENCRYPTION_KEY: 4pmcM6TeV2L8D4WWuQV3XGjxM2aJ3qS4Ph3CEmE-hzA=
+    command: ["python", "-m", "unittest", "discover", "-s", "tests", "-p", "test_auth.py", "-v"]

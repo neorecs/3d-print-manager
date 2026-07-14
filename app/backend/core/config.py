@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     openai_product_model: str = "gpt-5.4-mini"
     openai_api_base_url: str = "https://api.openai.com/v1"
     ai_product_max_output_tokens: int = 2500
+    auth_bootstrap_secret: str | None = None
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 

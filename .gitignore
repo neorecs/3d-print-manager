@@ -5,6 +5,9 @@ __pycache__/
 .mypy_cache/
 .ruff_cache/
 .venv/
+.venv-backend-tests/
+.docker-test-config/
+auth-test-output.txt
 venv/
 .streamlit/secrets.toml
 postgres_data/
