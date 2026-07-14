@@ -34,6 +34,7 @@ const navigation = [
     items: [
       { label: "Analyse", href: "/analyse", icon: "G" },
       { label: "Financieel", href: "/administratie", icon: "E" },
+      { label: "Gebruikers", href: "/instellingen/gebruikers", icon: "U" },
       { label: "Instellingen", href: "/instellingen", icon: "S" },
     ],
   },

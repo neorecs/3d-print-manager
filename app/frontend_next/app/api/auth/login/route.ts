@@ -50,6 +50,6 @@ export async function POST(request: NextRequest) {
   }
 
   clearRateLimit(rateLimitKey);
-  const response = NextResponse.json({ email: result.email, name: result.name, role: "admin" });
-  return setSessionCookie(response, result.email, result.name);
+  const response = NextResponse.json({ email: result.email, name: result.name, role: result.role });
+  return setSessionCookie(response, result.email, result.name, result.role);
 }

@@ -6,7 +6,7 @@ const SESSION_MAX_AGE_SECONDS = 60 * 60 * 12;
 type SessionPayload = {
   email: string;
   name: string;
-  role: "admin";
+  role: "admin" | "operator" | "viewer";
   exp: number;
 };
 
@@ -76,7 +76,7 @@ export function authIsEnabled() {
 }
 
 type LoginResult =
-  | { ok: true; email: string; name: string }
+  | { ok: true; email: string; name: string; role: SessionPayload["role"] }
   | { ok: false; error: string };
 
 export async function verifySessionToken(token?: string | null): Promise<SessionPayload | null> {
@@ -119,7 +119,7 @@ export async function validateLogin(email: string, password: string): Promise<Lo
   }
 
   if (!isAuthEnabled()) {
-    return { ok: true, email: "dev@local", name: "Lokale gebruiker" };
+    return { ok: true, email: "dev@local", name: "Lokale gebruiker", role: "admin" };
   }
 
   const expectedEmail = process.env.AUTH_ADMIN_EMAIL;
@@ -132,7 +132,7 @@ export async function validateLogin(email: string, password: string): Promise<Lo
     return { ok: false, error: "E-mailadres of wachtwoord klopt niet." };
   }
 
-  return { ok: true, email: expectedEmail, name: process.env.AUTH_ADMIN_NAME || "Beheerder" };
+  return { ok: true, email: expectedEmail, name: process.env.AUTH_ADMIN_NAME || "Beheerder", role: "admin" };
 }
 
 async function validateBackendLogin(email: string, password: string): Promise<LoginResult> {
@@ -154,15 +154,16 @@ async function validateBackendLogin(email: string, password: string): Promise<Lo
     ok: true,
     email: data.user.email,
     name: data.user.display_name || data.user.email,
+    role: data.user.role || "viewer",
   };
 }
 
-export async function setSessionCookie(response: NextResponse, email: string, name: string) {
+export async function setSessionCookie(response: NextResponse, email: string, name: string, role: SessionPayload["role"] = "admin") {
   const secret = getAuthSecret();
   if (!secret) return response;
 
   const exp = Math.floor(Date.now() / 1000) + SESSION_MAX_AGE_SECONDS;
-  const token = await createSessionToken({ email, name, role: "admin", exp }, secret);
+  const token = await createSessionToken({ email, name, role, exp }, secret);
 
   response.cookies.set(AUTH_COOKIE_NAME, token, {
     httpOnly: true,
