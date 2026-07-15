@@ -11,6 +11,7 @@ class PlatformCreate(BaseModel):
 class AuthLogin(BaseModel):
     email: str
     password: str
+    mfa_code: str | None = None
 
 
 class AuthBootstrapAdmin(BaseModel):

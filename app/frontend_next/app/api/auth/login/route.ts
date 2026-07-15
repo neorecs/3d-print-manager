@@ -38,14 +38,18 @@ export async function POST(request: NextRequest) {
   const payload = await request.json().catch(() => ({}));
   const email = typeof payload.email === "string" ? payload.email : "";
   const password = typeof payload.password === "string" ? payload.password : "";
+  const mfaCode = typeof payload.mfaCode === "string" ? payload.mfaCode : "";
   const rateLimitKey = getRateLimitKey(request, email);
 
   if (isRateLimited(rateLimitKey)) {
     return NextResponse.json({ detail: "Te veel loginpogingen. Probeer het later opnieuw." }, { status: 429 });
   }
 
-  const result = await validateLogin(email, password);
+  const result = await validateLogin(email, password, mfaCode);
   if (!result.ok) {
+    if (result.mfaRequired) {
+      return NextResponse.json({ detail: result.error || "MFA-code vereist.", mfa_required: true }, { status: 401 });
+    }
     return NextResponse.json({ detail: result.error || "Inloggen mislukt." }, { status: 401 });
   }
 

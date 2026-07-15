@@ -109,11 +109,30 @@ def reset_user_mfa(db: Session, user_id: int) -> User:
     return user
 
 
-def authenticate_user(db: Session, email: str, password: str, ip_address: str | None = None, user_agent: str | None = None) -> User:
+def authenticate_user(
+    db: Session,
+    email: str,
+    password: str,
+    mfa_code: str | None = None,
+    ip_address: str | None = None,
+    user_agent: str | None = None,
+) -> User:
     user = get_user_by_email(db, email)
     if not user or not user.is_active or not verify_password(password, user.password_hash):
         record_audit_log(db, None, "auth.login_failed", "user", None, f"Mislukte login voor {email}.", ip_address, user_agent)
         raise HTTPException(status_code=401, detail="E-mailadres of wachtwoord klopt niet.")
+
+    if user.mfa_enabled:
+        if not user.totp_secret_encrypted:
+            record_audit_log(db, user, "auth.mfa_missing_secret", "user", str(user.id), "MFA staat aan zonder secret.", ip_address, user_agent)
+            raise HTTPException(status_code=403, detail="MFA is niet goed ingesteld. Vraag een admin om MFA te resetten.")
+        if not mfa_code:
+            record_audit_log(db, user, "auth.mfa_required", "user", str(user.id), "MFA-code vereist voor login.", ip_address, user_agent)
+            raise HTTPException(status_code=401, detail={"message": "MFA-code vereist.", "mfa_required": True})
+        secret = decrypt_credential(user.totp_secret_encrypted)
+        if not verify_totp_code(secret, mfa_code):
+            record_audit_log(db, user, "auth.mfa_login_failed", "user", str(user.id), "Ongeldige MFA-code bij login.", ip_address, user_agent)
+            raise HTTPException(status_code=401, detail={"message": "MFA-code klopt niet.", "mfa_required": True})
 
     user.last_login_at = datetime.now(timezone.utc)
     db.add(user)

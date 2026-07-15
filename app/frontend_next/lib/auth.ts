@@ -77,7 +77,7 @@ export function authIsEnabled() {
 
 type LoginResult =
   | { ok: true; email: string; name: string; role: SessionPayload["role"] }
-  | { ok: false; error: string };
+  | { ok: false; error: string; mfaRequired?: boolean };
 
 export async function verifySessionToken(token?: string | null): Promise<SessionPayload | null> {
   if (!isAuthEnabled()) {
@@ -113,9 +113,9 @@ export async function getSessionFromCookieStore(cookieValue?: string | null) {
   return verifySessionToken(cookieValue);
 }
 
-export async function validateLogin(email: string, password: string): Promise<LoginResult> {
+export async function validateLogin(email: string, password: string, mfaCode?: string): Promise<LoginResult> {
   if (process.env.AUTH_BACKEND_LOGIN === "true") {
-    return validateBackendLogin(email, password);
+    return validateBackendLogin(email, password, mfaCode);
   }
 
   if (!isAuthEnabled()) {
@@ -135,19 +135,23 @@ export async function validateLogin(email: string, password: string): Promise<Lo
   return { ok: true, email: expectedEmail, name: process.env.AUTH_ADMIN_NAME || "Beheerder", role: "admin" };
 }
 
-async function validateBackendLogin(email: string, password: string): Promise<LoginResult> {
+async function validateBackendLogin(email: string, password: string, mfaCode?: string): Promise<LoginResult> {
   const apiBaseUrl =
     process.env.FRONTEND_NEXT_API_BASE_URL || process.env.API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:38080";
   const response = await fetch(`${apiBaseUrl}/auth/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, password }),
+    body: JSON.stringify({ email, password, mfa_code: mfaCode || null }),
     cache: "no-store",
   });
 
   const data = await response.json().catch(() => ({ detail: "Backend gaf geen JSON terug." }));
   if (!response.ok) {
-    return { ok: false, error: data.detail || "Inloggen mislukt." };
+    const detail = data.detail || "Inloggen mislukt.";
+    if (typeof detail === "object" && detail?.mfa_required) {
+      return { ok: false, error: detail.message || "MFA-code vereist.", mfaRequired: true };
+    }
+    return { ok: false, error: typeof detail === "string" ? detail : "Inloggen mislukt." };
   }
 
   return {
