@@ -6,7 +6,19 @@ from core.security import hash_password, verify_password
 from core.credentials import decrypt_credential
 from core.security import _totp_at_step
 from models import AuditLog
-from services.auth_service import authenticate_user, confirm_mfa_setup, create_admin_user, has_admin_user, start_mfa_setup
+from services.auth_service import (
+    authenticate_user,
+    confirm_mfa_setup,
+    create_admin_user,
+    create_user,
+    has_admin_user,
+    list_audit_logs,
+    list_users,
+    reset_user_mfa,
+    reset_user_password,
+    start_mfa_setup,
+    update_user,
+)
 
 
 class AuthTestCase(BackendTestCase):
@@ -51,3 +63,45 @@ class AuthTestCase(BackendTestCase):
         audit_actions = [log.action for log in self.db.scalars(select(AuditLog).order_by(AuditLog.id)).all()]
         self.assertIn("auth.mfa_setup_started", audit_actions)
         self.assertIn("auth.mfa_enabled", audit_actions)
+
+    def test_admin_can_create_update_and_reset_users(self) -> None:
+        create_admin_user(self.db, "admin@example.com", "sterk-wachtwoord-123", "Admin")
+        user = create_user(self.db, "Operator@Example.com", "tijdelijk-wachtwoord-123", "Operator", "operator", True)
+
+        self.assertEqual([item.email for item in list_users(self.db)], ["admin@example.com", "operator@example.com"])
+
+        updated = update_user(self.db, user.id, "Operator nieuw", "viewer", False)
+        self.assertEqual(updated.display_name, "Operator nieuw")
+        self.assertEqual(updated.role, "viewer")
+        self.assertFalse(updated.is_active)
+
+        reset_user_password(self.db, user.id, "nieuw-wachtwoord-123")
+        updated.is_active = True
+        self.db.add(updated)
+        self.db.commit()
+        authenticated = authenticate_user(self.db, "operator@example.com", "nieuw-wachtwoord-123")
+        self.assertEqual(authenticated.id, user.id)
+
+        updated.totp_secret_encrypted = "encrypted-secret"
+        updated.mfa_enabled = True
+        self.db.add(updated)
+        self.db.commit()
+        reset_user_mfa(self.db, user.id)
+        self.db.refresh(updated)
+        self.assertFalse(updated.mfa_enabled)
+        self.assertIsNone(updated.totp_secret_encrypted)
+
+        audit_actions = [log.action for log in list_audit_logs(self.db)]
+        self.assertIn("auth.user_created", audit_actions)
+        self.assertIn("auth.user_updated", audit_actions)
+        self.assertIn("auth.password_reset", audit_actions)
+        self.assertIn("auth.mfa_reset", audit_actions)
+
+    def test_last_active_admin_cannot_be_disabled_or_demoted(self) -> None:
+        admin = create_admin_user(self.db, "admin@example.com", "sterk-wachtwoord-123", "Admin")
+
+        with self.assertRaises(HTTPException):
+            update_user(self.db, admin.id, "Admin", "viewer", True)
+
+        with self.assertRaises(HTTPException):
+            update_user(self.db, admin.id, "Admin", "admin", False)

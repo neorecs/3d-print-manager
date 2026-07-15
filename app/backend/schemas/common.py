@@ -31,6 +31,24 @@ class AuthMfaConfirm(BaseModel):
     code: str
 
 
+class AuthUserCreate(BaseModel):
+    email: str
+    password: str
+    display_name: str | None = None
+    role: str = "operator"
+    is_active: bool = True
+
+
+class AuthUserUpdate(BaseModel):
+    display_name: str | None = None
+    role: str | None = None
+    is_active: bool | None = None
+
+
+class AuthPasswordReset(BaseModel):
+    password: str
+
+
 class PlatformCredentialCreate(BaseModel):
     key_name: str
     encrypted_value: str
