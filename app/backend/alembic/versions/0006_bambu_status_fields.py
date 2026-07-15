@@ -7,6 +7,7 @@ Create Date: 2026-06-27
 
 from alembic import op
 import sqlalchemy as sa
+from sqlalchemy import inspect
 
 
 revision = "0006_bambu_status_fields"
@@ -16,12 +17,19 @@ depends_on = None
 
 
 def upgrade() -> None:
-    op.add_column("bambu_printers", sa.Column("printer_state", sa.String(length=100), nullable=True))
-    op.add_column("bambu_printers", sa.Column("print_progress", sa.Integer(), nullable=True))
-    op.add_column("bambu_printers", sa.Column("nozzle_temperature", sa.Float(), nullable=True))
-    op.add_column("bambu_printers", sa.Column("bed_temperature", sa.Float(), nullable=True))
-    op.add_column("bambu_printers", sa.Column("chamber_temperature", sa.Float(), nullable=True))
-    op.add_column("bambu_printers", sa.Column("current_task", sa.String(length=255), nullable=True))
+    inspector = inspect(op.get_bind())
+    columns = {column["name"] for column in inspector.get_columns("bambu_printers")}
+
+    def add_column_if_missing(name: str, column) -> None:
+        if name not in columns:
+            op.add_column("bambu_printers", column)
+
+    add_column_if_missing("printer_state", sa.Column("printer_state", sa.String(length=100), nullable=True))
+    add_column_if_missing("print_progress", sa.Column("print_progress", sa.Integer(), nullable=True))
+    add_column_if_missing("nozzle_temperature", sa.Column("nozzle_temperature", sa.Float(), nullable=True))
+    add_column_if_missing("bed_temperature", sa.Column("bed_temperature", sa.Float(), nullable=True))
+    add_column_if_missing("chamber_temperature", sa.Column("chamber_temperature", sa.Float(), nullable=True))
+    add_column_if_missing("current_task", sa.Column("current_task", sa.String(length=255), nullable=True))
 
 
 def downgrade() -> None:

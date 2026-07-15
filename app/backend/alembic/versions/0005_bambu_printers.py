@@ -7,6 +7,7 @@ Create Date: 2026-06-27
 
 from alembic import op
 import sqlalchemy as sa
+from sqlalchemy import inspect
 
 
 revision = "0005_bambu_printers"
@@ -16,6 +17,10 @@ depends_on = None
 
 
 def upgrade() -> None:
+    inspector = inspect(op.get_bind())
+    if "bambu_printers" in set(inspector.get_table_names()):
+        return
+
     op.create_table(
         "bambu_printers",
         sa.Column("id", sa.Integer(), primary_key=True),
