@@ -162,7 +162,9 @@ Invoke-RestMethod -Method Post http://localhost:38080/auth/bootstrap-admin `
   -Body '{"bootstrap_secret":"tijdelijke-secret","email":"admin@example.com","password":"lang-sterk-wachtwoord","display_name":"Beheerder"}'
 ```
 
-De backend legt loginpogingen en het aanmaken van de eerste admin vast in `audit_logs`. MFA/TOTP kan backendmatig worden voorbereid via `/auth/mfa/setup` en bevestigd via `/auth/mfa/confirm`; MFA is nog niet verplicht in de loginflow.
+De backend legt loginpogingen en het aanmaken van de eerste admin vast in `audit_logs`. MFA/TOTP kan backendmatig worden voorbereid via `/auth/mfa/setup` en bevestigd via `/auth/mfa/confirm`. Zodra MFA voor een gebruiker is ingeschakeld, vraagt de loginflow om een geldige TOTP-code voordat de Next.js sessie wordt gezet.
+
+Voor een volledige lokale Docker-uitrol met database-login en MFA staat de checklist in `docs/LOKALE_DOCKER_UITROL_CHECKLIST.md`.
 
 ## Platformconnectors
 
