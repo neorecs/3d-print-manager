@@ -55,6 +55,7 @@ def login(payload: AuthLogin, request: Request, db: Session = Depends(get_db)) -
         db,
         payload.email,
         payload.password,
+        payload.mfa_code,
         ip_address=request.client.host if request.client else None,
         user_agent=request.headers.get("user-agent"),
     )

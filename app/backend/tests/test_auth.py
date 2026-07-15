@@ -64,6 +64,34 @@ class AuthTestCase(BackendTestCase):
         self.assertIn("auth.mfa_setup_started", audit_actions)
         self.assertIn("auth.mfa_enabled", audit_actions)
 
+    def test_mfa_enabled_user_must_provide_valid_code_to_login(self) -> None:
+        user = create_admin_user(self.db, "admin@example.com", "sterk-wachtwoord-123", "Admin")
+        setup = start_mfa_setup(self.db, "admin@example.com", "sterk-wachtwoord-123")
+        confirm_mfa_setup(self.db, "admin@example.com", "sterk-wachtwoord-123", _totp_at_step(setup["secret"], int(time.time() // 30)))
+
+        with self.assertRaises(HTTPException) as missing_code:
+            authenticate_user(self.db, "admin@example.com", "sterk-wachtwoord-123")
+        self.assertEqual(missing_code.exception.status_code, 401)
+        self.assertTrue(missing_code.exception.detail["mfa_required"])
+
+        with self.assertRaises(HTTPException) as wrong_code:
+            authenticate_user(self.db, "admin@example.com", "sterk-wachtwoord-123", "000000")
+        self.assertEqual(wrong_code.exception.status_code, 401)
+        self.assertTrue(wrong_code.exception.detail["mfa_required"])
+
+        authenticated = authenticate_user(
+            self.db,
+            "admin@example.com",
+            "sterk-wachtwoord-123",
+            _totp_at_step(setup["secret"], int(time.time() // 30)),
+        )
+        self.assertEqual(authenticated.id, user.id)
+
+        audit_actions = [log.action for log in self.db.scalars(select(AuditLog).order_by(AuditLog.id)).all()]
+        self.assertIn("auth.mfa_required", audit_actions)
+        self.assertIn("auth.mfa_login_failed", audit_actions)
+        self.assertEqual(audit_actions[-1], "auth.login_success")
+
     def test_admin_can_create_update_and_reset_users(self) -> None:
         create_admin_user(self.db, "admin@example.com", "sterk-wachtwoord-123", "Admin")
         user = create_user(self.db, "Operator@Example.com", "tijdelijk-wachtwoord-123", "Operator", "operator", True)

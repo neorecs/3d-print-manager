@@ -7,6 +7,8 @@ export function LoginForm({ nextPath }: { nextPath: string }) {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [mfaCode, setMfaCode] = useState("");
+  const [mfaRequired, setMfaRequired] = useState(false);
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -18,12 +20,19 @@ export function LoginForm({ nextPath }: { nextPath: string }) {
     const response = await fetch("/api/auth/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ email, password, mfaCode }),
     });
 
     if (!response.ok) {
       const data = await response.json().catch(() => ({ detail: "Inloggen mislukt." }));
-      setError(data.detail || "Inloggen mislukt.");
+      if (data.mfa_required) {
+        setMfaRequired(true);
+        setError(data.detail || "Vul je MFA-code in.");
+      } else {
+        setMfaRequired(false);
+        setMfaCode("");
+        setError(data.detail || "Inloggen mislukt.");
+      }
       setIsSubmitting(false);
       return;
     }
@@ -65,6 +74,27 @@ export function LoginForm({ nextPath }: { nextPath: string }) {
           value={password}
         />
       </div>
+      {mfaRequired ? (
+        <div>
+          <label className="text-xs font-black uppercase tracking-[.14em] text-muted" htmlFor="mfaCode">
+            MFA-code
+          </label>
+          <input
+            autoComplete="one-time-code"
+            className="mt-2 w-full rounded-xl border border-line bg-[#111b2d] px-4 py-3 text-sm font-semibold text-white outline-none transition focus:border-brand"
+            id="mfaCode"
+            inputMode="numeric"
+            maxLength={6}
+            name="mfaCode"
+            onChange={(event) => setMfaCode(event.target.value.replace(/\D/g, "").slice(0, 6))}
+            pattern="[0-9]{6}"
+            placeholder="123456"
+            required
+            type="text"
+            value={mfaCode}
+          />
+        </div>
+      ) : null}
       {error ? (
         <div className="rounded-xl border border-red-400/30 bg-red-500/10 px-4 py-3 text-sm font-bold text-red-100">
           {error}
