@@ -7,6 +7,7 @@ Create Date: 2026-06-27
 
 from alembic import op
 import sqlalchemy as sa
+from sqlalchemy import inspect
 
 
 revision = "0009_platform_import_logs"
@@ -16,6 +17,10 @@ depends_on = None
 
 
 def upgrade() -> None:
+    inspector = inspect(op.get_bind())
+    if "platform_import_logs" in set(inspector.get_table_names()):
+        return
+
     op.create_table(
         "platform_import_logs",
         sa.Column("id", sa.Integer(), primary_key=True),
