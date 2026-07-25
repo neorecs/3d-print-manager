@@ -152,6 +152,8 @@ AUTH_BACKEND_LOGIN=false
 
 Gebruik een lange willekeurige waarde voor `AUTH_SECRET` en een sterk adminwachtwoord. De login beschermt de Next.js pagina's en Next.js API-routes en beperkt herhaalde loginpogingen; houd de FastAPI backend daarnaast alleen intern bereikbaar. Zet `AUTH_ENABLED=false` alleen bewust voor lokale ontwikkeling of tijdelijke diagnose.
 
+In de NAS-compose valt `AUTH_SECRET` tijdelijk terug op `CREDENTIAL_ENCRYPTION_KEY` als er nog geen losse `AUTH_SECRET` is ingesteld. Voor productie heeft een aparte lange `AUTH_SECRET` de voorkeur.
+
 Voor databasegebruikers kan de backend een eerste admin aanmaken via `/auth/bootstrap-admin` wanneer `AUTH_BOOTSTRAP_SECRET` tijdelijk is ingesteld. Zet daarna `AUTH_BACKEND_LOGIN=true` op de Next.js service zodat de login tegen de FastAPI `users` tabel controleert. Verwijder of leeg `AUTH_BOOTSTRAP_SECRET` na het aanmaken van de eerste admin.
 
 Voorbeeld bootstrap-call:
