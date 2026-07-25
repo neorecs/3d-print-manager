@@ -11,16 +11,27 @@ export async function POST(request: NextRequest) {
   }
 
   const payload = await request.json().catch(() => ({}));
-  const response = await fetch(`${API_BASE_URL}/auth/change-password`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      email: session.email,
-      current_password: payload.currentPassword,
-      new_password: payload.newPassword,
-    }),
-    cache: "no-store",
-  });
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 15000);
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE_URL}/auth/change-password`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: session.email,
+        current_password: payload.currentPassword,
+        new_password: payload.newPassword,
+      }),
+      cache: "no-store",
+      signal: controller.signal,
+    });
+  } catch {
+    return NextResponse.json({ detail: "Backend reageert niet bij wachtwoord wijzigen. Probeer het opnieuw." }, { status: 504 });
+  } finally {
+    clearTimeout(timeout);
+  }
+
   const data = await response.json().catch(() => ({ detail: "Backend gaf geen JSON terug." }));
   if (!response.ok) {
     return NextResponse.json(data, { status: response.status });
