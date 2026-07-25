@@ -38,6 +38,7 @@ services:
       AUTH_ADMIN_NAME: ${AUTH_ADMIN_NAME:-Beheerder}
       AUTH_ADMIN_PASSWORD: ${AUTH_ADMIN_PASSWORD:-}
       AUTH_BACKEND_LOGIN: ${AUTH_BACKEND_LOGIN:-true}
+      AUTH_COOKIE_SECURE: ${AUTH_COOKIE_SECURE:-false}
     ports:
       - "38502:3000"
     networks:
