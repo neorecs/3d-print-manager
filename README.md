@@ -139,7 +139,7 @@ De NAS-compose bevat ook een `postgres_backup` service. Deze maakt bij start een
 
 ## Loginbeveiliging
 
-De Next.js frontend heeft een eerste opt-in loginlaag. Zet deze variabelen in de frontend/NAS environment:
+De Next.js frontend heeft een loginlaag. De NAS-compose zet deze standaard aan; lokaal kun je auth bewust uitzetten met `AUTH_ENABLED=false`.
 
 ```env
 AUTH_ENABLED=true
@@ -150,7 +150,7 @@ AUTH_ADMIN_PASSWORD=
 AUTH_BACKEND_LOGIN=false
 ```
 
-Gebruik een lange willekeurige waarde voor `AUTH_SECRET` en een sterk adminwachtwoord. Als `AUTH_ENABLED` niet op `true` staat, blijft de bestaande interne werking zonder login actief. De login beschermt de Next.js pagina's en Next.js API-routes en beperkt herhaalde loginpogingen; houd de FastAPI backend daarnaast alleen intern bereikbaar.
+Gebruik een lange willekeurige waarde voor `AUTH_SECRET` en een sterk adminwachtwoord. De login beschermt de Next.js pagina's en Next.js API-routes en beperkt herhaalde loginpogingen; houd de FastAPI backend daarnaast alleen intern bereikbaar. Zet `AUTH_ENABLED=false` alleen bewust voor lokale ontwikkeling of tijdelijke diagnose.
 
 Voor databasegebruikers kan de backend een eerste admin aanmaken via `/auth/bootstrap-admin` wanneer `AUTH_BOOTSTRAP_SECRET` tijdelijk is ingesteld. Zet daarna `AUTH_BACKEND_LOGIN=true` op de Next.js service zodat de login tegen de FastAPI `users` tabel controleert. Verwijder of leeg `AUTH_BOOTSTRAP_SECRET` na het aanmaken van de eerste admin.
 

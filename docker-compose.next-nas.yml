@@ -32,12 +32,12 @@ services:
     environment:
       API_BASE_URL: ${FRONTEND_NEXT_API_BASE_URL:-http://backend:8000}
       NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-http://10.5.1.150:38080}
-      AUTH_ENABLED: ${AUTH_ENABLED:-false}
+      AUTH_ENABLED: ${AUTH_ENABLED:-true}
       AUTH_SECRET: ${AUTH_SECRET:-}
       AUTH_ADMIN_EMAIL: ${AUTH_ADMIN_EMAIL:-}
       AUTH_ADMIN_NAME: ${AUTH_ADMIN_NAME:-Beheerder}
       AUTH_ADMIN_PASSWORD: ${AUTH_ADMIN_PASSWORD:-}
-      AUTH_BACKEND_LOGIN: ${AUTH_BACKEND_LOGIN:-false}
+      AUTH_BACKEND_LOGIN: ${AUTH_BACKEND_LOGIN:-true}
     ports:
       - "38502:3000"
     networks:
