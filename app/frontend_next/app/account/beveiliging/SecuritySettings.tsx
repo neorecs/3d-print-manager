@@ -1,6 +1,7 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import QRCode from "qrcode";
+import { FormEvent, useEffect, useState } from "react";
 
 type MfaSetup = {
   secret: string;
@@ -11,10 +12,39 @@ export function SecuritySettings() {
   const [password, setPassword] = useState("");
   const [code, setCode] = useState("");
   const [setup, setSetup] = useState<MfaSetup | null>(null);
+  const [qrCodeUrl, setQrCodeUrl] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [isStarting, setIsStarting] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    if (!setup?.otpauth_url) {
+      setQrCodeUrl("");
+      return;
+    }
+
+    QRCode.toDataURL(setup.otpauth_url, {
+      errorCorrectionLevel: "M",
+      margin: 2,
+      scale: 8,
+      color: {
+        dark: "#020617",
+        light: "#ffffff",
+      },
+    })
+      .then((url) => {
+        if (active) setQrCodeUrl(url);
+      })
+      .catch(() => {
+        if (active) setQrCodeUrl("");
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [setup]);
 
   async function startMfa(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -37,7 +67,7 @@ export function SecuritySettings() {
     }
 
     setSetup({ secret: data.secret, otpauth_url: data.otpauth_url });
-    setMessage("Voeg de setup-code toe aan je authenticator-app en vul daarna de 6-cijferige code in.");
+    setMessage("Scan de QR-code met je authenticator-app en vul daarna de 6-cijferige code in.");
   }
 
   async function confirmMfa(event: FormEvent<HTMLFormElement>) {
@@ -101,6 +131,21 @@ export function SecuritySettings() {
         <h2 className="text-lg font-black text-white">Authenticator koppelen</h2>
         {setup ? (
           <div className="mt-5 space-y-4">
+            <div className="rounded-xl border border-line bg-white p-4">
+              {qrCodeUrl ? (
+                <img
+                  alt="MFA QR-code voor authenticator-app"
+                  className="mx-auto h-56 w-56"
+                  height={224}
+                  src={qrCodeUrl}
+                  width={224}
+                />
+              ) : (
+                <div className="flex h-56 items-center justify-center rounded-lg bg-slate-100 text-center text-sm font-bold text-slate-700">
+                  QR-code wordt gemaakt...
+                </div>
+              )}
+            </div>
             <div className="rounded-xl border border-line bg-slate-950/40 p-4">
               <div className="text-xs font-black uppercase tracking-[.14em] text-muted">Setup-code</div>
               <div className="mt-2 break-all font-mono text-sm font-bold text-white">{setup.secret}</div>
