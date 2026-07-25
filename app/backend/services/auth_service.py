@@ -54,6 +54,7 @@ def create_user(
         password_hash=hash_password(password),
         role=normalized_role,
         is_active=is_active,
+        must_change_password=True,
     )
     db.add(user)
     db.commit()
@@ -91,10 +92,31 @@ def reset_user_password(db: Session, user_id: int, password: str) -> User:
         raise HTTPException(status_code=400, detail="Gebruik minimaal 12 tekens voor het wachtwoord.")
     user = get_user_or_404(db, user_id)
     user.password_hash = hash_password(password)
+    user.must_change_password = True
     db.add(user)
     db.commit()
     db.refresh(user)
     record_audit_log(db, user, "auth.password_reset", "user", str(user.id), f"Wachtwoord reset voor {user.email}.")
+    return user
+
+
+def change_own_password(db: Session, email: str, current_password: str, new_password: str) -> User:
+    if len(new_password) < 12:
+        raise HTTPException(status_code=400, detail="Gebruik minimaal 12 tekens voor het nieuwe wachtwoord.")
+    if current_password == new_password:
+        raise HTTPException(status_code=400, detail="Kies een ander wachtwoord dan het tijdelijke wachtwoord.")
+
+    user = get_user_by_email(db, email)
+    if not user or not user.is_active or not verify_password(current_password, user.password_hash):
+        record_audit_log(db, user if user else None, "auth.password_change_failed", "user", str(user.id) if user else None, f"Wachtwoord wijzigen mislukt voor {email}.")
+        raise HTTPException(status_code=401, detail="Huidig wachtwoord klopt niet.")
+
+    user.password_hash = hash_password(new_password)
+    user.must_change_password = False
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    record_audit_log(db, user, "auth.password_changed", "user", str(user.id), f"Wachtwoord gewijzigd voor {user.email}.")
     return user
 
 

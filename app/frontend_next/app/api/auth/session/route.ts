@@ -10,6 +10,8 @@ export async function GET() {
   return NextResponse.json({
     authEnabled: authIsEnabled(),
     authenticated: Boolean(session),
-    user: session ? { email: session.email, name: session.name, role: session.role } : null,
+    user: session
+      ? { email: session.email, name: session.name, role: session.role, mustChangePassword: Boolean(session.mustChangePassword) }
+      : null,
   });
 }

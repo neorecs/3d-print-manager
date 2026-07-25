@@ -7,6 +7,7 @@ type SessionPayload = {
   email: string;
   name: string;
   role: "admin" | "operator" | "viewer";
+  mustChangePassword?: boolean;
   exp: number;
 };
 
@@ -76,7 +77,7 @@ export function authIsEnabled() {
 }
 
 type LoginResult =
-  | { ok: true; email: string; name: string; role: SessionPayload["role"] }
+  | { ok: true; email: string; name: string; role: SessionPayload["role"]; mustChangePassword?: boolean }
   | { ok: false; error: string; mfaRequired?: boolean };
 
 export async function verifySessionToken(token?: string | null): Promise<SessionPayload | null> {
@@ -85,6 +86,7 @@ export async function verifySessionToken(token?: string | null): Promise<Session
       email: "dev@local",
       name: "Lokale gebruiker",
       role: "admin",
+      mustChangePassword: false,
       exp: Math.floor(Date.now() / 1000) + SESSION_MAX_AGE_SECONDS,
     };
   }
@@ -159,15 +161,22 @@ async function validateBackendLogin(email: string, password: string, mfaCode?: s
     email: data.user.email,
     name: data.user.display_name || data.user.email,
     role: data.user.role || "viewer",
+    mustChangePassword: Boolean(data.user.must_change_password),
   };
 }
 
-export async function setSessionCookie(response: NextResponse, email: string, name: string, role: SessionPayload["role"] = "admin") {
+export async function setSessionCookie(
+  response: NextResponse,
+  email: string,
+  name: string,
+  role: SessionPayload["role"] = "admin",
+  mustChangePassword = false,
+) {
   const secret = getAuthSecret();
   if (!secret) return response;
 
   const exp = Math.floor(Date.now() / 1000) + SESSION_MAX_AGE_SECONDS;
-  const token = await createSessionToken({ email, name, role, exp }, secret);
+  const token = await createSessionToken({ email, name, role, mustChangePassword, exp }, secret);
 
   response.cookies.set(AUTH_COOKIE_NAME, token, {
     httpOnly: true,

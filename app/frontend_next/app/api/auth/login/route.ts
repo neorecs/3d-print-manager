@@ -54,6 +54,11 @@ export async function POST(request: NextRequest) {
   }
 
   clearRateLimit(rateLimitKey);
-  const response = NextResponse.json({ email: result.email, name: result.name, role: result.role });
-  return setSessionCookie(response, result.email, result.name, result.role);
+  const response = NextResponse.json({
+    email: result.email,
+    name: result.name,
+    role: result.role,
+    must_change_password: Boolean(result.mustChangePassword),
+  });
+  return setSessionCookie(response, result.email, result.name, result.role, Boolean(result.mustChangePassword));
 }

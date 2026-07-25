@@ -3,9 +3,10 @@ from sqlalchemy.orm import Session
 
 from core.config import get_settings
 from database import get_db
-from schemas.common import AuthBootstrapAdmin, AuthLogin, AuthMfaConfirm, AuthMfaSetup, AuthPasswordReset, AuthUserCreate, AuthUserUpdate
+from schemas.common import AuthBootstrapAdmin, AuthLogin, AuthMfaConfirm, AuthMfaSetup, AuthPasswordChange, AuthPasswordReset, AuthUserCreate, AuthUserUpdate
 from services.auth_service import (
     authenticate_user,
+    change_own_password,
     confirm_mfa_setup,
     create_admin_user,
     create_user,
@@ -28,6 +29,7 @@ def user_payload(user) -> dict:
         "display_name": user.display_name,
         "role": user.role,
         "is_active": user.is_active,
+        "must_change_password": user.must_change_password,
         "mfa_enabled": user.mfa_enabled,
         "last_login_at": user.last_login_at.isoformat() if user.last_login_at else None,
         "created_at": user.created_at.isoformat() if user.created_at else None,
@@ -97,6 +99,12 @@ def users_update(user_id: int, payload: AuthUserUpdate, db: Session = Depends(ge
 def users_reset_password(user_id: int, payload: AuthPasswordReset, db: Session = Depends(get_db)) -> dict:
     user = reset_user_password(db, user_id, payload.password)
     return user_payload(user)
+
+
+@router.post("/change-password")
+def change_password(payload: AuthPasswordChange, db: Session = Depends(get_db)) -> dict:
+    user = change_own_password(db, payload.email, payload.current_password, payload.new_password)
+    return {"user": user_payload(user)}
 
 
 @router.post("/users/{user_id}/mfa/reset")

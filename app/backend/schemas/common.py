@@ -50,6 +50,12 @@ class AuthPasswordReset(BaseModel):
     password: str
 
 
+class AuthPasswordChange(BaseModel):
+    email: str
+    current_password: str
+    new_password: str
+
+
 class PlatformCredentialCreate(BaseModel):
     key_name: str
     encrypted_value: str

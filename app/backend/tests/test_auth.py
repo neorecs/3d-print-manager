@@ -8,6 +8,7 @@ from core.security import _totp_at_step
 from models import AuditLog
 from services.auth_service import (
     authenticate_user,
+    change_own_password,
     confirm_mfa_setup,
     create_admin_user,
     create_user,
@@ -37,6 +38,7 @@ class AuthTestCase(BackendTestCase):
 
         self.assertTrue(has_admin_user(self.db))
         self.assertEqual(user.email, "admin@example.com")
+        self.assertTrue(user.must_change_password)
 
         authenticated = authenticate_user(self.db, "admin@example.com", "sterk-wachtwoord-123")
 
@@ -44,6 +46,16 @@ class AuthTestCase(BackendTestCase):
         self.assertIsNotNone(authenticated.last_login_at)
         audit_actions = [log.action for log in self.db.scalars(select(AuditLog).order_by(AuditLog.id)).all()]
         self.assertEqual(audit_actions, ["auth.admin_created", "auth.login_success"])
+
+    def test_user_must_change_temporary_password(self) -> None:
+        user = create_admin_user(self.db, "admin@example.com", "tijdelijk-wachtwoord-123", "Admin")
+        self.assertTrue(user.must_change_password)
+
+        changed = change_own_password(self.db, "admin@example.com", "tijdelijk-wachtwoord-123", "nieuw-sterk-wachtwoord-456")
+        self.assertFalse(changed.must_change_password)
+
+        reset = reset_user_password(self.db, changed.id, "ander-tijdelijk-wachtwoord-789")
+        self.assertTrue(reset.must_change_password)
 
     def test_mfa_setup_stores_secret_encrypted_and_confirm_enables_mfa(self) -> None:
         user = create_admin_user(self.db, "admin@example.com", "sterk-wachtwoord-123", "Admin")
