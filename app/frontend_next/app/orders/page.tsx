@@ -23,7 +23,6 @@ export default async function OrdersPage() {
       <PageHeader
         title="Orders"
         description="Verkooporders vertalen naar voorraadreserveringen, printopdrachten en verzending."
-        actions={<ShopifyImportButton />}
       />
       {error || !data ? <OrdersError message={error || "Geen orderdata beschikbaar"} /> : <OrdersContent data={data} />}
     </AppShell>
@@ -48,6 +47,10 @@ function OrdersContent({ data }: { data: OrdersData }) {
 
   return (
     <div className="space-y-6">
+      <SectionCard title="Orders importeren" description="Haal nieuwe orders op uit je verkoopkanalen. In mockmodus blijft dit veilig en worden er geen live platformcalls gedaan.">
+        <ShopifyImportButton />
+      </SectionCard>
+
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
         <MetricCard label="Nieuw" value={data.orders.filter((order) => order.status === "nieuw").length} note="wacht op controle" tone="warning" />
         <MetricCard label="Betaald" value={paidOrders.length} note="met orderwaarde" tone="good" />

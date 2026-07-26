@@ -89,13 +89,13 @@ export function AppShell({ children }: { children: ReactNode }) {
       </aside>
       <div className="lg:pl-72">
         <header className="sticky top-0 z-20 border-b border-line bg-[#070b12]/85 backdrop-blur-xl">
-          <div className="flex h-16 items-center justify-between px-5 lg:px-8">
-            <div>
+          <div className="flex min-h-16 items-center justify-between gap-3 px-4 py-3 sm:px-5 lg:px-8">
+            <div className="min-w-0">
               <div className="text-sm font-bold text-slate-200">Nieuwe Next.js cockpit</div>
-              <div className="text-xs text-muted">Productie, voorraad, verkoop en printers in een beheerlaag</div>
+              <div className="line-clamp-2 text-xs leading-5 text-muted">Productie, voorraad, verkoop en printers in een beheerlaag</div>
             </div>
-            <div className="flex items-center gap-3">
-              <div className="rounded-full border border-brand/25 bg-brand/10 px-3 py-1 text-xs font-black text-brand">
+            <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+              <div className="whitespace-nowrap rounded-full border border-brand/25 bg-brand/10 px-2.5 py-1 text-[11px] font-black text-brand sm:px-3 sm:text-xs">
                 Prototype V2
               </div>
               <LogoutButton />
