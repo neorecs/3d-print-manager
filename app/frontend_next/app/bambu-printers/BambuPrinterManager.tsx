@@ -236,7 +236,7 @@ export function BambuPrinterManager({ printers }: { printers: BambuPrinter[] }) 
       <form className="rounded-lg border border-line bg-slate-950/25 p-4" onSubmit={createPrinter}>
         <h3 className="font-bold text-ink">Bambu-printer toevoegen</h3>
         <p className="mt-1 text-sm text-muted">
-          Gebruik het lokale IP-adres van de printer. De access code wordt versleuteld opgeslagen en niet teruggetoond. Deze app leest alleen mee en wijzigt geen Bambu-instellingen.
+          Gebruik het lokale IP-adres van de printer. De access code wordt versleuteld opgeslagen en niet teruggetoond. De site gebruikt LAN-bediening voor status en handmatige printstart; Bambu Studio blijft daarnaast gewoon bruikbaar.
         </p>
         <PrinterFields draft={newDraft} onChange={updateNew} />
         <div className="mt-4 flex justify-end">
@@ -281,7 +281,7 @@ export function BambuPrinterManager({ printers }: { printers: BambuPrinter[] }) 
                     {busyKey === `test-${printer.id}` ? "Testen..." : "Verbinding testen"}
                   </button>
                   <button className="rounded-md border border-line bg-slate-950/35 px-4 py-2 text-sm font-bold text-slate-300 hover:bg-white/5 disabled:opacity-60" disabled={busyKey !== null} onClick={() => refreshStatus(printer.id)} type="button">
-                    {busyKey === `status-${printer.id}` ? "Ophalen..." : "Status ophalen (read-only)"}
+                    {busyKey === `status-${printer.id}` ? "Ophalen..." : "Status ophalen"}
                   </button>
                   <button className="rounded-md bg-brand px-4 py-2 text-sm font-black text-slate-950 disabled:opacity-60" disabled={busyKey !== null} onClick={() => savePrinter(printer.id)} type="button">
                     {busyKey === `save-${printer.id}` ? "Opslaan..." : "Printer opslaan"}
@@ -382,7 +382,7 @@ function BambuPrintStartPanel({ printer, onRefresh }: { printer: BambuPrinter; o
         <div>
           <h4 className="font-black text-ink">Print starten vanaf printer/SD</h4>
           <p className="mt-1 text-sm leading-6 text-muted">
-            Gebruik dit alleen voor bestanden die al door Bambu Studio zijn voorbereid. Bambu Studio blijft gewoon bruikbaar om direct te printen.
+            Gebruik dit voor printfarm-opdrachten die al door Bambu Studio zijn voorbereid. Voor losse of persoonlijke prints kun je Bambu Studio gewoon blijven gebruiken.
           </p>
         </div>
         <StatusBadge status="handmatige bevestiging vereist" />
@@ -455,7 +455,7 @@ function PrinterFields({ draft, onChange }: { draft: PrinterDraft; onChange: (fi
       <TextField label="Model" value={draft.model} onChange={(value) => onChange("model", value)} placeholder="X1C, P1S, A1 mini" />
       <TextField label="IP-adres / host" value={draft.host} onChange={(value) => onChange("host", value)} placeholder="Bijv. 10.5.1.42" />
       <TextField label="MQTT-poort" value={draft.mqtt_port} onChange={(value) => onChange("mqtt_port", value)} inputMode="numeric" />
-      <TextField label="Serienummer voor read-only status" value={draft.serial_number} onChange={(value) => onChange("serial_number", value)} placeholder="Nodig voor status ophalen" />
+      <TextField label="Serienummer voor status en printstart" value={draft.serial_number} onChange={(value) => onChange("serial_number", value)} placeholder="Nodig voor status en printstart" />
       <TextField label="Locatie" value={draft.location} onChange={(value) => onChange("location", value)} placeholder="Bijv. Rek printerfarm" />
       <TextField label="Access code" value={draft.access_code} onChange={(value) => onChange("access_code", value)} placeholder="Leeg laten om bestaande code te behouden" type="password" />
       <label className="flex items-center gap-3 rounded-md border border-line bg-slate-950/35 px-3 py-2 text-sm text-ink font-semibold">

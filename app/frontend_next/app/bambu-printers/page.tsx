@@ -69,7 +69,7 @@ export default async function BambuPrintersPage() {
     <AppShell>
       <PageHeader
         title="Printers"
-        description="Printfarmoverzicht met status, voortgang, temperatuur en onderhoudssignalen. De app start geen prints automatisch."
+        description="Printfarmoverzicht met status, voortgang, temperatuur en onderhoudssignalen. Je kunt handmatig prints starten via de site, terwijl Bambu Studio bruikbaar blijft."
       />
       <PrintersContent data={data} />
     </AppShell>
@@ -101,7 +101,7 @@ function PrintersContent({ data }: { data: BambuPrintersData }) {
         </div>
       </SectionCard>
 
-      <SectionCard title="Printers beheren" description="Bestaande beheerfunctie: toevoegen, wijzigen, verbinding testen en read-only status ophalen.">
+      <SectionCard title="Printers beheren" description="Bestaande beheerfunctie: toevoegen, wijzigen, verbinding testen, status ophalen en gecontroleerd print starten.">
         <BambuPrinterManager printers={data.printers} />
       </SectionCard>
     </div>
