@@ -390,7 +390,7 @@ Acceptatie:
 
 ## Fase 8b - Bambu printerfarm
 
-Doel: Bambu-printers zichtbaar maken als farmoverzicht bovenop Bambu Studio/Bambu Farm Manager, zonder eigen slicer. De app mag gecontroleerd printopdrachten starten, maar Bambu Studio blijft de normale slicer en blijft bruikbaar om prints direct naar printers te sturen.
+Doel: Bambu-printers zichtbaar maken als farmoverzicht naast Bambu Studio/Bambu Farm Manager, zonder eigen slicer. De app mag gecontroleerd printopdrachten starten voor printfarmwerk, terwijl Bambu Studio de normale slicer blijft en ook bruikbaar blijft om persoonlijke prints direct naar printers te sturen.
 
 Inspiratie uit Bambu Farm Manager:
 
@@ -416,12 +416,14 @@ Aanvulling 2026-07-26 - veilige printstart vanuit de site:
 
 - Bambu Studio blijft verantwoordelijk voor slicen, printprofielen, 3MF/STL-voorbereiding en direct printen.
 - De site mag alleen bestaande, voorbereide `.gcode.3mf` projectbestanden starten.
+- Sitebediening en Bambu Studio-bediening bestaan naast elkaar: de site claimt geen exclusieve printercontrole.
+- Praktische regel: als een printer al bezig is via Bambu Studio, blokkeert de site een nieuwe printstart; als de site een print start, ziet Bambu Studio de printer gewoon als bezet.
 - Eerste implementatie start vanaf een bestand dat al op de printer/SD staat, bijvoorbeeld `file:///sdcard/bestand.gcode.3mf`.
 - Upload vanaf de site naar de printer komt pas later, omdat FTPS per firmware/model gevoeliger is.
 - Printstart werkt alleen via lokale LAN-aansturing met serienummer, LAN access code en MQTT-poort.
 - De gebruiker moet per printstart expliciet bevestigen.
 - De app mag niet starten als de printer volgens de laatst bekende status al bezig is, tenzij later bewust een force-flow wordt toegevoegd.
-- Bambu Studio kan gewoon gebruikt blijven worden; de site claimt geen exclusieve printercontrole.
+- Bambu Studio kan gewoon gebruikt blijven worden voor losse en persoonlijke prints.
 
 Gefaseerde uitvoering:
 

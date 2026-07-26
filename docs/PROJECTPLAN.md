@@ -9,7 +9,7 @@ Bouw een centrale beheerapplicatie voor 3D-printactiviteiten. De applicatie behe
 - Bouw geen eigen slicer.
 - Vervang Bambu Studio niet.
 - Bambu Studio blijft verantwoordelijk voor slicing, printvoorbereiding en werken met 3MF/STL-bestanden.
-- Deze applicatie is de centrale beheerlaag boven Bambu Studio.
+- Deze applicatie is de centrale beheerlaag naast Bambu Studio: Bambu Studio blijft bruikbaar voor slicing en directe/persoonlijke prints, terwijl deze app zakelijke order-, voorraad- en printfarmsturing verzorgt.
 - De interne productcatalogus is leidend.
 - Platformproducten zijn gekoppelde publicaties van interne producten.
 - Bouw modulair, zodat Streamlit later vervangen kan worden door React/Next.js of een andere frontend.

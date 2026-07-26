@@ -4,7 +4,7 @@ Deze handleiding legt uit waar je welk scherm voor gebruikt. De applicatie is nu
 
 ## Hoofdidee
 
-De app werkt als centrale laag boven je verkoopplatformen en Bambu Studio.
+De app werkt als centrale beheerlaag naast je verkoopplatformen en naast Bambu Studio.
 
 De normale volgorde is:
 
@@ -20,7 +20,7 @@ De normale volgorde is:
 10. Extra gelukte prints naar vrije voorraad boeken.
 11. Trends en voorraadadvies gebruiken voor extra productie.
 
-Belangrijk: Bambu Studio blijft voor slicing en printvoorbereiding. Deze app bepaalt vooral wat er geprint moet worden.
+Belangrijk: Bambu Studio blijft voor slicing, printvoorbereiding en persoonlijke prints. Deze app bepaalt vooral wat er zakelijk geprint moet worden en kan voorbereide printbestanden handmatig naar je Bambu-printers starten.
 
 ## Navigatie
 
@@ -506,5 +506,4 @@ Gebruik `Platformpublicatie` voor hoe dat product op Etsy, Shopify of een ander 
 - Dummy-import is bedoeld om de workflow te testen.
 - De UI is functioneel, maar nog niet zo intuïtief als een definitieve React/Next.js frontend.
 - Bambu Studio wordt niet vervangen.
-- Automatisch printen starten is geen onderdeel van deze versie.
-
+- Printstart via de site is handmatig en gecontroleerd. Automatisch starten zonder bevestiging is geen onderdeel van deze versie.
