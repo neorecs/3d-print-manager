@@ -390,7 +390,7 @@ Acceptatie:
 
 ## Fase 8b - Bambu printerfarm
 
-Doel: Bambu-printers zichtbaar maken als farmoverzicht bovenop Bambu Studio/Bambu Farm Manager, zonder eigen slicer of automatische printstart.
+Doel: Bambu-printers zichtbaar maken als farmoverzicht bovenop Bambu Studio/Bambu Farm Manager, zonder eigen slicer. De app mag gecontroleerd printopdrachten starten, maar Bambu Studio blijft de normale slicer en blijft bruikbaar om prints direct naar printers te sturen.
 
 Inspiratie uit Bambu Farm Manager:
 
@@ -410,7 +410,44 @@ Status 2026-06-27:
 - Next.js scherm aanwezig op `/bambu-printers`.
 - Veilige LAN-bereikbaarheidstest aanwezig via host en MQTT-poort.
 - NAS-route loopt via de Git-managed private backend in de Next.js stack, zodat nieuwe backendroutes zonder handmatige containerpatches beschikbaar kunnen worden.
-- Nog niet bouwen: automatische printstart, eigen slicer, cloudkoppeling of destructieve printercommando's.
+- Nog niet bouwen: eigen slicer, cloudkoppeling of destructieve printercommando's.
+
+Aanvulling 2026-07-26 - veilige printstart vanuit de site:
+
+- Bambu Studio blijft verantwoordelijk voor slicen, printprofielen, 3MF/STL-voorbereiding en direct printen.
+- De site mag alleen bestaande, voorbereide `.gcode.3mf` projectbestanden starten.
+- Eerste implementatie start vanaf een bestand dat al op de printer/SD staat, bijvoorbeeld `file:///sdcard/bestand.gcode.3mf`.
+- Upload vanaf de site naar de printer komt pas later, omdat FTPS per firmware/model gevoeliger is.
+- Printstart werkt alleen via lokale LAN-aansturing met serienummer, LAN access code en MQTT-poort.
+- De gebruiker moet per printstart expliciet bevestigen.
+- De app mag niet starten als de printer volgens de laatst bekende status al bezig is, tenzij later bewust een force-flow wordt toegevoegd.
+- Bambu Studio kan gewoon gebruikt blijven worden; de site claimt geen exclusieve printercontrole.
+
+Gefaseerde uitvoering:
+
+1. Preflight uitvoeren:
+   - printer actief;
+   - host en MQTT-poort bereikbaar;
+   - serienummer ingevuld;
+   - access code opgeslagen;
+   - bestandspad geldig en lokaal op SD;
+   - waarschuwing tonen als printerstatus onbekend of bezig.
+2. Veilige printstart:
+   - gebruiker kiest printer en SD-bestandspad;
+   - gebruiker kiest opties zoals AMS, timelapse, bed leveling en flow calibration;
+   - gebruiker bevestigt bewust met een bevestigingstekst;
+   - backend stuurt MQTT `project_file` naar de printer.
+3. Statuscontrole na start:
+   - status opnieuw ophalen;
+   - printjob/printerstatus in database bijwerken;
+   - duidelijke foutmelding tonen bij MQTT/auth/firmwareproblemen.
+4. Later uitbreiden:
+   - bestandbibliotheek per productvariant;
+   - upload naar printer via FTPS;
+   - SD-bestandenlijst uitlezen;
+   - batchprint met meerdere printers;
+   - auditlog per printstart;
+   - strengere rolrechten voor print starten.
 
 Nog verfijnen:
 
@@ -419,6 +456,7 @@ Nog verfijnen:
 - printerstatus koppelen aan printplanning;
 - farm-capaciteit tonen bij batchadvies;
 - optioneel waarschuwingen voor netwerk/offline printers;
+- printstart koppelen aan productvariant/printjob in plaats van handmatig SD-pad;
 - pas later onderzoeken of batchcommando's wenselijk en veilig zijn.
 
 ## Fase 9 - Analyse en advies

@@ -54,6 +54,7 @@ from schemas.common import (
     AccountingSaleCreate,
     VatPeriodCloseCreate,
     BambuPrinterCreate,
+    BambuPrintStartRequest,
     CostSettingCreate,
     AIProductDraftRequest,
     FilamentSpoolCreate,
@@ -93,7 +94,7 @@ from services.accounting_service import (
     seed_default_fiscal_settings,
 )
 from services.ai_product_assistant import generate_ai_product_draft, generate_product_translation
-from services.bambu_printers import public_bambu_printer_dict, refresh_bambu_mqtt_status, test_bambu_lan_connection
+from services.bambu_printers import preflight_bambu_print_start, public_bambu_printer_dict, refresh_bambu_mqtt_status, start_bambu_sdcard_print, test_bambu_lan_connection
 from services.platform_service import public_credential_dict
 from publishing.service import (
     mark_product_publications_sync_needed,

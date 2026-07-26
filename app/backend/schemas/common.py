@@ -83,6 +83,18 @@ class BambuPrinterCreate(BaseModel):
     active: bool = True
 
 
+class BambuPrintStartRequest(BaseModel):
+    file_path: str
+    plate: str = "Metadata/plate_1.gcode"
+    use_ams: bool = False
+    timelapse: bool = False
+    flow_cali: bool = False
+    bed_leveling: bool = True
+    layer_inspect: bool = True
+    vibration_cali: bool = False
+    confirmation_text: str | None = None
+
+
 class AccountingSaleCreate(BaseModel):
     order_id: int | None = None
     platform_id: int | None = None

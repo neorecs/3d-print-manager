@@ -16,6 +16,32 @@ type PrinterDraft = {
   active: boolean;
 };
 
+type PrintStartDraft = {
+  file_path: string;
+  plate: string;
+  use_ams: boolean;
+  timelapse: boolean;
+  flow_cali: boolean;
+  bed_leveling: boolean;
+  layer_inspect: boolean;
+  vibration_cali: boolean;
+  confirmation_text: string;
+};
+
+type PreflightCheck = {
+  name: string;
+  ok: boolean;
+  message: string;
+  level: "error" | "warning";
+};
+
+type PreflightResult = {
+  ok: boolean;
+  message: string;
+  confirmation_required: string;
+  checks: PreflightCheck[];
+};
+
 function emptyDraft(): PrinterDraft {
   return {
     name: "",
@@ -27,6 +53,20 @@ function emptyDraft(): PrinterDraft {
     connection_mode: "lan",
     location: "",
     active: true,
+  };
+}
+
+function emptyPrintStartDraft(): PrintStartDraft {
+  return {
+    file_path: "file:///sdcard/",
+    plate: "Metadata/plate_1.gcode",
+    use_ams: false,
+    timelapse: false,
+    flow_cali: false,
+    bed_leveling: true,
+    layer_inspect: true,
+    vibration_cali: false,
+    confirmation_text: "",
   };
 }
 
@@ -247,6 +287,7 @@ export function BambuPrinterManager({ printers }: { printers: BambuPrinter[] }) 
                     {busyKey === `save-${printer.id}` ? "Opslaan..." : "Printer opslaan"}
                   </button>
                 </div>
+                <BambuPrintStartPanel printer={printer} onRefresh={loadPrinters} />
               </div>
             </details>
           );
@@ -257,6 +298,153 @@ export function BambuPrinterManager({ printers }: { printers: BambuPrinter[] }) 
         )}
       </div>
     </div>
+  );
+}
+
+function BambuPrintStartPanel({ printer, onRefresh }: { printer: BambuPrinter; onRefresh: () => Promise<void> }) {
+  const [draft, setDraft] = useState<PrintStartDraft>(() => emptyPrintStartDraft());
+  const [preflight, setPreflight] = useState<PreflightResult | null>(null);
+  const [busy, setBusy] = useState<"preflight" | "start" | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  function update(field: keyof PrintStartDraft, value: string | boolean) {
+    setDraft((current) => ({ ...current, [field]: value }));
+    if (field !== "confirmation_text") setPreflight(null);
+  }
+
+  function payload() {
+    return {
+      file_path: draft.file_path.trim(),
+      plate: draft.plate.trim() || "Metadata/plate_1.gcode",
+      use_ams: draft.use_ams,
+      timelapse: draft.timelapse,
+      flow_cali: draft.flow_cali,
+      bed_leveling: draft.bed_leveling,
+      layer_inspect: draft.layer_inspect,
+      vibration_cali: draft.vibration_cali,
+      confirmation_text: draft.confirmation_text,
+    };
+  }
+
+  async function runPreflight() {
+    setBusy("preflight");
+    setMessage(null);
+    setError(null);
+    try {
+      const response = await fetch(`/api/bambu/printers/${printer.id}/print-preflight`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload()),
+      });
+      const data = await response.json().catch(() => null);
+      if (!response.ok) throw new Error(data?.detail?.message || data?.detail || "Preflight mislukt");
+      setPreflight(data);
+      setMessage(data.message || "Preflight uitgevoerd.");
+    } catch (caught) {
+      setPreflight(null);
+      setError(caught instanceof Error ? caught.message : "Preflight mislukt");
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function startPrint() {
+    setBusy("start");
+    setMessage(null);
+    setError(null);
+    try {
+      const response = await fetch(`/api/bambu/printers/${printer.id}/start-print`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload()),
+      });
+      const data = await response.json().catch(() => null);
+      if (!response.ok) {
+        const detail = data?.detail;
+        throw new Error(typeof detail === "string" ? detail : detail?.message || "Printstart mislukt");
+      }
+      setMessage(data.message || "Printstart verzonden.");
+      setDraft((current) => ({ ...current, confirmation_text: "" }));
+      await onRefresh();
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Printstart mislukt");
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  const canStart = Boolean(preflight?.ok && draft.confirmation_text.trim().toUpperCase() === "START PRINT");
+
+  return (
+    <div className="mt-5 rounded-xl border border-amber-400/25 bg-amber-400/5 p-4">
+      <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+        <div>
+          <h4 className="font-black text-ink">Print starten vanaf printer/SD</h4>
+          <p className="mt-1 text-sm leading-6 text-muted">
+            Gebruik dit alleen voor bestanden die al door Bambu Studio zijn voorbereid. Bambu Studio blijft gewoon bruikbaar om direct te printen.
+          </p>
+        </div>
+        <StatusBadge status="handmatige bevestiging vereist" />
+      </div>
+
+      <div className="mt-4 grid gap-4 md:grid-cols-2">
+        <TextField label="SD-bestandspad" value={draft.file_path} onChange={(value) => update("file_path", value)} placeholder="file:///sdcard/bestand.gcode.3mf" />
+        <TextField label="Plate/gcode-pad in 3MF" value={draft.plate} onChange={(value) => update("plate", value)} placeholder="Metadata/plate_1.gcode" />
+      </div>
+
+      <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+        <Option label="AMS gebruiken" checked={draft.use_ams} onChange={(value) => update("use_ams", value)} />
+        <Option label="Timelapse" checked={draft.timelapse} onChange={(value) => update("timelapse", value)} />
+        <Option label="Flow calibration" checked={draft.flow_cali} onChange={(value) => update("flow_cali", value)} />
+        <Option label="Bed leveling" checked={draft.bed_leveling} onChange={(value) => update("bed_leveling", value)} />
+        <Option label="Layer inspect" checked={draft.layer_inspect} onChange={(value) => update("layer_inspect", value)} />
+        <Option label="Vibration calibration" checked={draft.vibration_cali} onChange={(value) => update("vibration_cali", value)} />
+      </div>
+
+      <div className="mt-4 flex flex-wrap gap-3">
+        <button className="rounded-md border border-line bg-slate-950/35 px-4 py-2 text-sm font-bold text-slate-300 hover:bg-white/5 disabled:opacity-60" disabled={busy !== null} onClick={runPreflight} type="button">
+          {busy === "preflight" ? "Controleren..." : "Preflight controleren"}
+        </button>
+      </div>
+
+      {preflight ? (
+        <div className="mt-4 space-y-2">
+          {preflight.checks.map((check) => (
+            <div className={`rounded-lg border px-3 py-2 text-sm ${check.ok ? "border-emerald-400/20 bg-emerald-400/10 text-emerald-100" : check.level === "warning" ? "border-amber-400/25 bg-amber-400/10 text-amber-100" : "border-red-400/25 bg-red-400/10 text-red-100"}`} key={check.name}>
+              <span className="font-black">{check.ok ? "OK" : check.level === "warning" ? "Let op" : "Blokkeert"} - {check.name}:</span> {check.message}
+            </div>
+          ))}
+        </div>
+      ) : null}
+
+      <div className="mt-4 grid gap-3 md:grid-cols-[1fr_auto] md:items-end">
+        <label className="space-y-2">
+          <span className="text-sm font-bold text-slate-300">Bevestigingstekst</span>
+          <input
+            className="w-full rounded-md border border-line bg-slate-950/35 px-3 py-2 text-sm text-ink outline-none focus:border-brand"
+            onChange={(event) => update("confirmation_text", event.target.value)}
+            placeholder="Typ START PRINT"
+            value={draft.confirmation_text}
+          />
+        </label>
+        <button className="rounded-md bg-brand px-4 py-2 text-sm font-black text-slate-950 disabled:opacity-50" disabled={busy !== null || !canStart} onClick={startPrint} type="button">
+          {busy === "start" ? "Start verzenden..." : "Print starten"}
+        </button>
+      </div>
+
+      {message ? <div className="mt-4 rounded-md border border-emerald-400/25 bg-emerald-400/10 px-3 py-2 text-sm font-semibold text-emerald-200">{message}</div> : null}
+      {error ? <div className="mt-4 rounded-md border border-red-400/25 bg-red-400/10 px-3 py-2 text-sm font-semibold text-red-200">{error}</div> : null}
+    </div>
+  );
+}
+
+function Option({ label, checked, onChange }: { label: string; checked: boolean; onChange: (checked: boolean) => void }) {
+  return (
+    <label className="flex items-center gap-3 rounded-md border border-line bg-slate-950/35 px-3 py-2 text-sm font-semibold text-ink">
+      <input checked={checked} onChange={(event) => onChange(event.target.checked)} type="checkbox" />
+      {label}
+    </label>
   );
 }
 
