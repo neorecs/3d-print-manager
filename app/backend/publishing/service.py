@@ -211,8 +211,8 @@ def validate_publication_record(db: Session, publication: ProductPlatformPublica
             errors.append(f"Variant {variant.sku or variant.id} mist materiaal.")
         if not variant.color:
             errors.append(f"Variant {variant.sku or variant.id} mist kleur.")
-        if not variant.print_file_path and not variant.estimated_print_time_minutes:
-            warnings.append(f"Variant {variant.sku or variant.id} mist printbestand of printtijd.")
+        if not product.print_file_path and not variant.print_file_path and not variant.estimated_print_time_minutes:
+            warnings.append(f"Variant {variant.sku or variant.id} mist product-printbestand of printtijd.")
 
     if not publication.platform_title:
         errors.append(f"{platform.name}: platformtitel ontbreekt.")

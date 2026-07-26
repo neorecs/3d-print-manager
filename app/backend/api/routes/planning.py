@@ -216,7 +216,7 @@ def suggest_print_batches(db: Session = Depends(get_db)):
                 "quantity_planned": quantity_planned,
                 "quantity_to_order": quantity_to_order,
                 "quantity_to_inventory": quantity_to_inventory,
-                "print_file_path": variant.print_file_path if variant else "",
+                "print_file_path": product.print_file_path if product and product.print_file_path else (variant.print_file_path if variant else ""),
             }
         )
 
@@ -355,7 +355,7 @@ def build_batch_export_rows(db: Session, batch: PrintBatch) -> list[dict]:
                 "quantity_to_inventory": job.quantity_to_inventory,
                 "estimated_print_time_minutes": job.estimated_print_time_minutes,
                 "estimated_filament_grams": job.estimated_filament_grams,
-                "print_file_path": variant.print_file_path if variant else "",
+                "print_file_path": product.print_file_path if product and product.print_file_path else (variant.print_file_path if variant else ""),
             }
         )
     return sorted(rows, key=lambda row: (row["material"], row["color"], row["product"], row["variant"]))

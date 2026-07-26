@@ -158,6 +158,7 @@ class ProductCreate(BaseModel):
     seo_description: str | None = None
     product_type: str | None = None
     internal_category: str | None = None
+    print_file_path: str | None = None
     status: str = "concept"
     active: bool = True
 

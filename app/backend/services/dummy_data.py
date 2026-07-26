@@ -40,6 +40,7 @@ def seed_dummy_data(db: Session) -> None:
         seo_description="Decoratieve rode dumpling, gemaakt met PLA.",
         product_type="Decoratie",
         internal_category="Figuren",
+        print_file_path="/print-files/dumpling.gcode.3mf",
         status="klaar_voor_publicatie",
     )
     db.add(product)
@@ -51,7 +52,6 @@ def seed_dummy_data(db: Session) -> None:
         sku="DUMP-RED-PLA",
         color="Rood",
         material="PLA",
-        print_file_path="/print-files/dumpling-red.3mf",
         estimated_print_time_minutes=55,
         estimated_filament_grams=22,
         weight_grams=24,

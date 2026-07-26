@@ -9,6 +9,7 @@ import { InventoryManager } from "./InventoryManager";
 import { MediaManager } from "./MediaManager";
 import { PublicationManager } from "./PublicationManager";
 import { ProductEditForm } from "./ProductEditForm";
+import { ProductPrintFileManager } from "./ProductPrintFileManager";
 import { TranslationManager } from "./TranslationManager";
 import { VariantManager } from "./VariantManager";
 
@@ -60,9 +61,10 @@ function DetailContent({ data }: { data: ProductDetailData }) {
 
   return (
     <div className="space-y-6">
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
         <MetricCard label="Status" value={(data.product.status || "onbekend").replace(/_/g, " ")} />
         <MetricCard label="Varianten" value={data.variants.length} note="SKU's en printinfo" />
+        <MetricCard label="Printbestand" value={data.product.print_file_path ? "Gekoppeld" : "Ontbreekt"} note="productniveau" tone={data.product.print_file_path ? "good" : "warning"} />
         <MetricCard label="Vrije voorraad" value={freeStock} note={`${reservedStock} gereserveerd`} tone="good" />
         <MetricCard label="Foto's" value={data.media.length} note={data.media.some((item) => item.is_primary) ? "hoofdfoto gekozen" : "geen hoofdfoto"} tone={data.media.length ? "good" : "warning"} />
         <MetricCard label="Publicaties" value={publishedCount} note={`${syncNeeded} sync nodig`} tone={syncNeeded ? "warning" : "neutral"} />
@@ -72,8 +74,12 @@ function DetailContent({ data }: { data: ProductDetailData }) {
         <ProductEditForm product={data.product} />
       </SectionCard>
 
+      <SectionCard title="Printbestand beheren" description="Koppel een printklaar Bambu Studio .gcode.3mf bestand aan dit product. Varianten gebruiken standaard ditzelfde bestand.">
+        <ProductPrintFileManager product={data.product} />
+      </SectionCard>
+
       <div className="grid gap-5 xl:grid-cols-2">
-        <SectionCard title="Varianten beheren" description="Maak en wijzig SKU's, kleur, materiaal, printtijd, filamentverbruik, afmetingen en prijzen.">
+        <SectionCard title="Varianten beheren" description="Maak en wijzig SKU's, kleur, materiaal, printtijd, filamentverbruik, afmetingen en prijzen. Het printbestand staat op productniveau.">
           <VariantManager product={data.product} variants={data.variants} />
           {printMinutes ? <p className="mt-3 text-sm text-muted">Totale bekende printtijd: {formatMinutes(printMinutes)}.</p> : null}
         </SectionCard>

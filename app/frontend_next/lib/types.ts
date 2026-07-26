@@ -28,6 +28,7 @@ export type Product = {
   seo_description?: string | null;
   internal_category?: string | null;
   product_type?: string | null;
+  print_file_path?: string | null;
   status?: string | null;
   active?: boolean;
 };

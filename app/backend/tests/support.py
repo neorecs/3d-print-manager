@@ -82,6 +82,7 @@ class BackendTestCase(unittest.TestCase):
             seo_description="SEO omschrijving",
             product_type="decoratie",
             internal_category="test",
+            print_file_path="prints/test.gcode.3mf",
             status="klaar_voor_publicatie",
             active=True,
         )
@@ -94,7 +95,6 @@ class BackendTestCase(unittest.TestCase):
             sku=sku,
             color="rood",
             material="PLA",
-            print_file_path="prints/test.3mf",
             estimated_print_time_minutes=45,
             estimated_filament_grams=32,
             default_sale_price=12.95,

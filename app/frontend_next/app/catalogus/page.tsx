@@ -127,7 +127,7 @@ function ProductCard({ row }: { row: ProductCatalogRow }) {
         <Small label="Marge" value={price ? `${margin}%` : "-"} />
         <Small label="Kostprijs" value={cost ? formatCurrency(cost) : "-"} />
         <Small label="Verkoopprijs" value={price ? formatCurrency(price) : "-"} />
-        <Small label="Printbestand" value={primaryVariant?.print_file_path ? "Gekoppeld" : "Ontbreekt"} />
+        <Small label="Printbestand" value={row.product.print_file_path ? "Gekoppeld" : "Ontbreekt"} />
         <Small label="Kanalen" value={channels} />
       </div>
 

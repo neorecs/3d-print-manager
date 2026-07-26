@@ -18,6 +18,7 @@ class Product(TimestampMixin, Base):
     seo_description: Mapped[str | None] = mapped_column(Text)
     product_type: Mapped[str | None] = mapped_column(String(120))
     internal_category: Mapped[str | None] = mapped_column(String(120))
+    print_file_path: Mapped[str | None] = mapped_column(String(500))
     status: Mapped[str] = mapped_column(String(60), default="concept", nullable=False)
     active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
 

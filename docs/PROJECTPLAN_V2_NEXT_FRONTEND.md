@@ -444,7 +444,8 @@ Gefaseerde uitvoering:
    - printjob/printerstatus in database bijwerken;
    - duidelijke foutmelding tonen bij MQTT/auth/firmwareproblemen.
 4. Later uitbreiden:
-   - bestandbibliotheek per productvariant;
+   - standaard printbestand op productniveau;
+   - variant-override alleen optioneel als een product later echt afwijkende geometrie nodig heeft;
    - upload naar printer via FTPS;
    - SD-bestandenlijst uitlezen;
    - batchprint met meerdere printers;
@@ -458,7 +459,7 @@ Nog verfijnen:
 - printerstatus koppelen aan printplanning;
 - farm-capaciteit tonen bij batchadvies;
 - optioneel waarschuwingen voor netwerk/offline printers;
-- printstart koppelen aan productvariant/printjob in plaats van handmatig SD-pad;
+- printstart koppelen aan product/printjob in plaats van handmatig SD-pad;
 - pas later onderzoeken of batchcommando's wenselijk en veilig zijn.
 
 ## Fase 9 - Analyse en advies

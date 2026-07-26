@@ -199,7 +199,7 @@ export function VariantManager({ product, variants }: { product: Product; varian
       <form className="rounded-lg border border-line bg-slate-950/25 p-4" onSubmit={createVariant}>
         <div className="mb-4">
           <h3 className="font-bold text-ink">Nieuwe variant toevoegen</h3>
-          <p className="mt-1 text-sm text-muted">Maak per kleur, materiaal of uitvoering een eigen SKU aan.</p>
+          <p className="mt-1 text-sm text-muted">Maak per kleur, materiaal of uitvoering een eigen SKU aan. Het printbestand koppel je eenmalig aan het product.</p>
         </div>
         <VariantFields
           draft={newDraft}
@@ -281,7 +281,6 @@ function VariantFields({
       <TextField label="Materiaal" value={draft.material} onChange={(value) => onChange("material", value)} placeholder="Bijv. PLA" />
       <TextField label="Maat" value={draft.size} onChange={(value) => onChange("size", value)} placeholder="Bijv. M, 10 cm, standaard" />
       <TextField label="Afwerking" value={draft.finish} onChange={(value) => onChange("finish", value)} placeholder="Bijv. mat, glans, silk" />
-      <TextField label="Printbestand" value={draft.print_file_path} onChange={(value) => onChange("print_file_path", value)} placeholder="/PrintFiles/product.3mf" />
       <TextField label="Printtijd minuten" value={draft.estimated_print_time_minutes} onChange={(value) => onChange("estimated_print_time_minutes", value)} inputMode="numeric" />
       <TextField label="Filament gram" value={draft.estimated_filament_grams} onChange={(value) => onChange("estimated_filament_grams", value)} inputMode="decimal" />
       <TextField label="Gewicht gram" value={draft.weight_grams} onChange={(value) => onChange("weight_grams", value)} inputMode="decimal" />

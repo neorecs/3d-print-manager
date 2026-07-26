@@ -13,6 +13,7 @@ from publishing.service import mark_product_publications_sync_needed
 
 UPLOAD_ROOT = Path("uploads/product_media")
 ACCOUNTING_UPLOAD_ROOT = Path("uploads/accounting_documents")
+PRODUCT_PRINT_FILE_ROOT = Path("uploads/product_print_files")
 ALLOWED_IMAGE_CONTENT_TYPES = {"image/jpeg", "image/png", "image/webp", "image/gif"}
 ALLOWED_ACCOUNTING_CONTENT_TYPES = {
     "application/pdf",
@@ -20,6 +21,7 @@ ALLOWED_ACCOUNTING_CONTENT_TYPES = {
     "image/png",
     "image/webp",
 }
+ALLOWED_PRINT_FILE_SUFFIX = ".gcode.3mf"
 
 
 def upload_accounting_document_file(
@@ -112,6 +114,55 @@ def upload_product_media_file(
     return to_dict(item)
 
 
+def upload_product_print_file(db: Session, product_id: int, file: UploadFile) -> dict:
+    product = db.get(Product, product_id)
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+
+    original_name = Path(file.filename or "print.gcode.3mf").name
+    if not original_name.lower().endswith(ALLOWED_PRINT_FILE_SUFFIX):
+        raise HTTPException(
+            status_code=400,
+            detail="Upload een door Bambu Studio voorbereid .gcode.3mf bestand. Een losse STL of gewone 3MF is niet direct printbaar.",
+        )
+
+    target_dir = PRODUCT_PRINT_FILE_ROOT / str(product_id)
+    target_dir.mkdir(parents=True, exist_ok=True)
+    safe_name = _safe_print_filename(original_name)
+    filename = f"{uuid.uuid4().hex}-{safe_name}"
+    target_path = target_dir / filename
+    with target_path.open("wb") as output:
+        shutil.copyfileobj(file.file, output)
+
+    delete_uploaded_product_print_file(product.print_file_path)
+    product.print_file_path = f"/uploads/product_print_files/{product_id}/{filename}"
+    mark_product_publications_sync_needed(db, product_id)
+    db.commit()
+    db.refresh(product)
+    return {
+        "ok": True,
+        "product_id": product.id,
+        "print_file_path": product.print_file_path,
+        "original_filename": original_name,
+        "message": "Printbestand gekoppeld aan product.",
+        "product": to_dict(product),
+    }
+
+
+def delete_uploaded_product_print_file(file_path: str | None) -> None:
+    if not file_path or not file_path.startswith("/uploads/product_print_files/"):
+        return
+    relative_path = file_path.removeprefix("/uploads/")
+    target = Path("uploads") / relative_path
+    try:
+        resolved_root = PRODUCT_PRINT_FILE_ROOT.resolve()
+        resolved_target = target.resolve()
+        if resolved_root in resolved_target.parents and resolved_target.is_file():
+            resolved_target.unlink()
+    except OSError:
+        return
+
+
 def delete_uploaded_media_file(file_path: str | None) -> None:
     if not file_path or not file_path.startswith("/uploads/product_media/"):
         return
@@ -124,3 +175,8 @@ def delete_uploaded_media_file(file_path: str | None) -> None:
             resolved_target.unlink()
     except OSError:
         return
+
+
+def _safe_print_filename(filename: str) -> str:
+    cleaned = "".join(char if char.isalnum() or char in "._-" else "-" for char in filename.strip())
+    return cleaned.strip(".-") or "print.gcode.3mf"

@@ -48,6 +48,7 @@ export function ProductEditForm({ product }: { product: Product }) {
           seo_description: seoDescription || null,
           product_type: productType || null,
           internal_category: category || null,
+          print_file_path: product.print_file_path || null,
           status,
           active: product.active !== false,
         }),

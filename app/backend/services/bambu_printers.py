@@ -18,6 +18,7 @@ from models import BambuPrinter
 PRINT_START_CONFIRMATION = "START PRINT"
 BUSY_STATES = {"RUNNING", "PRINTING", "PAUSE", "PAUSED", "PREPARE", "SLICING", "BUSY"}
 BAMBU_PRINT_UPLOAD_ROOT = Path("uploads/bambu_print_files")
+PRODUCT_PRINT_UPLOAD_ROOT = Path("uploads/product_print_files")
 ALLOWED_BAMBU_PRINT_SUFFIX = ".gcode.3mf"
 MAX_BAMBU_PRINT_UPLOAD_BYTES = 500 * 1024 * 1024
 
@@ -253,8 +254,8 @@ def _upload_local_file_to_bambu_printer(printer: BambuPrinter, local_upload_path
 
     relative = local_upload_path.removeprefix("/uploads/")
     source_path = (Path("uploads") / relative).resolve()
-    upload_root = BAMBU_PRINT_UPLOAD_ROOT.resolve()
-    if not source_path.is_file() or upload_root not in source_path.parents:
+    allowed_roots = {BAMBU_PRINT_UPLOAD_ROOT.resolve(), PRODUCT_PRINT_UPLOAD_ROOT.resolve()}
+    if not source_path.is_file() or not any(root in source_path.parents for root in allowed_roots):
         raise HTTPException(status_code=400, detail="Geupload printbestand kon niet worden gevonden in de app.")
 
     filename = source_path.name

@@ -2,7 +2,7 @@ from fastapi import APIRouter
 from api.routes_shared import *
 from domain.statuses import PUBLICATION_PAUSED, PUBLICATION_PUBLISHED, PUBLICATION_SYNC_NEEDED
 from services.product_service import generate_product_translations_for_product
-from services.upload_service import delete_uploaded_media_file
+from services.upload_service import delete_uploaded_media_file, upload_product_print_file
 
 router = APIRouter()
 
@@ -34,6 +34,11 @@ def update_product(item_id: int, payload: ProductCreate, db: Session = Depends(g
     db.commit()
     db.refresh(item)
     return to_dict(item)
+
+
+@router.post("/products/{product_id}/print-file/upload")
+def upload_product_print_file_endpoint(product_id: int, file: UploadFile = File(...), db: Session = Depends(get_db)):
+    return upload_product_print_file(db, product_id, file)
 
 
 @router.get("/product-variants")
