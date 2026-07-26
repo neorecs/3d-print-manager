@@ -248,15 +248,16 @@ def _bambu_print_preflight_checks(printer: BambuPrinter, file_path: str) -> list
     add(
         "SD-bestandspad",
         normalized_path.startswith("file:///sdcard/") and normalized_path.lower().endswith(".3mf"),
-        "Bestandspad wijst naar een voorbereid 3MF-project op de printer/SD." if normalized_path.startswith("file:///sdcard/") and normalized_path.lower().endswith(".3mf") else "Gebruik een pad zoals file:///sdcard/bestand.gcode.3mf.",
-    )
-    add(
-        "Printer niet bezig",
-        state not in BUSY_STATES,
-        f"Laatst bekende printerstatus is {state or 'onbekend'}." if state not in BUSY_STATES else f"Printer lijkt bezig of gepauzeerd ({state}). Start geen nieuwe print via de site.",
+        "Bestandspad wijst naar een voorbereid 3MF-project op de printer/SD." if normalized_path.startswith("file:///sdcard/") and normalized_path.lower().endswith(".3mf") else "Vul het volledige bestandspad in, bijvoorbeeld file:///sdcard/bestand.gcode.3mf. Alleen file:///sdcard/ is nog geen bestand.",
     )
     if not state:
-        add("Status recent", False, "Status is onbekend. Haal eerst status op of controleer Bambu Studio.", level="warning")
+        add("Printerstatus", False, "Status is onbekend. Haal eerst status op of controleer Bambu Studio voordat je echt start.", level="warning")
+    else:
+        add(
+            "Printer niet bezig",
+            state not in BUSY_STATES,
+            f"Laatst bekende printerstatus is {state}." if state not in BUSY_STATES else f"Printer lijkt bezig of gepauzeerd ({state}). Start geen nieuwe print via de site.",
+        )
 
     return checks
 
