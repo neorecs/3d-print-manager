@@ -389,7 +389,13 @@ function BambuPrintStartPanel({ printer, onRefresh }: { printer: BambuPrinter; o
       </div>
 
       <div className="mt-4 grid gap-4 md:grid-cols-2">
-        <TextField label="SD-bestandspad" value={draft.file_path} onChange={(value) => update("file_path", value)} placeholder="file:///sdcard/bestand.gcode.3mf" />
+        <TextField
+          help="Dit moet een volledig 3MF-projectbestand zijn dat al op de printer/SD staat. Alleen file:///sdcard/ is nog geen geldig bestand."
+          label="SD-bestandspad"
+          value={draft.file_path}
+          onChange={(value) => update("file_path", value)}
+          placeholder="file:///sdcard/bestand.gcode.3mf"
+        />
         <TextField label="Plate/gcode-pad in 3MF" value={draft.plate} onChange={(value) => update("plate", value)} placeholder="Metadata/plate_1.gcode" />
       </div>
 
@@ -480,6 +486,7 @@ function TextField({
   value,
   onChange,
   placeholder,
+  help,
   inputMode,
   type = "text",
 }: {
@@ -487,6 +494,7 @@ function TextField({
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
+  help?: string;
   inputMode?: "text" | "numeric" | "decimal";
   type?: "text" | "password";
 }) {
@@ -501,6 +509,7 @@ function TextField({
         type={type}
         value={value}
       />
+      {help ? <span className="block text-xs font-semibold leading-5 text-muted">{help}</span> : null}
     </label>
   );
 }
