@@ -4,9 +4,12 @@ import ssl
 import threading
 import uuid
 from datetime import datetime, timezone
+from ftplib import FTP_TLS
+from pathlib import Path
+from urllib.parse import quote
 
 import paho.mqtt.client as mqtt
-from fastapi import HTTPException
+from fastapi import HTTPException, UploadFile
 from sqlalchemy.orm import Session
 
 from core.credentials import decrypt_credential
@@ -14,6 +17,9 @@ from models import BambuPrinter
 
 PRINT_START_CONFIRMATION = "START PRINT"
 BUSY_STATES = {"RUNNING", "PRINTING", "PAUSE", "PAUSED", "PREPARE", "SLICING", "BUSY"}
+BAMBU_PRINT_UPLOAD_ROOT = Path("uploads/bambu_print_files")
+ALLOWED_BAMBU_PRINT_SUFFIX = ".gcode.3mf"
+MAX_BAMBU_PRINT_UPLOAD_BYTES = 500 * 1024 * 1024
 
 
 def public_bambu_printer_dict(printer: BambuPrinter) -> dict:
@@ -145,6 +151,41 @@ def preflight_bambu_print_start(db: Session, printer: BambuPrinter, file_path: s
     }
 
 
+def save_bambu_print_upload(file: UploadFile) -> dict:
+    original_name = Path(file.filename or "print.gcode.3mf").name
+    lower_name = original_name.lower()
+    if not lower_name.endswith(ALLOWED_BAMBU_PRINT_SUFFIX):
+        raise HTTPException(
+            status_code=400,
+            detail="Upload een door Bambu Studio voorbereid .gcode.3mf bestand. Een gewone STL/3MF zonder slicing kan de printer niet direct starten.",
+        )
+
+    BAMBU_PRINT_UPLOAD_ROOT.mkdir(parents=True, exist_ok=True)
+    safe_name = _safe_bambu_filename(original_name)
+    target_name = f"{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}-{uuid.uuid4().hex[:8]}-{safe_name}"
+    target_path = BAMBU_PRINT_UPLOAD_ROOT / target_name
+    size = 0
+
+    with target_path.open("wb") as handle:
+        while chunk := file.file.read(1024 * 1024):
+            size += len(chunk)
+            if size > MAX_BAMBU_PRINT_UPLOAD_BYTES:
+                target_path.unlink(missing_ok=True)
+                raise HTTPException(status_code=413, detail="Printbestand is te groot. Maximum is 500 MB.")
+            handle.write(chunk)
+
+    printer_file_path = f"file:///sdcard/{quote(target_name)}"
+    return {
+        "ok": True,
+        "local_upload_path": f"/uploads/bambu_print_files/{target_name}",
+        "file_path": printer_file_path,
+        "filename": target_name,
+        "original_filename": original_name,
+        "size_bytes": size,
+        "message": "Printbestand opgeslagen in de app. Bij printstart uploadt de app dit bestand eerst naar de printer.",
+    }
+
+
 def start_bambu_sdcard_print(db: Session, printer: BambuPrinter, payload) -> dict:
     preflight = preflight_bambu_print_start(db, printer, payload.file_path)
     if not preflight["ok"]:
@@ -154,6 +195,10 @@ def start_bambu_sdcard_print(db: Session, printer: BambuPrinter, payload) -> dic
             status_code=400,
             detail=f"Bevestiging ontbreekt. Typ exact '{PRINT_START_CONFIRMATION}' voordat de app een print mag starten.",
         )
+
+    if payload.local_upload_path:
+        uploaded_file_path = _upload_local_file_to_bambu_printer(printer, payload.local_upload_path)
+        payload.file_path = uploaded_file_path
 
     access_code = decrypt_credential(printer.access_code_encrypted or "")
     serial = (printer.serial_number or "").strip()
@@ -188,6 +233,45 @@ def start_bambu_sdcard_print(db: Session, printer: BambuPrinter, payload) -> dic
         "printer": public_bambu_printer_dict(printer),
         "mqtt_topic": f"device/{serial}/request",
     }
+
+
+class _ImplicitFTP_TLS(FTP_TLS):
+    def connect(self, host="", port=0, timeout=-999, source_address=None):
+        if port == 0:
+            port = 990
+        super().connect(host, port, timeout, source_address)
+        self.sock = self.context.wrap_socket(self.sock, server_hostname=self.host)
+        self.file = self.sock.makefile("r", encoding=self.encoding)
+        self.welcome = self.getresp()
+        return self.welcome
+
+
+def _upload_local_file_to_bambu_printer(printer: BambuPrinter, local_upload_path: str) -> str:
+    access_code = decrypt_credential(printer.access_code_encrypted or "")
+    if not access_code:
+        raise HTTPException(status_code=400, detail="Access code ontbreekt. Uploaden naar de printer kan niet zonder LAN access code.")
+
+    relative = local_upload_path.removeprefix("/uploads/")
+    source_path = (Path("uploads") / relative).resolve()
+    upload_root = BAMBU_PRINT_UPLOAD_ROOT.resolve()
+    if not source_path.is_file() or upload_root not in source_path.parents:
+        raise HTTPException(status_code=400, detail="Geupload printbestand kon niet worden gevonden in de app.")
+
+    filename = source_path.name
+    try:
+        ftp = _ImplicitFTP_TLS(timeout=30)
+        ftp.context.check_hostname = False
+        ftp.context.verify_mode = ssl.CERT_NONE
+        ftp.connect(printer.host, 990)
+        ftp.login("bblp", access_code)
+        ftp.prot_p()
+        with source_path.open("rb") as handle:
+            ftp.storbinary(f"STOR {filename}", handle)
+        ftp.quit()
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(status_code=502, detail=f"Upload naar printer via FTPS mislukt: {exc}") from exc
+
+    return f"file:///sdcard/{quote(filename)}"
 
 
 def _publish_bambu_mqtt_command(printer: BambuPrinter, access_code: str, serial: str, command: dict, timeout_seconds: float = 5.0) -> None:
@@ -260,6 +344,11 @@ def _bambu_print_preflight_checks(printer: BambuPrinter, file_path: str) -> list
         )
 
     return checks
+
+
+def _safe_bambu_filename(filename: str) -> str:
+    cleaned = "".join(char if char.isalnum() or char in "._-" else "-" for char in filename.strip())
+    return cleaned.strip(".-") or "print.gcode.3mf"
 
 
 def apply_bambu_status_payload(printer: BambuPrinter, payload: object) -> None:

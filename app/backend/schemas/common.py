@@ -85,6 +85,7 @@ class BambuPrinterCreate(BaseModel):
 
 class BambuPrintStartRequest(BaseModel):
     file_path: str
+    local_upload_path: str | None = None
     plate: str = "Metadata/plate_1.gcode"
     use_ams: bool = False
     timelapse: bool = False

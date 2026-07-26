@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { ChangeEvent, FormEvent, useEffect, useState } from "react";
 import { StatusBadge } from "@/components/StatusBadge";
 import type { BambuPrinter } from "@/lib/types";
 
@@ -18,6 +18,7 @@ type PrinterDraft = {
 
 type PrintStartDraft = {
   file_path: string;
+  local_upload_path: string;
   plate: string;
   use_ams: boolean;
   timelapse: boolean;
@@ -59,6 +60,7 @@ function emptyDraft(): PrinterDraft {
 function emptyPrintStartDraft(): PrintStartDraft {
   return {
     file_path: "file:///sdcard/",
+    local_upload_path: "",
     plate: "Metadata/plate_1.gcode",
     use_ams: false,
     timelapse: false,
@@ -304,18 +306,23 @@ export function BambuPrinterManager({ printers }: { printers: BambuPrinter[] }) 
 function BambuPrintStartPanel({ printer, onRefresh }: { printer: BambuPrinter; onRefresh: () => Promise<void> }) {
   const [draft, setDraft] = useState<PrintStartDraft>(() => emptyPrintStartDraft());
   const [preflight, setPreflight] = useState<PreflightResult | null>(null);
-  const [busy, setBusy] = useState<"preflight" | "start" | null>(null);
+  const [busy, setBusy] = useState<"upload" | "preflight" | "start" | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   function update(field: keyof PrintStartDraft, value: string | boolean) {
-    setDraft((current) => ({ ...current, [field]: value }));
+    setDraft((current) => ({
+      ...current,
+      [field]: value,
+      local_upload_path: field === "file_path" ? "" : current.local_upload_path,
+    }));
     if (field !== "confirmation_text") setPreflight(null);
   }
 
   function payload() {
     return {
       file_path: draft.file_path.trim(),
+      local_upload_path: draft.local_upload_path || null,
       plate: draft.plate.trim() || "Metadata/plate_1.gcode",
       use_ams: draft.use_ams,
       timelapse: draft.timelapse,
@@ -325,6 +332,37 @@ function BambuPrintStartPanel({ printer, onRefresh }: { printer: BambuPrinter; o
       vibration_cali: draft.vibration_cali,
       confirmation_text: draft.confirmation_text,
     };
+  }
+
+  async function uploadPrintFile(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    setBusy("upload");
+    setMessage(null);
+    setError(null);
+    setPreflight(null);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const response = await fetch(`/api/bambu/printers/${printer.id}/print-files/upload`, {
+        method: "POST",
+        body: formData,
+      });
+      const data = await response.json().catch(() => null);
+      if (!response.ok) throw new Error(data?.detail || "Printbestand uploaden is mislukt");
+      setDraft((current) => ({
+        ...current,
+        file_path: data.file_path || current.file_path,
+        local_upload_path: data.local_upload_path || "",
+        confirmation_text: "",
+      }));
+      setMessage(data.message || "Printbestand geupload. Bij printstart wordt het bestand naar de printer verstuurd.");
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Printbestand uploaden is mislukt");
+    } finally {
+      setBusy(null);
+      event.target.value = "";
+    }
   }
 
   async function runPreflight() {
@@ -397,6 +435,22 @@ function BambuPrintStartPanel({ printer, onRefresh }: { printer: BambuPrinter; o
           placeholder="file:///sdcard/bestand.gcode.3mf"
         />
         <TextField label="Plate/gcode-pad in 3MF" value={draft.plate} onChange={(value) => update("plate", value)} placeholder="Metadata/plate_1.gcode" />
+      </div>
+
+      <div className="mt-4 rounded-lg border border-line bg-slate-950/25 p-4">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <h5 className="font-black text-ink">3MF-bestand via de site gebruiken</h5>
+            <p className="mt-1 text-sm leading-6 text-muted">
+              Upload hier een door Bambu Studio voorbereid .gcode.3mf bestand. Bij printstart stuurt de site dit bestand eerst via FTPS naar de printer en start daarna de print via LAN/MQTT.
+            </p>
+            {draft.local_upload_path ? <p className="mt-2 text-xs font-bold text-emerald-300">Bestand klaar in de app: {draft.local_upload_path}</p> : null}
+          </div>
+          <label className="inline-flex cursor-pointer items-center justify-center rounded-md border border-line bg-slate-950/35 px-4 py-2 text-sm font-black text-slate-200 hover:bg-white/5">
+            {busy === "upload" ? "Uploaden..." : "Printbestand kiezen"}
+            <input accept=".gcode.3mf" className="sr-only" disabled={busy !== null} onChange={uploadPrintFile} type="file" />
+          </label>
+        </div>
       </div>
 
       <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">

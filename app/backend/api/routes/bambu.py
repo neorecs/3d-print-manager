@@ -54,6 +54,12 @@ def bambu_print_preflight(item_id: int, payload: BambuPrintStartRequest, db: Ses
     return preflight_bambu_print_start(db, item, payload.file_path)
 
 
+@router.post("/bambu/printers/{item_id}/print-files/upload")
+def bambu_print_file_upload(item_id: int, file: UploadFile = File(...), db: Session = Depends(get_db)):
+    get_or_404(db, BambuPrinter, item_id)
+    return save_bambu_print_upload(file)
+
+
 @router.post("/bambu/printers/{item_id}/start-print")
 def bambu_start_print(item_id: int, payload: BambuPrintStartRequest, db: Session = Depends(get_db)):
     item = get_or_404(db, BambuPrinter, item_id)
