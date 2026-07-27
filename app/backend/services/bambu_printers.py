@@ -92,7 +92,7 @@ def refresh_bambu_mqtt_status(db: Session, printer: BambuPrinter, timeout_second
     done = threading.Event()
 
     def on_connect(client, _userdata, _flags, reason_code, _properties=None):
-        if int(reason_code) != 0:
+        if not _mqtt_reason_code_success(reason_code):
             error["message"] = f"MQTT verbinding geweigerd: {reason_code}"
             done.set()
             return
@@ -302,7 +302,7 @@ def _publish_bambu_mqtt_command(printer: BambuPrinter, access_code: str, serial:
     published = threading.Event()
 
     def on_connect(client, _userdata, _flags, reason_code, _properties=None):
-        if int(reason_code) != 0:
+        if not _mqtt_reason_code_success(reason_code):
             error["message"] = f"MQTT verbinding geweigerd: {reason_code}"
             connected.set()
             return
@@ -335,6 +335,15 @@ def _publish_bambu_mqtt_command(printer: BambuPrinter, access_code: str, serial:
         raise HTTPException(status_code=502, detail=error["message"])
     if not connected.is_set() or not published.is_set():
         raise HTTPException(status_code=504, detail="MQTT printstart timeout. Controleer LAN mode, Developer Mode, access code en printerstatus.")
+
+
+def _mqtt_reason_code_success(reason_code: object) -> bool:
+    if hasattr(reason_code, "is_failure"):
+        return not bool(reason_code.is_failure)
+    try:
+        return int(reason_code) == 0
+    except (TypeError, ValueError):
+        return str(reason_code).strip().lower() in {"0", "success", "normal disconnection"}
 
 
 def _bambu_print_preflight_checks(printer: BambuPrinter, file_path: str) -> list[dict]:

@@ -1,7 +1,7 @@
 from support import BackendTestCase
 
 from models import BambuPrinter
-from services.bambu_printers import preflight_bambu_print_start
+from services.bambu_printers import _mqtt_reason_code_success, preflight_bambu_print_start
 
 
 class BambuPrinterPreflightTests(BackendTestCase):
@@ -53,3 +53,13 @@ class BambuPrinterPreflightTests(BackendTestCase):
 
         self.assertTrue(result["ok"])
 
+    def test_mqtt_reason_code_accepts_paho_v2_success_object(self):
+        class ReasonCode:
+            is_failure = False
+
+            def __str__(self):
+                return "Success"
+
+        self.assertTrue(_mqtt_reason_code_success(ReasonCode()))
+        self.assertTrue(_mqtt_reason_code_success(0))
+        self.assertFalse(_mqtt_reason_code_success(5))
