@@ -63,7 +63,19 @@ export function ProductPrintFileManager({ product, printers }: { product: Produc
   const filename = product.print_file_path?.split("/").pop() || null;
   const selectedPrinter = printers.find((printer) => String(printer.id) === selectedPrinterId);
   const printerFilePath = filename ? `file:///sdcard/${encodeURIComponent(filename)}` : "";
-  const canStart = Boolean(preflight?.ok && confirmationText.trim().toUpperCase() === "START PRINT" && selectedPrinterId);
+  const confirmationOk = confirmationText.trim().toUpperCase() === "START PRINT";
+  const startBlockedReason = !product.print_file_path
+    ? "Koppel eerst een printbestand aan dit product."
+    : !selectedPrinterId
+      ? "Kies eerst een printer."
+      : !preflight
+        ? "Klik eerst op Preflight controleren. Daarna wordt Print starten actief als alle controles goed zijn."
+        : !preflight.ok
+          ? "Preflight blokkeert printstart. Los de rode controles op en controleer opnieuw."
+          : !confirmationOk
+            ? "Typ START PRINT als bevestiging om de knop actief te maken."
+            : null;
+  const canStart = !startBlockedReason;
 
   function startPayload() {
     return {
@@ -218,13 +230,23 @@ export function ProductPrintFileManager({ product, printers }: { product: Produc
         <div className="mt-4 grid gap-3 md:grid-cols-[1fr_auto] md:items-end">
           <TextField label="Bevestigingstekst" value={confirmationText} onChange={setConfirmationText} placeholder="Typ START PRINT" />
           <button
-            className="rounded-md bg-brand px-4 py-2 text-sm font-black text-slate-950 disabled:opacity-50"
+            className="rounded-md bg-brand px-4 py-2 text-sm font-black text-slate-950 hover:bg-brand/90 disabled:cursor-not-allowed disabled:bg-slate-800 disabled:text-slate-500"
             disabled={busy !== null || !canStart}
             onClick={startPrint}
             type="button"
+            title={startBlockedReason || "Klaar om printstart te verzenden"}
           >
             {busy === "start" ? "Start verzenden..." : "Print starten"}
           </button>
+        </div>
+        <div
+          className={`mt-3 rounded-lg border px-3 py-2 text-sm font-semibold ${
+            startBlockedReason
+              ? "border-amber-400/25 bg-amber-400/10 text-amber-100"
+              : "border-emerald-400/25 bg-emerald-400/10 text-emerald-100"
+          }`}
+        >
+          {startBlockedReason || "Alles staat klaar. Je kunt de printstart nu verzenden."}
         </div>
       </div>
     </div>
