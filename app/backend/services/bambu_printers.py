@@ -17,6 +17,7 @@ from models import BambuPrinter
 
 PRINT_START_CONFIRMATION = "START PRINT"
 BUSY_STATES = {"RUNNING", "PRINTING", "PAUSE", "PAUSED", "PREPARE", "SLICING", "BUSY"}
+READY_STATES = {"IDLE", "FINISH", "FINISHED", "FAILED", "STOPPED"}
 BAMBU_PRINT_UPLOAD_ROOT = Path("uploads/bambu_print_files")
 PRODUCT_PRINT_UPLOAD_ROOT = Path("uploads/product_print_files")
 ALLOWED_BAMBU_PRINT_SUFFIXES = (".gcode.3mf", "_gcode.3mf")
@@ -96,6 +97,20 @@ def refresh_bambu_mqtt_status(db: Session, printer: BambuPrinter, timeout_second
             done.set()
             return
         client.subscribe(topic)
+        client.publish(
+            f"device/{serial}/request",
+            json.dumps(
+                {
+                    "pushing": {
+                        "sequence_id": str(uuid.uuid4()),
+                        "command": "pushall",
+                        "version": 1,
+                        "push_target": 1,
+                    }
+                }
+            ),
+            qos=0,
+        )
 
     def on_message(client, _userdata, message):
         try:
@@ -121,6 +136,7 @@ def refresh_bambu_mqtt_status(db: Session, printer: BambuPrinter, timeout_second
     except Exception as exc:  # noqa: BLE001
         printer.last_status = "mqtt_fout"
         printer.status_message = f"MQTT-status ophalen mislukt: {exc}"
+        printer.printer_state = None
         db.commit()
         db.refresh(printer)
         return public_bambu_printer_dict(printer)
@@ -128,9 +144,11 @@ def refresh_bambu_mqtt_status(db: Session, printer: BambuPrinter, timeout_second
     if error.get("message"):
         printer.last_status = "mqtt_fout"
         printer.status_message = error["message"]
+        printer.printer_state = None
     elif not received.get("payload"):
         printer.last_status = "mqtt_timeout"
         printer.status_message = f"Geen MQTT-status ontvangen op topic {topic} binnen {int(timeout_seconds)} seconden."
+        printer.printer_state = None
     else:
         apply_bambu_status_payload(printer, received["payload"])
 
@@ -139,7 +157,10 @@ def refresh_bambu_mqtt_status(db: Session, printer: BambuPrinter, timeout_second
     return public_bambu_printer_dict(printer)
 
 
-def preflight_bambu_print_start(db: Session, printer: BambuPrinter, file_path: str) -> dict:
+def preflight_bambu_print_start(db: Session, printer: BambuPrinter, file_path: str, *, refresh_status: bool = True) -> dict:
+    if refresh_status and printer.active and printer.serial_number and printer.access_code_encrypted:
+        refresh_bambu_mqtt_status(db, printer, timeout_seconds=8.0)
+
     checks = _bambu_print_preflight_checks(printer, file_path)
     ok = all(check["ok"] for check in checks if check["level"] == "error")
     return {
@@ -148,7 +169,7 @@ def preflight_bambu_print_start(db: Session, printer: BambuPrinter, file_path: s
         "file_path": file_path,
         "confirmation_required": PRINT_START_CONFIRMATION,
         "checks": checks,
-        "message": "Preflight akkoord. Bevestig bewust voordat je de print start." if ok else "Preflight blokkeert printstart. Los de rode controles eerst op.",
+        "message": "Preflight akkoord. Printer is vrij en de print kan worden gestart." if ok else "Preflight blokkeert printstart. Los de rode controles eerst op.",
     }
 
 
@@ -336,13 +357,13 @@ def _bambu_print_preflight_checks(printer: BambuPrinter, file_path: str) -> list
         "Bestandspad wijst naar een voorbereid 3MF-project op de printer/SD." if normalized_path.startswith("file:///sdcard/") and normalized_path.lower().endswith(".3mf") else "Vul het volledige bestandspad in, bijvoorbeeld file:///sdcard/bestand.gcode.3mf. Alleen file:///sdcard/ is nog geen bestand.",
     )
     if not state:
-        add("Printerstatus", False, "Status is onbekend. Haal eerst status op of controleer Bambu Studio voordat je echt start.", level="warning")
+        add("Printerstatus", False, "Status is onbekend. De app kon niet bevestigen dat de printer vrij is, dus printstart wordt geblokkeerd.")
+    elif state in BUSY_STATES:
+        add("Printer niet bezig", False, f"Printer lijkt bezig of gepauzeerd ({state}). Start geen nieuwe print via de site.")
+    elif state in READY_STATES:
+        add("Printer niet bezig", True, f"Printerstatus is {state}. De printer lijkt vrij.")
     else:
-        add(
-            "Printer niet bezig",
-            state not in BUSY_STATES,
-            f"Laatst bekende printerstatus is {state}." if state not in BUSY_STATES else f"Printer lijkt bezig of gepauzeerd ({state}). Start geen nieuwe print via de site.",
-        )
+        add("Printerstatus herkend", False, f"Printerstatus is {state}. De app herkent deze status nog niet betrouwbaar als vrij, dus printstart wordt geblokkeerd.")
 
     return checks
 
