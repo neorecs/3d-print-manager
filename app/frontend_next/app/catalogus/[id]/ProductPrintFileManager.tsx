@@ -30,7 +30,6 @@ export function ProductPrintFileManager({ product, printers }: { product: Produc
   const [useAms, setUseAms] = useState(false);
   const [bedLeveling, setBedLeveling] = useState(true);
   const [layerInspect, setLayerInspect] = useState(true);
-  const [confirmationText, setConfirmationText] = useState("");
   const [preflight, setPreflight] = useState<PreflightResult | null>(null);
 
   async function uploadPrintFile(event: ChangeEvent<HTMLInputElement>) {
@@ -50,7 +49,6 @@ export function ProductPrintFileManager({ product, printers }: { product: Produc
       if (!response.ok) throw new Error(data?.detail || "Printbestand uploaden is mislukt");
       setMessage(data?.message || "Printbestand gekoppeld aan product.");
       setPreflight(null);
-      setConfirmationText("");
       router.refresh();
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Printbestand uploaden is mislukt");
@@ -63,18 +61,11 @@ export function ProductPrintFileManager({ product, printers }: { product: Produc
   const filename = product.print_file_path?.split("/").pop() || null;
   const selectedPrinter = printers.find((printer) => String(printer.id) === selectedPrinterId);
   const printerFilePath = filename ? `file:///sdcard/${encodeURIComponent(filename)}` : "";
-  const confirmationOk = confirmationText.trim().toUpperCase() === "START PRINT";
   const startBlockedReason = !product.print_file_path
     ? "Koppel eerst een printbestand aan dit product."
     : !selectedPrinterId
       ? "Kies eerst een printer."
-      : !preflight
-        ? "Klik eerst op Preflight controleren. Daarna wordt Print starten actief als alle controles goed zijn."
-        : !preflight.ok
-          ? "Preflight blokkeert printstart. Los de rode controles op en controleer opnieuw."
-          : !confirmationOk
-            ? "Typ START PRINT als bevestiging om de knop actief te maken."
-            : null;
+      : null;
   const canStart = !startBlockedReason;
 
   function startPayload() {
@@ -88,7 +79,7 @@ export function ProductPrintFileManager({ product, printers }: { product: Produc
       bed_leveling: bedLeveling,
       layer_inspect: layerInspect,
       vibration_cali: false,
-      confirmation_text: confirmationText,
+      confirmation_text: "START PRINT",
     };
   }
 
@@ -117,10 +108,24 @@ export function ProductPrintFileManager({ product, printers }: { product: Produc
 
   async function startPrint() {
     if (!canStart) return;
-    setBusy("start");
+    setBusy("preflight");
     setMessage(null);
     setError(null);
     try {
+      const preflightResponse = await fetch(`/api/bambu/printers/${selectedPrinterId}/print-preflight`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(startPayload()),
+      });
+      const preflightData = await preflightResponse.json().catch(() => null);
+      if (!preflightResponse.ok) throw new Error(preflightData?.detail?.message || preflightData?.detail || "Preflight mislukt");
+      setPreflight(preflightData);
+      if (!preflightData.ok) {
+        setError("Controle blokkeert printstart. Los de meldingen hieronder op en probeer opnieuw.");
+        return;
+      }
+
+      setBusy("start");
       const response = await fetch(`/api/bambu/printers/${selectedPrinterId}/start-print`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -132,7 +137,6 @@ export function ProductPrintFileManager({ product, printers }: { product: Produc
         throw new Error(typeof detail === "string" ? detail : detail?.message || "Printstart mislukt");
       }
       setMessage(data.message || "Printstart verzonden.");
-      setConfirmationText("");
       setPreflight(null);
       router.refresh();
     } catch (caught) {
@@ -170,7 +174,7 @@ export function ProductPrintFileManager({ product, printers }: { product: Produc
           <div>
             <h3 className="font-bold text-ink">Print dit product</h3>
             <p className="mt-1 text-sm leading-6 text-muted">
-              Gebruik het gekoppelde productbestand om eerst een preflight te draaien. Bij printstart uploadt de app het bestand naar de printer en stuurt daarna het LAN/MQTT startcommando.
+              Kies de printer en start de print. De app controleert eerst automatisch of starten veilig kan, uploadt daarna het bestand naar de printer en stuurt het LAN/MQTT startcommando.
             </p>
             {selectedPrinter ? <p className="mt-2 text-xs font-bold text-slate-400">Gekozen printer: {selectedPrinter.name} ({selectedPrinter.host})</p> : null}
           </div>
@@ -210,7 +214,7 @@ export function ProductPrintFileManager({ product, printers }: { product: Produc
             onClick={runPreflight}
             type="button"
           >
-            {busy === "preflight" ? "Controleren..." : "Preflight controleren"}
+            {busy === "preflight" ? "Controleren..." : "Alleen controleren"}
           </button>
           <a className="rounded-md border border-line bg-slate-950/35 px-4 py-2 text-sm font-bold text-slate-300 hover:bg-white/5" href="/bambu-printers">
             Printers beheren
@@ -228,7 +232,9 @@ export function ProductPrintFileManager({ product, printers }: { product: Produc
         ) : null}
 
         <div className="mt-4 grid gap-3 md:grid-cols-[1fr_auto] md:items-end">
-          <TextField label="Bevestigingstekst" value={confirmationText} onChange={setConfirmationText} placeholder="Typ START PRINT" />
+          <div className="rounded-lg border border-line bg-slate-950/35 px-3 py-2 text-sm leading-6 text-muted">
+            <span className="font-black text-ink">Veilige start:</span> bij klikken op Print starten voert de app automatisch eerst de controle uit.
+          </div>
           <button
             className="rounded-md bg-brand px-4 py-2 text-sm font-black text-slate-950 hover:bg-brand/90 disabled:cursor-not-allowed disabled:bg-slate-800 disabled:text-slate-500"
             disabled={busy !== null || !canStart}
@@ -236,7 +242,7 @@ export function ProductPrintFileManager({ product, printers }: { product: Produc
             type="button"
             title={startBlockedReason || "Klaar om printstart te verzenden"}
           >
-            {busy === "start" ? "Start verzenden..." : "Print starten"}
+            {busy === "preflight" ? "Controleren..." : busy === "start" ? "Start verzenden..." : "Print starten"}
           </button>
         </div>
         <div
@@ -246,7 +252,7 @@ export function ProductPrintFileManager({ product, printers }: { product: Produc
               : "border-emerald-400/25 bg-emerald-400/10 text-emerald-100"
           }`}
         >
-          {startBlockedReason || "Alles staat klaar. Je kunt de printstart nu verzenden."}
+          {startBlockedReason || "Klaar voor printstart. De controle draait automatisch zodra je op Print starten klikt."}
         </div>
       </div>
     </div>
