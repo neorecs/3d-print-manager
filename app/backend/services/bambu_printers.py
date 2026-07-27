@@ -19,7 +19,7 @@ PRINT_START_CONFIRMATION = "START PRINT"
 BUSY_STATES = {"RUNNING", "PRINTING", "PAUSE", "PAUSED", "PREPARE", "SLICING", "BUSY"}
 BAMBU_PRINT_UPLOAD_ROOT = Path("uploads/bambu_print_files")
 PRODUCT_PRINT_UPLOAD_ROOT = Path("uploads/product_print_files")
-ALLOWED_BAMBU_PRINT_SUFFIX = ".gcode.3mf"
+ALLOWED_BAMBU_PRINT_SUFFIXES = (".gcode.3mf", "_gcode.3mf")
 MAX_BAMBU_PRINT_UPLOAD_BYTES = 500 * 1024 * 1024
 
 
@@ -155,7 +155,7 @@ def preflight_bambu_print_start(db: Session, printer: BambuPrinter, file_path: s
 def save_bambu_print_upload(file: UploadFile) -> dict:
     original_name = Path(file.filename or "print.gcode.3mf").name
     lower_name = original_name.lower()
-    if not lower_name.endswith(ALLOWED_BAMBU_PRINT_SUFFIX):
+    if not lower_name.endswith(ALLOWED_BAMBU_PRINT_SUFFIXES):
         raise HTTPException(
             status_code=400,
             detail="Upload een door Bambu Studio voorbereid .gcode.3mf bestand. Een gewone STL/3MF zonder slicing kan de printer niet direct starten.",

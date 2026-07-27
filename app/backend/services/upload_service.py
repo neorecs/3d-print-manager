@@ -21,7 +21,7 @@ ALLOWED_ACCOUNTING_CONTENT_TYPES = {
     "image/png",
     "image/webp",
 }
-ALLOWED_PRINT_FILE_SUFFIX = ".gcode.3mf"
+ALLOWED_PRINT_FILE_SUFFIXES = (".gcode.3mf", "_gcode.3mf")
 
 
 def upload_accounting_document_file(
@@ -120,7 +120,7 @@ def upload_product_print_file(db: Session, product_id: int, file: UploadFile) ->
         raise HTTPException(status_code=404, detail="Product not found")
 
     original_name = Path(file.filename or "print.gcode.3mf").name
-    if not original_name.lower().endswith(ALLOWED_PRINT_FILE_SUFFIX):
+    if not original_name.lower().endswith(ALLOWED_PRINT_FILE_SUFFIXES):
         raise HTTPException(
             status_code=400,
             detail="Upload een door Bambu Studio voorbereid .gcode.3mf bestand. Een losse STL of gewone 3MF is niet direct printbaar.",

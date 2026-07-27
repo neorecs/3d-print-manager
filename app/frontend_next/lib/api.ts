@@ -118,7 +118,7 @@ export async function getProductCatalogData(): Promise<ProductCatalogData> {
 }
 
 export async function getProductDetailData(productId: number): Promise<ProductDetailData> {
-  const [product, variants, inventory, media, tags, translations, publications, platforms] = await Promise.all([
+  const [product, variants, inventory, media, tags, translations, publications, platforms, printers] = await Promise.all([
     apiGet<Product>(`/products/${productId}`),
     apiGet<ProductVariant[]>("/product-variants"),
     apiGet<ProductInventory[]>("/inventory/products"),
@@ -127,6 +127,7 @@ export async function getProductDetailData(productId: number): Promise<ProductDe
     apiGet<ProductTranslation[]>(`/products/${productId}/translations`).catch(() => []),
     apiGet<ProductPublication[]>(`/products/${productId}/publications`).catch(() => []),
     apiGet<Platform[]>("/platforms"),
+    apiGet<BambuPrinter[]>("/bambu/printers").catch(() => []),
   ]);
 
   return {
@@ -138,6 +139,7 @@ export async function getProductDetailData(productId: number): Promise<ProductDe
     translations,
     publications,
     platforms,
+    printers,
   };
 }
 

@@ -420,6 +420,7 @@ export type ProductDetailData = {
   translations: ProductTranslation[];
   publications: ProductPublication[];
   platforms: Platform[];
+  printers: BambuPrinter[];
 };
 
 export type PlatformConnectorStatus = {
