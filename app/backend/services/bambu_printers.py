@@ -1,7 +1,9 @@
 import json
+import shutil
 import socket
 import ssl
 import subprocess
+import tempfile
 import threading
 import uuid
 from datetime import datetime, timezone
@@ -310,34 +312,38 @@ def _upload_local_file_to_bambu_printer_with_curl(printer: BambuPrinter, access_
     file_size = source_path.stat().st_size
     max_time = min(max(300, int(file_size / 75_000)), 1800)
     failures: list[str] = []
-    for remote_path in (filename, f"models/{filename}"):
-        target_url = f"ftps://{printer.host}:990/{quote(remote_path, safe='/')}"
-        command = [
-            "curl",
-            "--fail",
-            "--silent",
-            "--show-error",
-            "--ftp-pasv",
-            "--insecure",
-            "--ssl-reqd",
-            "--connect-timeout",
-            "20",
-            "--max-time",
-            str(max_time),
-            "--user",
-            f"bblp:{access_code}",
-            "--upload-file",
-            str(source_path),
-            target_url,
-        ]
-        try:
-            subprocess.run(command, check=True, capture_output=True, text=True, timeout=max_time + 30)
-            return remote_path
-        except subprocess.CalledProcessError as exc:
-            detail = (exc.stderr or exc.stdout or "").strip() or f"curl exit code {exc.returncode}"
-            failures.append(f"{remote_path}: {detail}")
-        except subprocess.TimeoutExpired as exc:
-            raise HTTPException(status_code=504, detail="Upload naar printer via FTPS duurde te lang en is afgebroken.") from exc
+
+    with tempfile.TemporaryDirectory() as temp_dir:
+        upload_source = Path(temp_dir) / filename
+        shutil.copyfile(source_path, upload_source)
+        for remote_dir, remote_path in (("", filename), ("models/", f"models/{filename}")):
+            target_url = f"ftps://{printer.host}:990/{remote_dir}"
+            command = [
+                "curl",
+                "--fail",
+                "--silent",
+                "--show-error",
+                "--ftp-pasv",
+                "--insecure",
+                "--ssl-reqd",
+                "--connect-timeout",
+                "20",
+                "--max-time",
+                str(max_time),
+                "--user",
+                f"bblp:{access_code}",
+                "--upload-file",
+                str(upload_source),
+                target_url,
+            ]
+            try:
+                subprocess.run(command, check=True, capture_output=True, text=True, timeout=max_time + 30)
+                return remote_path
+            except subprocess.CalledProcessError as exc:
+                detail = (exc.stderr or exc.stdout or "").strip() or f"curl exit code {exc.returncode}"
+                failures.append(f"{remote_path}: {detail}")
+            except subprocess.TimeoutExpired as exc:
+                raise HTTPException(status_code=504, detail="Upload naar printer via FTPS duurde te lang en is afgebroken.") from exc
 
     raise HTTPException(status_code=502, detail=f"Upload naar printer via FTPS mislukt: {' | '.join(failures)}")
 
