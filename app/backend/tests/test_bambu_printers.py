@@ -1,7 +1,9 @@
 from support import BackendTestCase
 
 from models import BambuPrinter
-from services.bambu_printers import _mqtt_reason_code_success, preflight_bambu_print_start
+from pathlib import Path
+
+from services.bambu_printers import _bambu_remote_print_filename, _mqtt_reason_code_success, preflight_bambu_print_start
 
 
 class BambuPrinterPreflightTests(BackendTestCase):
@@ -63,3 +65,10 @@ class BambuPrinterPreflightTests(BackendTestCase):
         self.assertTrue(_mqtt_reason_code_success(ReasonCode()))
         self.assertTrue(_mqtt_reason_code_success(0))
         self.assertFalse(_mqtt_reason_code_success(5))
+
+    def test_remote_print_filename_is_short_and_bambu_safe(self):
+        filename = _bambu_remote_print_filename(Path("1cdd9ac93ce14bd69b49ea6f4b953cf1-world_s_tinest_3d_print_gcode.3mf"))
+
+        self.assertLessEqual(len(filename), 25)
+        self.assertTrue(filename.startswith("pm-"))
+        self.assertTrue(filename.endswith(".gcode.3mf"))

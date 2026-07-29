@@ -280,9 +280,10 @@ def _upload_local_file_to_bambu_printer(printer: BambuPrinter, local_upload_path
     if not source_path.is_file() or not any(root in source_path.parents for root in allowed_roots):
         raise HTTPException(status_code=400, detail="Geupload printbestand kon niet worden gevonden in de app.")
 
-    filename = source_path.name
-    if _upload_local_file_to_bambu_printer_with_curl(printer, access_code, source_path, filename):
-        return f"ftp:///{quote(filename)}"
+    remote_filename = _bambu_remote_print_filename(source_path)
+    remote_path = _upload_local_file_to_bambu_printer_with_curl(printer, access_code, source_path, remote_filename)
+    if remote_path:
+        return f"ftp:///{quote(remote_path, safe='/')}"
 
     try:
         ftp = _ImplicitFTP_TLS(timeout=30)
@@ -292,49 +293,58 @@ def _upload_local_file_to_bambu_printer(printer: BambuPrinter, local_upload_path
         ftp.login("bblp", access_code)
         ftp.prot_p()
         with source_path.open("rb") as handle:
-            ftp.storbinary(f"STOR {filename}", handle)
+            ftp.storbinary(f"STOR {remote_filename}", handle)
         ftp.quit()
     except Exception as exc:  # noqa: BLE001
         raise HTTPException(status_code=502, detail=f"Upload naar printer via FTPS mislukt: {exc}") from exc
 
-    return f"ftp:///{quote(filename)}"
+    return f"ftp:///{quote(remote_filename)}"
 
 
-def _upload_local_file_to_bambu_printer_with_curl(printer: BambuPrinter, access_code: str, source_path: Path, filename: str) -> bool:
+def _upload_local_file_to_bambu_printer_with_curl(printer: BambuPrinter, access_code: str, source_path: Path, filename: str) -> str | None:
     try:
         subprocess.run(["curl", "--version"], check=True, capture_output=True, text=True, timeout=5)
     except (OSError, subprocess.SubprocessError):
-        return False
+        return None
 
     file_size = source_path.stat().st_size
     max_time = min(max(300, int(file_size / 75_000)), 1800)
-    target_url = f"ftps://{printer.host}:990/{quote(filename)}"
-    command = [
-        "curl",
-        "--fail",
-        "--silent",
-        "--show-error",
-        "--ftp-pasv",
-        "--insecure",
-        "--ssl-reqd",
-        "--connect-timeout",
-        "20",
-        "--max-time",
-        str(max_time),
-        "--user",
-        f"bblp:{access_code}",
-        "--upload-file",
-        str(source_path),
-        target_url,
-    ]
-    try:
-        subprocess.run(command, check=True, capture_output=True, text=True, timeout=max_time + 30)
-        return True
-    except subprocess.CalledProcessError as exc:
-        detail = (exc.stderr or exc.stdout or "").strip() or f"curl exit code {exc.returncode}"
-        raise HTTPException(status_code=502, detail=f"Upload naar printer via FTPS mislukt: {detail}") from exc
-    except subprocess.TimeoutExpired as exc:
-        raise HTTPException(status_code=504, detail="Upload naar printer via FTPS duurde te lang en is afgebroken.") from exc
+    failures: list[str] = []
+    for remote_path in (filename, f"models/{filename}"):
+        target_url = f"ftps://{printer.host}:990/{quote(remote_path, safe='/')}"
+        command = [
+            "curl",
+            "--fail",
+            "--silent",
+            "--show-error",
+            "--ftp-pasv",
+            "--insecure",
+            "--ssl-reqd",
+            "--connect-timeout",
+            "20",
+            "--max-time",
+            str(max_time),
+            "--user",
+            f"bblp:{access_code}",
+            "--upload-file",
+            str(source_path),
+            target_url,
+        ]
+        try:
+            subprocess.run(command, check=True, capture_output=True, text=True, timeout=max_time + 30)
+            return remote_path
+        except subprocess.CalledProcessError as exc:
+            detail = (exc.stderr or exc.stdout or "").strip() or f"curl exit code {exc.returncode}"
+            failures.append(f"{remote_path}: {detail}")
+        except subprocess.TimeoutExpired as exc:
+            raise HTTPException(status_code=504, detail="Upload naar printer via FTPS duurde te lang en is afgebroken.") from exc
+
+    raise HTTPException(status_code=502, detail=f"Upload naar printer via FTPS mislukt: {' | '.join(failures)}")
+
+
+def _bambu_remote_print_filename(source_path: Path) -> str:
+    token = uuid.uuid5(uuid.NAMESPACE_URL, source_path.name).hex[:12]
+    return f"pm-{token}.gcode.3mf"
 
 
 def _publish_bambu_mqtt_command(printer: BambuPrinter, access_code: str, serial: str, command: dict, timeout_seconds: float = 5.0) -> None:
