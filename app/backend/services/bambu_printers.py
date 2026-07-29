@@ -345,11 +345,17 @@ def _upload_local_file_to_bambu_printer_with_curl(printer: BambuPrinter, access_
             except subprocess.TimeoutExpired as exc:
                 raise HTTPException(status_code=504, detail="Upload naar printer via FTPS duurde te lang en is afgebroken.") from exc
 
-    raise HTTPException(status_code=502, detail=f"Upload naar printer via FTPS mislukt: {' | '.join(failures)}")
+    failure_detail = " | ".join(failures)
+    if "553" in failure_detail:
+        failure_detail += (
+            " | Bambu FTP-code 553 betekent meestal dat de printer het bestand niet kan aanmaken. "
+            "Controleer of de SD-kaart geplaatst, schrijfbaar en niet vol is, en of uploaden via Bambu Studio of WinSCP wel lukt."
+        )
+    raise HTTPException(status_code=502, detail=f"Upload naar printer via FTPS mislukt: {failure_detail}")
 
 
 def _bambu_remote_print_filename(source_path: Path) -> str:
-    token = uuid.uuid5(uuid.NAMESPACE_URL, source_path.name).hex[:12]
+    token = uuid.uuid4().hex[:12]
     return f"pm-{token}.gcode.3mf"
 
 
