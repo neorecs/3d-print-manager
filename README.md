@@ -52,8 +52,9 @@ Versie 0.13 live-hardening:
 - Verpakking, platformkosten, verzending en stroomkosten meenemen
 - Geschatte winst per order berekenen en tonen
 - Printbatches aanmaken uit geselecteerde printtaken
-- Bambu Studio-export maken als CSV en Markdown
-- Productielijst exporteren met ordernummer, aantallen, kleur, materiaal en printbestandpad
+- Bambu Studio-pakket per batch downloaden als ZIP met CSV, handleiding en gekoppelde `.gcode.3mf` bestanden
+- Een gekoppeld productbestand rechtstreeks downloaden en openen in Bambu Studio
+- Productielijst exporteren met ordernummer, aantallen, kleur, materiaal en bestandsnaam
 - Orderoverzicht exporteren per batch
 - Trendanalyse over 30, 60 en 90 dagen
 - Verkoop per productvariant tonen
@@ -77,7 +78,8 @@ Versie 0.13 live-hardening:
 - Begrensde uploads per bestandstype
 - Dagelijkse backup van PostgreSQL en de permanente uploadopslag
 - Live-readiness op basis van werkelijk recente database- en bestandsbackups
-- Bambu-printstart uitsluitend via remote upload van een gekoppeld `.gcode.3mf` productbestand
+- Cloudvriendelijke Bambu Studio-workflow als standaard: downloaden, controleren en vanuit Bambu Studio printen
+- Directe Bambu-printstart via LAN blijft als ingeklapte geavanceerde optie beschikbaar
 
 Uploads worden lokaal opgeslagen onder `app/backend/uploads/` en via de API geserveerd onder `/uploads/...`. Deze map staat in `.gitignore`.
 
@@ -324,3 +326,15 @@ docker-compose.yml
 - Platformproducten zijn gekoppelde publicaties.
 - Bambu Studio blijft verantwoordelijk voor slicing en printvoorbereiding.
 - Er worden geen secrets hardcoded opgeslagen.
+
+## Printen via Bambu Studio
+
+De aanbevolen workflow houdt Bambu Cloud, Bambu Handy en Bambu Studio beschikbaar:
+
+1. Koppel op de productdetailpagina een door Bambu Studio voorbereid `.gcode.3mf` bestand.
+2. Kies `Download voor Bambu Studio`, of maak in Printplanning een Bambu Studio-pakket voor een volledige batch.
+3. Open het gedownloade bestand in Bambu Studio.
+4. Controleer printer, plate, materiaal/kleur en AMS-toewijzing en kies `Print plate`.
+5. Verwerk na afloop het printresultaat in Printplanning.
+
+Een batchpakket bevat de productielijst, het orderoverzicht, een korte handleiding en alle unieke gekoppelde printbestanden. Direct starten via LAN/MQTT staat apart als geavanceerde modus en is niet nodig voor deze cloudworkflow.

@@ -29,6 +29,9 @@ type BatchExportResult = {
   export_dir?: string;
   row_count?: number;
   files?: Record<string, string>;
+  download_url?: string;
+  print_file_count?: number;
+  missing_print_files?: string[];
 };
 
 const printJobStatuses = ["nieuw", "gepland", "bezig", "geprint", "deels_mislukt", "mislukt", "verwerkt", "geannuleerd"];
@@ -279,8 +282,18 @@ export function PrintPlanningManager({
       {error ? <div className="rounded-md border border-red-400/25 bg-red-400/10 px-3 py-2 text-sm font-semibold text-red-300">{error}</div> : null}
       {exportResult ? (
         <div className="rounded-md border border-brand/30 bg-brand/10 px-3 py-3 text-sm text-brand">
-          <div className="font-bold">Exportmap: {exportResult.export_dir || "-"}</div>
-          <div className="mt-1">Regels: {exportResult.row_count ?? "-"}</div>
+          <div className="font-bold">Bambu Studio-pakket staat klaar</div>
+          <div className="mt-1">{exportResult.row_count ?? 0} productieregels en {exportResult.print_file_count ?? 0} unieke printbestanden.</div>
+          {exportResult.missing_print_files?.length ? (
+            <div className="mt-2 rounded-md border border-amber-400/25 bg-amber-400/10 px-3 py-2 text-amber-100">
+              Printbestand ontbreekt voor: {exportResult.missing_print_files.join(", ")}.
+            </div>
+          ) : null}
+          {exportResult.download_url ? (
+            <a className="mt-3 inline-flex rounded-md bg-brand px-4 py-2 font-black text-slate-950" download href={`/api${exportResult.download_url}`}>
+              ZIP-pakket downloaden
+            </a>
+          ) : null}
         </div>
       ) : null}
 
@@ -416,7 +429,7 @@ export function PrintPlanningManager({
       <section className="space-y-3">
         <div>
           <h3 className="text-lg font-bold text-ink">Printbatches</h3>
-          <p className="mt-1 text-sm text-muted">Export maakt productielijsten voor gebruik naast Bambu Studio.</p>
+          <p className="mt-1 text-sm text-muted">Maak een downloadbaar ZIP-pakket met productielijsten, uitleg en gekoppelde .gcode.3mf bestanden.</p>
         </div>
         {printBatches.length ? (
           <div className="table-scroll">
@@ -448,7 +461,7 @@ export function PrintPlanningManager({
                         onClick={() => exportBatch(batch)}
                         type="button"
                       >
-                        {busyKey === `export-${batch.id}` ? "Export..." : "Export"}
+                        {busyKey === `export-${batch.id}` ? "Pakket maken..." : "Bambu Studio-pakket"}
                       </button>
                     </td>
                   </tr>

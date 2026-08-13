@@ -160,19 +160,70 @@ export function ProductPrintFileManager({ product, printers }: { product: Produc
               {filename ? `Gekoppeld: ${filename}` : "Nog geen printbestand gekoppeld."}
             </p>
           </div>
-          <label className="inline-flex cursor-pointer items-center justify-center rounded-md border border-line bg-slate-950/35 px-4 py-2 text-sm font-black text-slate-200 hover:bg-white/5">
-            {uploading ? "Uploaden..." : filename ? "Bestand vervangen" : "Printbestand kiezen"}
-            <input accept=".gcode.3mf" className="sr-only" disabled={uploading} onChange={uploadPrintFile} type="file" />
-          </label>
+          <div className="flex flex-wrap gap-2">
+            {product.print_file_path ? (
+              <a
+                className="inline-flex items-center justify-center rounded-md bg-brand px-4 py-2 text-sm font-black text-slate-950 hover:bg-brand/90"
+                download
+                href={`/api/products/${product.id}/print-file/download`}
+              >
+                Download voor Bambu Studio
+              </a>
+            ) : null}
+            <label className="inline-flex cursor-pointer items-center justify-center rounded-md border border-line bg-slate-950/35 px-4 py-2 text-sm font-black text-slate-200 hover:bg-white/5">
+              {uploading ? "Uploaden..." : filename ? "Bestand vervangen" : "Printbestand kiezen"}
+              <input accept=".gcode.3mf" className="sr-only" disabled={uploading} onChange={uploadPrintFile} type="file" />
+            </label>
+          </div>
         </div>
       </div>
 
-      <div className="rounded-lg border border-line bg-slate-950/25 p-4">
+      <div className="rounded-lg border border-brand/30 bg-brand/5 p-4">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
           <div>
-            <h3 className="font-bold text-ink">Print dit product</h3>
+            <p className="text-xs font-black uppercase tracking-wide text-brand">Aanbevolen cloudworkflow</p>
+            <h3 className="mt-1 text-lg font-bold text-ink">Printen via Bambu Studio</h3>
+            <p className="mt-1 max-w-3xl text-sm leading-6 text-muted">
+              Hiermee blijven Bambu Studio, Bambu Handy en Bambu Cloud normaal beschikbaar. De manager levert het juiste voorbereide bestand; Bambu Studio verstuurt de print.
+            </p>
+          </div>
+          <StatusBadge status={product.print_file_path ? "klaar" : "bestand ontbreekt"} />
+        </div>
+        <div className="mt-4 grid gap-3 md:grid-cols-3">
+          <WorkflowStep number="1" title="Download" description="Download het gekoppelde .gcode.3mf bestand." />
+          <WorkflowStep number="2" title="Open en controleer" description="Open het bestand in Bambu Studio en controleer printer, plate, kleur, materiaal en AMS." />
+          <WorkflowStep number="3" title="Print plate" description="Start de opdracht vanuit Bambu Studio. Verwerk daarna het resultaat in Printplanning." />
+        </div>
+        <div className="mt-4 flex flex-wrap gap-3">
+          {product.print_file_path ? (
+            <a className="rounded-md bg-brand px-4 py-2 text-sm font-black text-slate-950 hover:bg-brand/90" download href={`/api/products/${product.id}/print-file/download`}>
+              Bestand downloaden
+            </a>
+          ) : (
+            <span className="rounded-md border border-amber-400/25 bg-amber-400/10 px-4 py-2 text-sm font-bold text-amber-100">Upload eerst een printbestand</span>
+          )}
+          <a className="rounded-md border border-line bg-slate-950/35 px-4 py-2 text-sm font-bold text-slate-300 hover:bg-white/5" href="/printplanning">
+            Naar printplanning
+          </a>
+        </div>
+      </div>
+
+      <details className="rounded-lg border border-line bg-slate-950/25">
+        <summary className="cursor-pointer list-none p-4">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h3 className="font-bold text-ink">Directe LAN-printstart (geavanceerd)</h3>
+              <p className="mt-1 text-sm text-muted">Alleen gebruiken bij een printer die bewust voor directe LAN-bediening is ingericht.</p>
+            </div>
+            <span className="text-sm font-bold text-slate-400">Instellingen tonen</span>
+          </div>
+        </summary>
+        <div className="border-t border-line p-4">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <h3 className="font-bold text-ink">Direct naar printer sturen</h3>
             <p className="mt-1 text-sm leading-6 text-muted">
-              Kies de printer en start de print. De app controleert eerst automatisch of starten veilig kan, uploadt daarna het bestand naar de printer en stuurt het LAN/MQTT startcommando.
+              De app controleert de printer, uploadt het bestand en stuurt het LAN/MQTT-startcommando. Dit is niet de aanbevolen route zolang je Bambu Cloud en Handy wilt behouden.
             </p>
             {selectedPrinter ? <p className="mt-2 text-xs font-bold text-slate-400">Gekozen printer: {selectedPrinter.name} ({selectedPrinter.host})</p> : null}
           </div>
@@ -252,7 +303,20 @@ export function ProductPrintFileManager({ product, printers }: { product: Produc
         >
           {startBlockedReason || "Klaar voor printstart. De controle draait automatisch zodra je op Print starten klikt."}
         </div>
+        </div>
+      </details>
+    </div>
+  );
+}
+
+function WorkflowStep({ number, title, description }: { number: string; title: string; description: string }) {
+  return (
+    <div className="rounded-md border border-line bg-slate-950/35 p-3">
+      <div className="flex items-center gap-2">
+        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand text-xs font-black text-slate-950">{number}</span>
+        <span className="font-bold text-ink">{title}</span>
       </div>
+      <p className="mt-2 text-sm leading-6 text-muted">{description}</p>
     </div>
   );
 }

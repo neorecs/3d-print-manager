@@ -14,6 +14,7 @@ from domain.statuses import (
     RECOMMENDATION_IGNORED,
     RECOMMENDATION_NEW,
 )
+from services.bambu_studio_service import batch_export_download_response, export_print_batch_for_bambu_studio
 
 router = APIRouter()
 
@@ -281,122 +282,13 @@ def get_print_batch(item_id: int, db: Session = Depends(get_db)):
 @router.post("/print-batches/{item_id}/export")
 def export_print_batch(item_id: int, db: Session = Depends(get_db)):
     batch = get_or_404(db, PrintBatch, item_id)
-    rows = build_batch_export_rows(db, batch)
-    if not rows:
-        raise HTTPException(status_code=400, detail="Batch bevat geen printtaken")
-
-    export_date = (batch.planned_date or date.today()).isoformat()
-    batch_slug = slugify(batch.batch_name)
-    export_dir = Path("exports") / "PrintJobs" / export_date / batch_slug
-    export_dir.mkdir(parents=True, exist_ok=True)
-
-    production_csv = export_dir / "productielijst.csv"
-    orders_csv = export_dir / "orderoverzicht.csv"
-    markdown_file = export_dir / "productielijst.md"
-
-    write_csv(production_csv, rows)
-    write_csv(
-        orders_csv,
-        [
-            {
-                "order_number": row["order_number"],
-                "job_id": row["job_id"],
-                "sku": row["sku"],
-                "product": row["product"],
-                "variant": row["variant"],
-                "quantity_in_batch": row["quantity_in_batch"],
-                "quantity_to_order": row["quantity_to_order"],
-                "quantity_to_inventory": row["quantity_to_inventory"],
-            }
-            for row in rows
-        ],
-    )
-    markdown_file.write_text(build_batch_markdown(batch, rows), encoding="utf-8")
-
-    return {
-        "status": "exported",
-        "batch_id": batch.id,
-        "export_dir": str(export_dir),
-        "files": {
-            "productielijst_csv": str(production_csv),
-            "orderoverzicht_csv": str(orders_csv),
-            "productielijst_markdown": str(markdown_file),
-        },
-        "row_count": len(rows),
-    }
+    return export_print_batch_for_bambu_studio(db, batch)
 
 
-def build_batch_export_rows(db: Session, batch: PrintBatch) -> list[dict]:
-    batch_items = db.scalars(select(PrintBatchItem).where(PrintBatchItem.print_batch_id == batch.id)).all()
-    rows = []
-    for batch_item in batch_items:
-        job = db.get(PrintJob, batch_item.print_job_id)
-        if not job:
-            continue
-        product = db.get(Product, job.product_id)
-        variant = db.get(ProductVariant, job.product_variant_id)
-        order_item = db.get(OrderItem, job.order_item_id) if job.order_item_id else None
-        order = db.get(Order, order_item.order_id) if order_item else None
-        rows.append(
-            {
-                "batch_id": batch.id,
-                "batch_name": batch.batch_name,
-                "job_id": job.id,
-                "order_number": order.internal_order_number if order else "voorraadproductie",
-                "product": product.name if product else "",
-                "variant": variant.variant_name if variant else "",
-                "sku": variant.sku if variant else "",
-                "color": job.color or (variant.color if variant else ""),
-                "material": job.material or (variant.material if variant else ""),
-                "quantity_in_batch": batch_item.quantity_in_batch,
-                "quantity_needed": job.quantity_needed,
-                "quantity_planned": job.quantity_planned,
-                "quantity_to_order": job.quantity_to_order,
-                "quantity_to_inventory": job.quantity_to_inventory,
-                "estimated_print_time_minutes": job.estimated_print_time_minutes,
-                "estimated_filament_grams": job.estimated_filament_grams,
-                "print_file_path": product.print_file_path if product and product.print_file_path else (variant.print_file_path if variant else ""),
-            }
-        )
-    return sorted(rows, key=lambda row: (row["material"], row["color"], row["product"], row["variant"]))
-
-
-def write_csv(path: Path, rows: list[dict]) -> None:
-    with path.open("w", encoding="utf-8", newline="") as handle:
-        writer = csv.DictWriter(handle, fieldnames=list(rows[0].keys()))
-        writer.writeheader()
-        writer.writerows(rows)
-
-
-def build_batch_markdown(batch: PrintBatch, rows: list[dict]) -> str:
-    lines = [
-        f"# Productielijst - {batch.batch_name}",
-        "",
-        f"- Batch ID: {batch.id}",
-        f"- Geplande datum: {batch.planned_date or '-'}",
-        f"- Materiaal: {batch.material or '-'}",
-        f"- Kleur: {batch.color or '-'}",
-        f"- Geschatte printtijd minuten: {batch.estimated_total_print_time_minutes or 0}",
-        f"- Geschat filament gram: {batch.estimated_total_filament_grams or 0}",
-        "",
-    ]
-    current_group = None
-    for row in rows:
-        group = (row["material"], row["color"])
-        if group != current_group:
-            lines.extend(["", f"## {row['material'] or '-'} - {row['color'] or '-'}", ""])
-            current_group = group
-        lines.append(
-            f"- {row['quantity_in_batch']}x {row['product']} / {row['variant']} "
-            f"({row['sku']}) - order: {row['order_number']} - bestand: {row['print_file_path'] or '-'}"
-        )
-    lines.append("")
-    return "\n".join(lines)
-
-
-def slugify(value: str) -> str:
-    value = re.sub(r"[^a-zA-Z0-9_-]+", "-", value.strip().lower())
-    return value.strip("-") or "batch"
+@router.get("/print-batches/{item_id}/export/download")
+def download_print_batch_export(item_id: int, db: Session = Depends(get_db)):
+    batch = get_or_404(db, PrintBatch, item_id)
+    return batch_export_download_response(db, batch)
 
 
 @router.get("/analytics/sales-trends")

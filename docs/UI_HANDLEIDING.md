@@ -22,6 +22,20 @@ De normale volgorde is:
 
 Belangrijk: Bambu Studio blijft voor slicing, printvoorbereiding en persoonlijke prints. Deze app bepaalt vooral wat er zakelijk geprint moet worden en kan voorbereide printbestanden handmatig naar je Bambu-printers starten.
 
+## Printen via Bambu Studio
+
+Dit is de aanbevolen werkwijze zolang je Bambu Cloud en Bambu Handy wilt blijven gebruiken.
+
+1. Open `Producten` en kies het product.
+2. Ga naar `Printbestand beheren` en upload een printklaar `.gcode.3mf` bestand als dat nog ontbreekt.
+3. Kies `Download voor Bambu Studio`.
+4. Open het gedownloade bestand in Bambu Studio.
+5. Controleer printer, plate, materiaal, kleur en AMS-toewijzing.
+6. Kies in Bambu Studio `Print plate`.
+7. Ga na afloop naar `Printplanning` en verwerk het printresultaat.
+
+Voor meerdere printtaken maak je eerst een batch in `Printplanning`. Kies daarna `Bambu Studio-pakket`. De ZIP-download bevat de productielijst, het orderoverzicht, uitleg en alle beschikbare productprintbestanden. De ingeklapte directe LAN-printstart op de productpagina is alleen voor een printer die daar bewust voor is ingericht.
+
 ## Navigatie
 
 Links in de zijbalk kies je eerst een sectie:
