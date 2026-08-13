@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 from api.routes_shared import *
 from services.platform_service import connector_status_payload, normalize_language_list, sync_platform_inventory_payload
+from services.auth_service import record_audit_log
 
 router = APIRouter()
 
@@ -102,19 +103,24 @@ def create_platform_credential(
         existing.encrypted_value = encrypt_credential(payload.encrypted_value)
         db.commit()
         db.refresh(existing)
+        record_audit_log(db, None, "platform.credential_updated", "platform", str(platform_id), f"Credential {key_name} bijgewerkt.")
         return public_credential_dict(existing)
     item = PlatformCredential(platform_id=platform_id, key_name=key_name, encrypted_value=encrypt_credential(payload.encrypted_value))
     db.add(item)
     db.commit()
     db.refresh(item)
+    record_audit_log(db, None, "platform.credential_created", "platform", str(platform_id), f"Credential {key_name} opgeslagen.")
     return public_credential_dict(item)
 
 
 @router.delete("/platform-credentials/{item_id}")
 def delete_platform_credential(item_id: int, db: Session = Depends(get_db)):
     item = get_or_404(db, PlatformCredential, item_id)
+    platform_id = item.platform_id
+    key_name = item.key_name
     db.delete(item)
     db.commit()
+    record_audit_log(db, None, "platform.credential_deleted", "platform", str(platform_id), f"Credential {key_name} verwijderd.")
     return {"status": "deleted"}
 
 

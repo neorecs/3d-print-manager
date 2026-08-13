@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, Numeric, String, Text, func
+from sqlalchemy import Boolean, CheckConstraint, DateTime, ForeignKey, Integer, Numeric, String, Text, UniqueConstraint, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from database import Base
@@ -9,6 +9,12 @@ from models.mixins import TimestampMixin
 
 class ProductInventory(TimestampMixin, Base):
     __tablename__ = "product_inventory"
+    __table_args__ = (
+        UniqueConstraint("product_variant_id", name="uq_product_inventory_variant"),
+        CheckConstraint("quantity_on_hand >= 0", name="ck_product_inventory_on_hand_nonnegative"),
+        CheckConstraint("quantity_reserved >= 0", name="ck_product_inventory_reserved_nonnegative"),
+        CheckConstraint("quantity_reserved <= quantity_on_hand", name="ck_product_inventory_reserved_lte_on_hand"),
+    )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     product_id: Mapped[int] = mapped_column(ForeignKey("products.id"), nullable=False)

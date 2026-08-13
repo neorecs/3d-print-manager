@@ -17,7 +17,6 @@ type PrinterDraft = {
 };
 
 type PrintStartDraft = {
-  file_path: string;
   local_upload_path: string;
   plate: string;
   use_ams: boolean;
@@ -59,7 +58,6 @@ function emptyDraft(): PrinterDraft {
 
 function emptyPrintStartDraft(): PrintStartDraft {
   return {
-    file_path: "file:///sdcard/",
     local_upload_path: "",
     plate: "Metadata/plate_1.gcode",
     use_ams: false,
@@ -314,15 +312,13 @@ function BambuPrintStartPanel({ printer, onRefresh }: { printer: BambuPrinter; o
     setDraft((current) => ({
       ...current,
       [field]: value,
-      local_upload_path: field === "file_path" ? "" : current.local_upload_path,
     }));
     if (field !== "confirmation_text") setPreflight(null);
   }
 
   function payload() {
     return {
-      file_path: draft.file_path.trim(),
-      local_upload_path: draft.local_upload_path || null,
+      local_upload_path: draft.local_upload_path,
       plate: draft.plate.trim() || "Metadata/plate_1.gcode",
       use_ams: draft.use_ams,
       timelapse: draft.timelapse,
@@ -352,7 +348,6 @@ function BambuPrintStartPanel({ printer, onRefresh }: { printer: BambuPrinter; o
       if (!response.ok) throw new Error(data?.detail || "Printbestand uploaden is mislukt");
       setDraft((current) => ({
         ...current,
-        file_path: data.file_path || current.file_path,
         local_upload_path: data.local_upload_path || "",
         confirmation_text: "",
       }));
@@ -418,7 +413,7 @@ function BambuPrintStartPanel({ printer, onRefresh }: { printer: BambuPrinter; o
     <div className="mt-5 rounded-xl border border-amber-400/25 bg-amber-400/5 p-4">
       <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
         <div>
-          <h4 className="font-black text-ink">Print starten vanaf printer/SD</h4>
+          <h4 className="font-black text-ink">Printbestand op afstand starten</h4>
           <p className="mt-1 text-sm leading-6 text-muted">
             Gebruik dit voor printfarm-opdrachten die al door Bambu Studio zijn voorbereid. Voor losse of persoonlijke prints kun je Bambu Studio gewoon blijven gebruiken.
           </p>
@@ -426,14 +421,7 @@ function BambuPrintStartPanel({ printer, onRefresh }: { printer: BambuPrinter; o
         <StatusBadge status="handmatige bevestiging vereist" />
       </div>
 
-      <div className="mt-4 grid gap-4 md:grid-cols-2">
-        <TextField
-          help="Dit moet een volledig 3MF-projectbestand zijn dat al op de printer/SD staat. Alleen file:///sdcard/ is nog geen geldig bestand."
-          label="SD-bestandspad"
-          value={draft.file_path}
-          onChange={(value) => update("file_path", value)}
-          placeholder="file:///sdcard/bestand.gcode.3mf"
-        />
+      <div className="mt-4">
         <TextField label="Plate/gcode-pad in 3MF" value={draft.plate} onChange={(value) => update("plate", value)} placeholder="Metadata/plate_1.gcode" />
       </div>
 

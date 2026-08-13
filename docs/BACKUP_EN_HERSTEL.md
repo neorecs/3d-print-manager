@@ -2,9 +2,12 @@
 
 Doel: PostgreSQL backups automatisch maken en herstel aantoonbaar testen voordat echte platformdata wordt gebruikt.
 
-## Automatische backup
+## Automatische backups
 
-De NAS-compose bevat een `postgres_backup` service.
+De NAS-compose bevat twee backupservices:
+
+- `postgres_backup` voor de database;
+- `uploads_backup` voor productfoto's, administratiedocumenten en `.gcode.3mf` printbestanden.
 
 Gedrag:
 
@@ -21,6 +24,9 @@ Standaard bewaarlocatie:
 ```text
 postgres_backups Docker volume
 ```
+
+De bestandsbackup wordt daaronder opgeslagen in `uploads/` als een `.tar.gz` met eigen `.sha256` controlebestand.
+Na een geslaagde run schrijven beide services een marker in `status/`. De live-readiness controleert dat de database- en uploadsmarker niet ouder zijn dan 48 uur.
 
 Wil je een zichtbare NAS-map gebruiken, zet dan in Dockhand:
 
@@ -71,6 +77,8 @@ pg_restore --clean --if-exists --dbname="postgresql://USER:PASSWORD@HOST:5432/TE
 - printjobs;
 - accounting;
 - Bambu-printers.
+5. Pak de bijbehorende uploadsbackup uit in een lege testmap.
+6. Controleer minimaal een productfoto, administratiedocument en productprintbestand.
 
 ## Go/no-go
 
@@ -88,3 +96,5 @@ Datum: 2026-06-29
 - Checksum: OK
 - Restore naar tijdelijke database: OK
 - Tijdelijke database verwijderd: OK
+
+De eerdere hersteltest van 2026-06-29 controleerde alleen PostgreSQL. Na invoering van `uploads_backup` moet nog een nieuwe gezamenlijke hersteltest worden uitgevoerd.

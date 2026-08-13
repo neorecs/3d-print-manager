@@ -93,7 +93,9 @@ def add_inventory_movement(
 
 
 def process_order_inventory(db: Session, order: Order) -> dict:
-    items = db.scalars(select(OrderItem).where(OrderItem.order_id == order.id)).all()
+    items = db.scalars(
+        select(OrderItem).where(OrderItem.order_id == order.id).order_by(OrderItem.id).with_for_update()
+    ).all()
     results = []
 
     for item in items:
@@ -128,7 +130,7 @@ def process_order_item_inventory(db: Session, item: OrderItem) -> dict:
         select(ProductInventory).where(
             ProductInventory.product_id == item.product_id,
             ProductInventory.product_variant_id == item.product_variant_id,
-        )
+        ).with_for_update()
     )
     if not inventory:
         item.quantity_from_inventory = 0
@@ -188,6 +190,9 @@ def process_order_item_inventory(db: Session, item: OrderItem) -> dict:
 
 
 def adjust_product_inventory(db: Session, inventory: ProductInventory, quantity: int) -> dict:
+    inventory = db.scalar(select(ProductInventory).where(ProductInventory.id == inventory.id).with_for_update())
+    if not inventory:
+        raise HTTPException(status_code=404, detail="ProductInventory not found")
     before = inventory_snapshot(inventory)
     new_quantity_on_hand = inventory.quantity_on_hand + quantity
     if new_quantity_on_hand < 0:
@@ -209,6 +214,9 @@ def adjust_product_inventory(db: Session, inventory: ProductInventory, quantity:
 
 
 def reserve_product_inventory(db: Session, inventory: ProductInventory, quantity: int) -> dict:
+    inventory = db.scalar(select(ProductInventory).where(ProductInventory.id == inventory.id).with_for_update())
+    if not inventory:
+        raise HTTPException(status_code=404, detail="ProductInventory not found")
     validate_positive_quantity(quantity)
     if inventory.free_stock < quantity:
         raise HTTPException(status_code=400, detail="Niet genoeg vrije voorraad")
@@ -228,6 +236,9 @@ def reserve_product_inventory(db: Session, inventory: ProductInventory, quantity
 
 
 def release_product_inventory(db: Session, inventory: ProductInventory, quantity: int) -> dict:
+    inventory = db.scalar(select(ProductInventory).where(ProductInventory.id == inventory.id).with_for_update())
+    if not inventory:
+        raise HTTPException(status_code=404, detail="ProductInventory not found")
     validate_positive_quantity(quantity)
     before = inventory_snapshot(inventory)
     inventory.quantity_reserved = max(0, inventory.quantity_reserved - quantity)

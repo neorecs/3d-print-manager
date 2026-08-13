@@ -4,7 +4,7 @@ Centrale beheerlaag voor 3D-printactiviteiten: producten, platformpublicaties, o
 
 ## Status
 
-Versie 0.12 prototype:
+Versie 0.13 live-hardening:
 
 - FastAPI backend
 - PostgreSQL database
@@ -71,6 +71,13 @@ Versie 0.12 prototype:
 - Foutmeldingen en sync-status zijn zichtbaar in het Streamlit publicatiescherm
 - Connectorlaag voor Etsy/Shopify met veilige mockmodus
 - Platformcredentials beheren zonder waarden terug te tonen in API/Streamlit
+- Databaseconstraints tegen dubbele imports en ongeldige voorraad
+- Transactionele voorraadvergrendeling voor gelijktijdige reserveringen
+- Daglimiet en gebruiksregistratie voor betaalde AI-aanvragen
+- Begrensde uploads per bestandstype
+- Dagelijkse backup van PostgreSQL en de permanente uploadopslag
+- Live-readiness op basis van werkelijk recente database- en bestandsbackups
+- Bambu-printstart uitsluitend via remote upload van een gekoppeld `.gcode.3mf` productbestand
 
 Uploads worden lokaal opgeslagen onder `app/backend/uploads/` en via de API geserveerd onder `/uploads/...`. Deze map staat in `.gitignore`.
 
@@ -135,7 +142,7 @@ De NAS-compose bevat healthchecks voor:
 Het v1.0 livegang-runbook staat in `docs/V1_LIVEGANG_RUNBOOK.md`. Gebruik dat document als go/no-go lijst voordat echte platformtokens, echte orders of live publicaties worden gebruikt.
 Het auth/loginspoor staat in `docs/PROJECTPLAN_AUTH_LOGIN.md`.
 
-De NAS-compose bevat ook een `postgres_backup` service. Deze maakt bij start een PostgreSQL backup en daarna standaard dagelijks. Details staan in `docs/BACKUP_EN_HERSTEL.md`.
+De NAS-compose bevat een `postgres_backup` en `uploads_backup` service. Deze bewaren dagelijks zowel PostgreSQL als foto's, documenten en printbestanden. Details staan in `docs/BACKUP_EN_HERSTEL.md`.
 
 ## Loginbeveiliging
 
@@ -210,7 +217,7 @@ De backend heeft dependency-vrije `unittest` tests voor de belangrijkste busines
 docker compose exec -T backend python -m unittest discover -s tests -v
 ```
 
-De huidige suite controleert:
+De huidige suite controleert onder andere:
 
 - voorraadreservering en alleen tekort naar printplanning;
 - herhaald orderverwerken zonder dubbele reservering;
@@ -219,6 +226,9 @@ De huidige suite controleert:
 - publicatievalidatie en mock-publicatie via de connectorlaag;
 - Etsy/Shopify connectorfouten zonder live calls in mockmodus;
 - voorraadadvies op basis van verkoop, veiligheidsvoorraad en vrije voorraad.
+- unieke voorraadregels en databasechecks tegen overreservering;
+- Bambu-preflight blokkeert starten zonder gekoppeld remote uploadbestand;
+- AI-daglimiet en tokenregistratie.
 
 Voor een snelle containercheck van alleen de auth/loginbasis:
 

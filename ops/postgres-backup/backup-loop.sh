@@ -7,8 +7,9 @@ BACKUP_DIR="${BACKUP_DIR:-/backups/daily}"
 BACKUP_RETENTION_DAYS="${BACKUP_RETENTION_DAYS:-14}"
 BACKUP_INTERVAL_SECONDS="${BACKUP_INTERVAL_SECONDS:-86400}"
 BACKUP_RUN_ONCE="${BACKUP_RUN_ONCE:-false}"
+BACKUP_STATUS_DIR="${BACKUP_STATUS_DIR:-/backups/status}"
 
-mkdir -p "$BACKUP_DIR"
+mkdir -p "$BACKUP_DIR" "$BACKUP_STATUS_DIR"
 
 normalize_database_url() {
   printf '%s' "$DATABASE_URL" | sed 's#^postgresql+psycopg://#postgresql://#'
@@ -24,6 +25,7 @@ run_backup() {
   if pg_dump --format=custom --file="$tmp" "$database_url"; then
     mv "$tmp" "$target"
     sha256sum "$target" > "$target.sha256"
+    date -u +%Y-%m-%dT%H:%M:%SZ > "$BACKUP_STATUS_DIR/postgres-last-success"
     find "$BACKUP_DIR" -type f -name 'print_manager_*.dump' -mtime +"$BACKUP_RETENTION_DAYS" -delete
     find "$BACKUP_DIR" -type f -name 'print_manager_*.dump.sha256' -mtime +"$BACKUP_RETENTION_DAYS" -delete
     echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Backup completed: $target"

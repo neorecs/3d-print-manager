@@ -1,4 +1,3 @@
-import shutil
 import uuid
 from pathlib import Path
 
@@ -9,6 +8,7 @@ from api.utils import to_dict
 from domain.statuses import ACCOUNTING_DOCUMENT_STORED
 from models import AccountingDocument, AccountingPurchase, AccountingSale, Product, ProductMedia
 from publishing.service import mark_product_publications_sync_needed
+from core.config import get_settings
 
 
 UPLOAD_ROOT = Path("uploads/product_media")
@@ -52,8 +52,7 @@ def upload_accounting_document_file(
     target_dir.mkdir(parents=True, exist_ok=True)
     filename = f"{uuid.uuid4().hex}{extension}"
     target_path = target_dir / filename
-    with target_path.open("wb") as output:
-        shutil.copyfileobj(file.file, output)
+    _copy_upload_limited(file, target_path, get_settings().upload_accounting_max_bytes, "Administratiedocument")
 
     item = AccountingDocument(
         document_type=document_type,
@@ -94,8 +93,7 @@ def upload_product_media_file(
     target_dir.mkdir(parents=True, exist_ok=True)
     filename = f"{uuid.uuid4().hex}{extension}"
     target_path = target_dir / filename
-    with target_path.open("wb") as output:
-        shutil.copyfileobj(file.file, output)
+    _copy_upload_limited(file, target_path, get_settings().upload_image_max_bytes, "Productafbeelding")
 
     if is_primary:
         clear_primary(db, product_id)
@@ -131,8 +129,7 @@ def upload_product_print_file(db: Session, product_id: int, file: UploadFile) ->
     safe_name = _safe_print_filename(original_name)
     filename = f"{uuid.uuid4().hex}-{safe_name}"
     target_path = target_dir / filename
-    with target_path.open("wb") as output:
-        shutil.copyfileobj(file.file, output)
+    _copy_upload_limited(file, target_path, get_settings().upload_print_file_max_bytes, "Printbestand")
 
     delete_uploaded_product_print_file(product.print_file_path)
     product.print_file_path = f"/uploads/product_print_files/{product_id}/{filename}"
@@ -180,3 +177,21 @@ def delete_uploaded_media_file(file_path: str | None) -> None:
 def _safe_print_filename(filename: str) -> str:
     cleaned = "".join(char if char.isalnum() or char in "._-" else "-" for char in filename.strip())
     return cleaned.strip(".-") or "print.gcode.3mf"
+
+
+def _copy_upload_limited(file: UploadFile, target_path: Path, maximum_bytes: int, label: str) -> int:
+    size = 0
+    try:
+        with target_path.open("wb") as output:
+            while chunk := file.file.read(1024 * 1024):
+                size += len(chunk)
+                if size > maximum_bytes:
+                    raise HTTPException(
+                        status_code=413,
+                        detail=f"{label} is te groot. Maximum is {maximum_bytes // (1024 * 1024)} MB.",
+                    )
+                output.write(chunk)
+    except Exception:
+        target_path.unlink(missing_ok=True)
+        raise
+    return size

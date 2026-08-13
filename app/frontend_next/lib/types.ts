@@ -491,6 +491,11 @@ export type AIProductStatus = {
   model: string;
   ready: boolean;
   note: string;
+  daily_limit: number;
+  used_today: number;
+  remaining_today: number;
+  input_tokens_today: number;
+  output_tokens_today: number;
 };
 
 export type SystemReadiness = {
@@ -498,6 +503,13 @@ export type SystemReadiness = {
   live_calls_blocked: boolean;
   credential_encryption_configured: boolean;
   database_configured: boolean;
+  database_reachable: boolean;
+  upload_storage_writable: boolean;
+  upload_backup_configured: boolean;
+  database_backup_recent: boolean;
+  upload_backup_recent: boolean;
+  auth_enabled: boolean;
+  auth_backend_login: boolean;
   ai_enabled: boolean;
   ai_configured: boolean;
   openai_model: string;

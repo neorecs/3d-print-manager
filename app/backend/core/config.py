@@ -11,6 +11,10 @@ class Settings(BaseSettings):
     openai_product_model: str = "gpt-5.4-mini"
     openai_api_base_url: str = "https://api.openai.com/v1"
     ai_product_max_output_tokens: int = 2500
+    ai_daily_request_limit: int = 20
+    upload_image_max_bytes: int = 15 * 1024 * 1024
+    upload_accounting_max_bytes: int = 25 * 1024 * 1024
+    upload_print_file_max_bytes: int = 500 * 1024 * 1024
     auth_bootstrap_secret: str | None = None
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")

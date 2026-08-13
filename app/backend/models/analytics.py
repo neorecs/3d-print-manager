@@ -35,3 +35,16 @@ class StockRecommendation(TimestampMixin, Base):
     recommended_print_quantity: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     reason: Mapped[str | None] = mapped_column(Text)
     status: Mapped[str] = mapped_column(String(80), default="nieuw", nullable=False)
+
+
+class AIUsageLog(Base):
+    __tablename__ = "ai_usage_logs"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    action: Mapped[str] = mapped_column(String(80), nullable=False)
+    model: Mapped[str] = mapped_column(String(120), nullable=False)
+    status: Mapped[str] = mapped_column(String(40), default="gestart", nullable=False)
+    input_tokens: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    output_tokens: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    error_message: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)

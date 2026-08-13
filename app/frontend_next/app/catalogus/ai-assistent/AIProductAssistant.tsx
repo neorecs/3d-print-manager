@@ -194,6 +194,11 @@ export function AIProductAssistant({ status }: { status: AIProductStatus }) {
     <div className="space-y-5">
       <div className={`rounded-md border px-4 py-3 text-sm ${status.ready ? "border-amber-400/25 bg-amber-400/10 text-amber-900" : "border-emerald-400/25 bg-emerald-400/10 text-emerald-300"}`}>
         <strong>{status.ready ? "Echte AI staat klaar." : "Gratis mockmodus actief."}</strong> {status.ready ? status.note : "Er worden geen betaalde OpenAI-calls gedaan."}
+        {status.ready ? (
+          <div className="mt-2 font-semibold">
+            Vandaag gebruikt: {status.used_today} van {status.daily_limit} aanvragen. Nog beschikbaar: {status.remaining_today}.
+          </div>
+        ) : null}
       </div>
       {error ? <div className="rounded-md border border-red-400/25 bg-red-400/10 px-3 py-2 text-sm font-semibold text-red-300">{error}</div> : null}
 

@@ -1,5 +1,5 @@
 from models.accounting import AccountingDocument, AccountingFiscalSetting, AccountingPurchase, AccountingSale, VatPeriod
-from models.analytics import StockRecommendation, TrendSnapshot
+from models.analytics import AIUsageLog, StockRecommendation, TrendSnapshot
 from models.auth import AuditLog, User
 from models.bambu import BambuPrinter
 from models.costs import CostSetting, OrderProfitCalculation
@@ -20,6 +20,7 @@ from models.products import (
 
 __all__ = [
     "FilamentSpool",
+    "AIUsageLog",
     "BambuPrinter",
     "AuditLog",
     "AccountingDocument",

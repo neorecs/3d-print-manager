@@ -1,4 +1,4 @@
-from sqlalchemy import Boolean, Float, ForeignKey, Integer, Numeric, String, Text
+from sqlalchemy import Boolean, Float, ForeignKey, Integer, Numeric, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from database import Base
@@ -79,6 +79,7 @@ class ProductTag(Base):
 
 class ProductTranslation(TimestampMixin, Base):
     __tablename__ = "product_translations"
+    __table_args__ = (UniqueConstraint("product_id", "language_code", name="uq_product_translation_language"),)
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     product_id: Mapped[int] = mapped_column(ForeignKey("products.id"), nullable=False)
@@ -96,6 +97,7 @@ class ProductTranslation(TimestampMixin, Base):
 
 class ProductPlatformPublication(TimestampMixin, Base):
     __tablename__ = "product_platform_publications"
+    __table_args__ = (UniqueConstraint("product_id", "platform_id", name="uq_product_publication_platform"),)
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     product_id: Mapped[int] = mapped_column(ForeignKey("products.id"), nullable=False)
@@ -125,6 +127,7 @@ class ProductPublicationMedia(TimestampMixin, Base):
 
 class ProductVariantPlatformLink(TimestampMixin, Base):
     __tablename__ = "product_variant_platform_links"
+    __table_args__ = (UniqueConstraint("product_variant_id", "platform_id", name="uq_variant_platform_link"),)
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     product_variant_id: Mapped[int] = mapped_column(ForeignKey("product_variants.id"), nullable=False)

@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 from api.routes_shared import *
 from domain.statuses import INVENTORY_NONE, ORDER_NEW, ORDER_PLANNED, PRINT_JOB_NEW
+from sqlalchemy.exc import IntegrityError
 
 router = APIRouter()
 
@@ -13,7 +14,11 @@ def list_orders(db: Session = Depends(get_db)):
 def create_order(payload: OrderCreate, db: Session = Depends(get_db)):
     item = Order(**order_payload(payload))
     db.add(item)
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError as exc:
+        db.rollback()
+        raise HTTPException(status_code=409, detail="Er bestaat al een order met dit interne of externe ordernummer.") from exc
     db.refresh(item)
     return to_dict(item)
 
@@ -32,7 +37,11 @@ def update_order(item_id: int, payload: OrderCreate, db: Session = Depends(get_d
     item = get_or_404(db, Order, item_id)
     for key, value in order_payload(payload).items():
         setattr(item, key, value)
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError as exc:
+        db.rollback()
+        raise HTTPException(status_code=409, detail="De gewijzigde order botst met een bestaand ordernummer.") from exc
     db.refresh(item)
     return to_dict(item)
 
@@ -107,7 +116,11 @@ def import_etsy_orders(
             else:
                 skipped.append(imported["order"])
 
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError as exc:
+        db.rollback()
+        raise HTTPException(status_code=409, detail="Een Etsy-order is gelijktijdig al geimporteerd. Vernieuw het overzicht.") from exc
     return {
         "status": "etsy_import_complete" if not errors else "etsy_import_completed_with_errors",
         "created": len(created),
@@ -181,7 +194,11 @@ def import_shopify_orders(
             platform_message = f"{platform_message} Importlimiet bereikt; er zijn mogelijk nog meer Shopify orders."
         finish_import_log(log, "klaar", platform_created, platform_updated, platform_skipped, platform_errors, platform_message)
 
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError as exc:
+        db.rollback()
+        raise HTTPException(status_code=409, detail="Een Shopify-order is gelijktijdig al geimporteerd. Vernieuw het overzicht.") from exc
     return {
         "status": "shopify_import_complete" if not errors else "shopify_import_completed_with_errors",
         "created": len(created),

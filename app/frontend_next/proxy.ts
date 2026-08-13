@@ -16,6 +16,31 @@ function isPublicPath(pathname: string) {
   return publicPaths.some((path) => pathname === path || pathname.startsWith(`${path}/`));
 }
 
+function roleDenied(request: NextRequest, role: "admin" | "operator" | "viewer") {
+  const pathname = request.nextUrl.pathname;
+  const mutating = !["GET", "HEAD", "OPTIONS"].includes(request.method.toUpperCase());
+
+  if (role === "viewer" && mutating) {
+    return "Een viewer mag alleen gegevens bekijken.";
+  }
+  if (role !== "admin") {
+    const adminOnlyPrefixes = [
+      "/instellingen/gebruikers",
+      "/api/auth/users",
+      "/api/auth/audit-logs",
+      "/api/platform-credentials",
+      "/api/accounting/fiscal-settings",
+    ];
+    if (adminOnlyPrefixes.some((prefix) => pathname.startsWith(prefix))) {
+      return "Deze actie is alleen beschikbaar voor een beheerder.";
+    }
+    if (pathname.includes("/credentials")) {
+      return "Verkoopkanaal-credentials mogen alleen door een beheerder worden aangepast.";
+    }
+  }
+  return null;
+}
+
 export async function proxy(request: NextRequest) {
   if (!authIsEnabled() || isPublicPath(request.nextUrl.pathname)) {
     return NextResponse.next();
@@ -23,6 +48,16 @@ export async function proxy(request: NextRequest) {
 
   const session = await getSessionFromRequest(request);
   if (session) {
+    const deniedMessage = roleDenied(request, session.role);
+    if (deniedMessage) {
+      if (request.nextUrl.pathname.startsWith("/api/")) {
+        return NextResponse.json({ detail: deniedMessage }, { status: 403 });
+      }
+      const target = request.nextUrl.clone();
+      target.pathname = "/";
+      target.searchParams.set("toegang", "geweigerd");
+      return NextResponse.redirect(target);
+    }
     if (
       session.mustChangePassword &&
       request.nextUrl.pathname !== "/account/wachtwoord-wijzigen" &&

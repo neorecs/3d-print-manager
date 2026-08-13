@@ -418,8 +418,8 @@ Aanvulling 2026-07-26 - veilige printstart vanuit de site:
 - De site mag alleen bestaande, voorbereide `.gcode.3mf` projectbestanden starten.
 - Sitebediening en Bambu Studio-bediening bestaan naast elkaar: de site claimt geen exclusieve printercontrole.
 - Praktische regel: als een printer al bezig is via Bambu Studio, blokkeert de site een nieuwe printstart; als de site een print start, ziet Bambu Studio de printer gewoon als bezet.
-- Eerste implementatie start vanaf een bestand dat al op de printer/SD staat, bijvoorbeeld `file:///sdcard/bestand.gcode.3mf`.
-- Upload vanaf de site naar de printer komt pas later, omdat FTPS per firmware/model gevoeliger is.
+- De enige ondersteunde workflow is remote upload: een product heeft een gekoppeld, printklaar `.gcode.3mf` bestand en de app stuurt dit bestand bij iedere printopdracht naar de gekozen printer.
+- Een handmatige SD-bestandmodus wordt niet gebouwd.
 - Printstart werkt alleen via lokale LAN-aansturing met serienummer, LAN access code en MQTT-poort.
 - De gebruiker moet per printstart expliciet bevestigen.
 - De app mag niet starten als de printer volgens de laatst bekende status al bezig is, tenzij later bewust een force-flow wordt toegevoegd.
@@ -432,10 +432,10 @@ Gefaseerde uitvoering:
    - host en MQTT-poort bereikbaar;
    - serienummer ingevuld;
    - access code opgeslagen;
-   - bestandspad geldig en lokaal op SD;
+   - gekoppeld `.gcode.3mf` productbestand bestaat in de permanente app-opslag;
    - waarschuwing tonen als printerstatus onbekend of bezig.
 2. Veilige printstart:
-   - gebruiker kiest printer en SD-bestandspad;
+   - gebruiker kiest printer en het gekoppelde productbestand wordt automatisch gebruikt;
    - gebruiker kiest opties zoals AMS, timelapse, bed leveling en flow calibration;
    - gebruiker bevestigt bewust met een bevestigingstekst;
    - backend stuurt MQTT `project_file` naar de printer.
@@ -444,10 +444,9 @@ Gefaseerde uitvoering:
    - printjob/printerstatus in database bijwerken;
    - duidelijke foutmelding tonen bij MQTT/auth/firmwareproblemen.
 4. Later uitbreiden:
-   - standaard printbestand op productniveau;
+   - remote upload robuust maken voor ondersteunde Bambu-modellen en firmware;
    - variant-override alleen optioneel als een product later echt afwijkende geometrie nodig heeft;
-   - upload naar printer via FTPS;
-   - SD-bestandenlijst uitlezen;
+   - uploaddiagnose en duidelijkere firmware/model-specifieke foutmeldingen;
    - batchprint met meerdere printers;
    - auditlog per printstart;
    - strengere rolrechten voor print starten.
@@ -459,7 +458,7 @@ Nog verfijnen:
 - printerstatus koppelen aan printplanning;
 - farm-capaciteit tonen bij batchadvies;
 - optioneel waarschuwingen voor netwerk/offline printers;
-- printstart koppelen aan product/printjob in plaats van handmatig SD-pad;
+- printstart verder koppelen aan printjob en batchplanning;
 - pas later onderzoeken of batchcommando's wenselijk en veilig zijn.
 
 ## Fase 9 - Analyse en advies

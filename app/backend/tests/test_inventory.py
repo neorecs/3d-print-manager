@@ -1,7 +1,27 @@
 from support import *
+from sqlalchemy.exc import IntegrityError
 
 
 class InventoryTestCase(BackendTestCase):
+    def test_only_one_inventory_row_is_allowed_per_variant(self) -> None:
+        product, variant = self.make_product_variant("INV-UNIQUE")
+        self.db.add_all(
+            [
+                ProductInventory(product_id=product.id, product_variant_id=variant.id, quantity_on_hand=1, quantity_reserved=0),
+                ProductInventory(product_id=product.id, product_variant_id=variant.id, quantity_on_hand=2, quantity_reserved=0),
+            ]
+        )
+        with self.assertRaises(IntegrityError):
+            self.db.commit()
+        self.db.rollback()
+
+    def test_database_rejects_reserved_stock_above_on_hand(self) -> None:
+        product, variant = self.make_product_variant("INV-CHECK")
+        self.db.add(ProductInventory(product_id=product.id, product_variant_id=variant.id, quantity_on_hand=1, quantity_reserved=2))
+        with self.assertRaises(IntegrityError):
+            self.db.commit()
+        self.db.rollback()
+
     def test_order_inventory_reserves_available_stock_and_prints_only_shortage(self) -> None:
         platform = self.make_platform()
         product, variant = self.make_product_variant("INV-RESERVE")

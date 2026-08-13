@@ -58,9 +58,7 @@ export function ProductPrintFileManager({ product, printers }: { product: Produc
     }
   }
 
-  const filename = product.print_file_path?.split("/").pop() || null;
   const selectedPrinter = printers.find((printer) => String(printer.id) === selectedPrinterId);
-  const printerFilePath = filename ? `file:///sdcard/${encodeURIComponent(filename)}` : "";
   const startBlockedReason = !product.print_file_path
     ? "Koppel eerst een printbestand aan dit product."
     : !selectedPrinterId
@@ -70,8 +68,7 @@ export function ProductPrintFileManager({ product, printers }: { product: Produc
 
   function startPayload() {
     return {
-      file_path: printerFilePath,
-      local_upload_path: product.print_file_path || null,
+      local_upload_path: product.print_file_path,
       plate: plate.trim() || "Metadata/plate_1.gcode",
       use_ams: useAms,
       timelapse: false,
@@ -84,7 +81,7 @@ export function ProductPrintFileManager({ product, printers }: { product: Produc
   }
 
   async function runPreflight() {
-    if (!selectedPrinterId || !product.print_file_path || !printerFilePath) return;
+    if (!selectedPrinterId || !product.print_file_path) return;
     setBusy("preflight");
     setMessage(null);
     setError(null);

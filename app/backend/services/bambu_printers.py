@@ -16,7 +16,9 @@ from fastapi import HTTPException, UploadFile
 from sqlalchemy.orm import Session
 
 from core.credentials import decrypt_credential
+from core.config import get_settings
 from models import BambuPrinter
+from services.auth_service import record_audit_log
 
 PRINT_START_CONFIRMATION = "START PRINT"
 BUSY_STATES = {"RUNNING", "PRINTING", "PAUSE", "PAUSED", "PREPARE", "SLICING", "BUSY"}
@@ -24,7 +26,6 @@ READY_STATES = {"IDLE", "FINISH", "FINISHED", "FAILED", "STOPPED"}
 BAMBU_PRINT_UPLOAD_ROOT = Path("uploads/bambu_print_files")
 PRODUCT_PRINT_UPLOAD_ROOT = Path("uploads/product_print_files")
 ALLOWED_BAMBU_PRINT_SUFFIXES = (".gcode.3mf", "_gcode.3mf")
-MAX_BAMBU_PRINT_UPLOAD_BYTES = 500 * 1024 * 1024
 
 
 def public_bambu_printer_dict(printer: BambuPrinter) -> dict:
@@ -160,16 +161,22 @@ def refresh_bambu_mqtt_status(db: Session, printer: BambuPrinter, timeout_second
     return public_bambu_printer_dict(printer)
 
 
-def preflight_bambu_print_start(db: Session, printer: BambuPrinter, file_path: str, *, refresh_status: bool = True) -> dict:
+def preflight_bambu_print_start(
+    db: Session,
+    printer: BambuPrinter,
+    local_upload_path: str,
+    *,
+    refresh_status: bool = True,
+) -> dict:
     if refresh_status and printer.active and printer.serial_number and printer.access_code_encrypted:
         refresh_bambu_mqtt_status(db, printer, timeout_seconds=8.0)
 
-    checks = _bambu_print_preflight_checks(printer, file_path)
+    checks = _bambu_print_preflight_checks(printer, local_upload_path)
     ok = all(check["ok"] for check in checks if check["level"] == "error")
     return {
         "ok": ok,
         "printer": public_bambu_printer_dict(printer),
-        "file_path": file_path,
+        "local_upload_path": local_upload_path,
         "confirmation_required": PRINT_START_CONFIRMATION,
         "checks": checks,
         "message": "Preflight akkoord. Printer is vrij en de print kan worden gestart." if ok else "Preflight blokkeert printstart. Los de rode controles eerst op.",
@@ -194,16 +201,14 @@ def save_bambu_print_upload(file: UploadFile) -> dict:
     with target_path.open("wb") as handle:
         while chunk := file.file.read(1024 * 1024):
             size += len(chunk)
-            if size > MAX_BAMBU_PRINT_UPLOAD_BYTES:
+            if size > get_settings().upload_print_file_max_bytes:
                 target_path.unlink(missing_ok=True)
                 raise HTTPException(status_code=413, detail="Printbestand is te groot. Maximum is 500 MB.")
             handle.write(chunk)
 
-    printer_file_path = f"file:///sdcard/{quote(target_name)}"
     return {
         "ok": True,
         "local_upload_path": f"/uploads/bambu_print_files/{target_name}",
-        "file_path": printer_file_path,
         "filename": target_name,
         "original_filename": original_name,
         "size_bytes": size,
@@ -211,8 +216,8 @@ def save_bambu_print_upload(file: UploadFile) -> dict:
     }
 
 
-def start_bambu_sdcard_print(db: Session, printer: BambuPrinter, payload) -> dict:
-    preflight = preflight_bambu_print_start(db, printer, payload.file_path)
+def start_bambu_remote_print(db: Session, printer: BambuPrinter, payload) -> dict:
+    preflight = preflight_bambu_print_start(db, printer, payload.local_upload_path)
     if not preflight["ok"]:
         raise HTTPException(status_code=400, detail=preflight)
     if (payload.confirmation_text or "").strip().upper() != PRINT_START_CONFIRMATION:
@@ -221,9 +226,7 @@ def start_bambu_sdcard_print(db: Session, printer: BambuPrinter, payload) -> dic
             detail=f"Bevestiging ontbreekt. Typ exact '{PRINT_START_CONFIRMATION}' voordat de app een print mag starten.",
         )
 
-    if payload.local_upload_path:
-        uploaded_file_path = _upload_local_file_to_bambu_printer(printer, payload.local_upload_path)
-        payload.file_path = uploaded_file_path
+    uploaded_file_path = _upload_local_file_to_bambu_printer(printer, payload.local_upload_path)
 
     access_code = decrypt_credential(printer.access_code_encrypted or "")
     serial = (printer.serial_number or "").strip()
@@ -232,7 +235,7 @@ def start_bambu_sdcard_print(db: Session, printer: BambuPrinter, payload) -> dic
         "print": {
             "sequence_id": request_id,
             "command": "project_file",
-            "url": payload.file_path.strip(),
+            "url": uploaded_file_path,
             "param": payload.plate.strip() or "Metadata/plate_1.gcode",
             "subtask_id": "0",
             "use_ams": bool(payload.use_ams),
@@ -246,11 +249,19 @@ def start_bambu_sdcard_print(db: Session, printer: BambuPrinter, payload) -> dic
 
     _publish_bambu_mqtt_command(printer, access_code, serial, command)
     printer.last_status = "printstart_verzonden"
-    printer.status_message = f"Printstart verzonden voor {payload.file_path.strip()}. Controleer printerstatus of Bambu Studio voor bevestiging."
-    printer.current_task = payload.file_path.strip().replace("file:///sdcard/", "")
+    printer.status_message = f"Printstart verzonden voor {uploaded_file_path}. Controleer printerstatus of Bambu Studio voor bevestiging."
+    printer.current_task = uploaded_file_path.rsplit("/", 1)[-1]
     printer.last_seen_at = datetime.now(timezone.utc)
     db.commit()
     db.refresh(printer)
+    record_audit_log(
+        db,
+        None,
+        "bambu.print_started",
+        "bambu_printer",
+        str(printer.id),
+        f"Remote printstart verzonden voor {printer.current_task}.",
+    )
     return {
         "ok": True,
         "request_id": request_id,
@@ -409,13 +420,12 @@ def _mqtt_reason_code_success(reason_code: object) -> bool:
         return str(reason_code).strip().lower() in {"0", "success", "normal disconnection"}
 
 
-def _bambu_print_preflight_checks(printer: BambuPrinter, file_path: str) -> list[dict]:
+def _bambu_print_preflight_checks(printer: BambuPrinter, local_upload_path: str) -> list[dict]:
     checks: list[dict] = []
 
     def add(name: str, ok: bool, message: str, level: str = "error") -> None:
         checks.append({"name": name, "ok": ok, "message": message, "level": level})
 
-    normalized_path = (file_path or "").strip()
     state = (printer.printer_state or "").strip().upper()
 
     add("Printer actief", bool(printer.active), "Printer staat actief in de app." if printer.active else "Printer staat inactief in de app.")
@@ -424,9 +434,11 @@ def _bambu_print_preflight_checks(printer: BambuPrinter, file_path: str) -> list
     add("Access code opgeslagen", bool(printer.access_code_encrypted), "LAN access code is opgeslagen." if printer.access_code_encrypted else "Sla de LAN access code op voordat je opdrachten kunt sturen.")
     add("MQTT-poort", int(printer.mqtt_port or 0) > 0, f"MQTT-poort {printer.mqtt_port} wordt gebruikt." if int(printer.mqtt_port or 0) > 0 else "MQTT-poort ontbreekt.")
     add(
-        "SD-bestandspad",
-        normalized_path.startswith("file:///sdcard/") and normalized_path.lower().endswith(".3mf"),
-        "Bestandspad wijst naar een voorbereid 3MF-project op de printer/SD." if normalized_path.startswith("file:///sdcard/") and normalized_path.lower().endswith(".3mf") else "Vul het volledige bestandspad in, bijvoorbeeld file:///sdcard/bestand.gcode.3mf. Alleen file:///sdcard/ is nog geen bestand.",
+        "Gekoppeld printbestand",
+        bool((local_upload_path or "").startswith("/uploads/product_print_files/")),
+        "Het productbestand wordt op afstand naar de printer geupload."
+        if (local_upload_path or "").startswith("/uploads/product_print_files/")
+        else "Koppel eerst een printklaar .gcode.3mf bestand aan het product.",
     )
     if not state:
         add("Printerstatus", False, "Status is onbekend. De app kon niet bevestigen dat de printer vrij is, dus printstart wordt geblokkeerd.")

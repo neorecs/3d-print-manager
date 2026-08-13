@@ -73,8 +73,28 @@ export default async function SettingsPage() {
             />
             <CheckRow
               label="Database ingesteld"
-              ok={readiness.database_configured}
-              detail="PostgreSQL is de bron voor producten, orders, voorraad, accounting en printerinstellingen."
+              ok={readiness.database_reachable}
+              detail="De app voert een echte verbindingscontrole met PostgreSQL uit."
+            />
+            <CheckRow
+              label="Bestandsopslag"
+              ok={readiness.upload_storage_writable}
+              detail="Foto's, documenten en printbestanden moeten op de permanente opslag geschreven kunnen worden."
+            />
+            <CheckRow
+              label="Databasebackup recent"
+              ok={readiness.database_backup_recent}
+              detail="De laatste geslaagde PostgreSQL-backup mag maximaal 48 uur oud zijn."
+            />
+            <CheckRow
+              label="Bestandsbackup recent"
+              ok={readiness.upload_backup_configured && readiness.upload_backup_recent}
+              detail="De laatste backup van foto's, documenten en printbestanden mag maximaal 48 uur oud zijn."
+            />
+            <CheckRow
+              label="Database-login"
+              ok={readiness.auth_enabled && readiness.auth_backend_login}
+              detail="De hoofdinterface gebruikt ingeschakelde databaseaccounts voor toegang."
             />
             <CheckRow
               label="Backupplan aanwezig"

@@ -27,7 +27,7 @@ class BambuPrinterPreflightTests(BackendTestCase):
         result = preflight_bambu_print_start(
             self.db,
             self.make_printer(None),
-            "file:///sdcard/test.gcode.3mf",
+            "/uploads/product_print_files/1/test.gcode.3mf",
             refresh_status=False,
         )
 
@@ -38,7 +38,7 @@ class BambuPrinterPreflightTests(BackendTestCase):
         result = preflight_bambu_print_start(
             self.db,
             self.make_printer("RUNNING"),
-            "file:///sdcard/test.gcode.3mf",
+            "/uploads/product_print_files/1/test.gcode.3mf",
             refresh_status=False,
         )
 
@@ -49,11 +49,22 @@ class BambuPrinterPreflightTests(BackendTestCase):
         result = preflight_bambu_print_start(
             self.db,
             self.make_printer("IDLE"),
-            "file:///sdcard/test.gcode.3mf",
+            "/uploads/product_print_files/1/test.gcode.3mf",
             refresh_status=False,
         )
 
         self.assertTrue(result["ok"])
+
+    def test_preflight_blocks_start_without_remote_upload_source(self):
+        result = preflight_bambu_print_start(
+            self.db,
+            self.make_printer("IDLE"),
+            "",
+            refresh_status=False,
+        )
+
+        self.assertFalse(result["ok"])
+        self.assertTrue(any(check["name"] == "Gekoppeld printbestand" and not check["ok"] for check in result["checks"]))
 
     def test_mqtt_reason_code_accepts_paho_v2_success_object(self):
         class ReasonCode:

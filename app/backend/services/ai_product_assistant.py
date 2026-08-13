@@ -7,6 +7,8 @@ from fastapi import HTTPException
 
 from core.config import Settings
 from schemas.common import AIProductDraftRequest
+from sqlalchemy.orm import Session
+from services.ai_usage_service import complete_ai_request, fail_ai_request, reserve_ai_request
 
 
 PRODUCT_DRAFT_SCHEMA: dict[str, Any] = {
@@ -121,7 +123,7 @@ TRANSLATION_SCHEMA: dict[str, Any] = {
 }
 
 
-def generate_ai_product_draft(payload: AIProductDraftRequest, settings: Settings) -> dict[str, Any]:
+def generate_ai_product_draft(payload: AIProductDraftRequest, settings: Settings, db: Session | None = None) -> dict[str, Any]:
     if not settings.ai_openai_enabled:
         raise HTTPException(status_code=403, detail="Echte AI-generatie staat uit. Zet AI_OPENAI_ENABLED=true om dit te gebruiken.")
     if not settings.openai_api_key:
@@ -160,14 +162,22 @@ def generate_ai_product_draft(payload: AIProductDraftRequest, settings: Settings
         "max_output_tokens": settings.ai_product_max_output_tokens,
     }
 
-    response_data = post_openai_response(request_body, settings)
+    usage_log = reserve_ai_request(db, "product_draft", settings.openai_product_model, settings.ai_daily_request_limit) if db else None
+    try:
+        response_data = post_openai_response(request_body, settings)
+    except Exception as exc:
+        if db and usage_log:
+            fail_ai_request(db, usage_log, exc)
+        raise
+    if db and usage_log:
+        complete_ai_request(db, usage_log, response_data.get("usage"))
     draft = extract_json_response(response_data)
     draft["source"] = f"openai_api:{settings.openai_product_model}"
     draft["usage"] = response_data.get("usage") or {}
     return draft
 
 
-def generate_product_translation(source: dict[str, Any], language_code: str, settings: Settings) -> dict[str, Any]:
+def generate_product_translation(source: dict[str, Any], language_code: str, settings: Settings, db: Session | None = None) -> dict[str, Any]:
     if not settings.ai_openai_enabled:
         return mock_product_translation(source, language_code)
     if not settings.openai_api_key:
@@ -211,7 +221,15 @@ def generate_product_translation(source: dict[str, Any], language_code: str, set
         },
         "max_output_tokens": min(settings.ai_product_max_output_tokens, 1800),
     }
-    response_data = post_openai_response(request_body, settings)
+    usage_log = reserve_ai_request(db, f"translation:{language_code}", settings.openai_product_model, settings.ai_daily_request_limit) if db else None
+    try:
+        response_data = post_openai_response(request_body, settings)
+    except Exception as exc:
+        if db and usage_log:
+            fail_ai_request(db, usage_log, exc)
+        raise
+    if db and usage_log:
+        complete_ai_request(db, usage_log, response_data.get("usage"))
     translated = extract_json_response(response_data)
     translated["tags"] = ", ".join(translated.get("tags") or [])
     translated["source"] = f"openai_api:{settings.openai_product_model}"

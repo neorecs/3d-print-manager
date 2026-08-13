@@ -29,7 +29,7 @@ def generate_product_translations_for_product(db: Session, product: Product, pay
         if existing and not payload.overwrite:
             skipped.append(language_code)
             continue
-        translated = generate_product_translation(source, language_code, get_settings())
+        translated = generate_product_translation(source, language_code, get_settings(), db)
         data = {
             "language_code": language_code,
             "title": translated.get("title"),

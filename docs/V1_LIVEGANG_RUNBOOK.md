@@ -19,7 +19,11 @@ Live betekent hier eerst: intern gebruiken met echte producten, echte voorraad, 
 | Secrets buiten Git | klaar als werkwijze | Controleer Dockhand env voor `DATABASE_URL` en `CREDENTIAL_ENCRYPTION_KEY`. |
 | Connector mockmodus | klaar | `CONNECTORS_LIVE_MODE=false` houden tot live platformtest. |
 | Backup aanwezig | klaar | `postgres_backup` service draait; `.dump` en `.sha256` zijn gecontroleerd. |
-| Hersteltest uitgevoerd | klaar | Backup is teruggezet naar tijdelijke testdatabase en daarna opgeschoond. |
+| Bestandsbackup aanwezig | klaar in compose | `uploads_backup` bewaart foto's, documenten en printbestanden met checksum. |
+| Gezamenlijke hersteltest | open | Database en uploadbestanden samen herstellen en controleren. |
+| Voorraadconcurrency | klaar in code | Rijvergrendeling en databaseconstraints voorkomen normale overreservering. |
+| Rollen | klaar in hoofdinterface | Viewer is alleen-lezen; credentials, gebruikers en fiscale instellingen zijn admin-only. |
+| AI-kostenlimiet | klaar in code | Daglimiet en tokenregistratie zijn aanwezig; echte AI blijft standaard uit. |
 | Etsy live test | open | Pas na backup/herstel en juiste credentials. |
 | Shopify live test | open | Pas na backup/herstel en juiste credentials. |
 | Administratiecontrole | deels klaar | Basis aanwezig; fiscale instellingen laten controleren. |
@@ -73,6 +77,7 @@ Bewaar ook:
 - database naam;
 - app commit/hash;
 - resultaat van laatste restore-test.
+- de bijbehorende uploadsbackup met checksum.
 
 ## Hersteltest
 
@@ -125,7 +130,7 @@ Gecontroleerde tellingen:
 Go alleen als:
 
 - backup is bewezen;
-- restore-test is bewezen;
+- gezamenlijke database- en bestandenrestore is bewezen;
 - `CREDENTIAL_ENCRYPTION_KEY` definitief is;
 - connectorstatus toont welke credentials aanwezig zijn;
 - testproduct klaarstaat;

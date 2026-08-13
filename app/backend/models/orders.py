@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, Integer, Numeric, String
+from sqlalchemy import DateTime, ForeignKey, Integer, Numeric, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 from database import Base
@@ -9,6 +9,9 @@ from models.mixins import TimestampMixin
 
 class Order(TimestampMixin, Base):
     __tablename__ = "orders"
+    __table_args__ = (
+        UniqueConstraint("platform_id", "external_order_id", name="uq_orders_platform_external"),
+    )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     internal_order_number: Mapped[str] = mapped_column(String(80), unique=True, nullable=False)

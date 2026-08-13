@@ -326,6 +326,11 @@ export async function getAIProductStatus(): Promise<AIProductStatus> {
       model: "mockmodus",
       ready: false,
       note: "AI-status is niet bereikbaar. De frontend gebruikt gratis mockmodus zonder OpenAI API-call.",
+      daily_limit: 0,
+      used_today: 0,
+      remaining_today: 0,
+      input_tokens_today: 0,
+      output_tokens_today: 0,
     };
   }
 }
@@ -339,6 +344,13 @@ export async function getSystemReadiness(): Promise<SystemReadiness> {
       live_calls_blocked: true,
       credential_encryption_configured: false,
       database_configured: false,
+      database_reachable: false,
+      upload_storage_writable: false,
+      upload_backup_configured: false,
+      database_backup_recent: false,
+      upload_backup_recent: false,
+      auth_enabled: false,
+      auth_backend_login: false,
       ai_enabled: false,
       ai_configured: false,
       openai_model: "onbekend",

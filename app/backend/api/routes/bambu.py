@@ -51,7 +51,7 @@ def refresh_bambu_printer_status(item_id: int, db: Session = Depends(get_db)):
 @router.post("/bambu/printers/{item_id}/print-preflight")
 def bambu_print_preflight(item_id: int, payload: BambuPrintStartRequest, db: Session = Depends(get_db)):
     item = get_or_404(db, BambuPrinter, item_id)
-    return preflight_bambu_print_start(db, item, payload.file_path)
+    return preflight_bambu_print_start(db, item, payload.local_upload_path)
 
 
 @router.post("/bambu/printers/{item_id}/print-files/upload")
@@ -63,6 +63,6 @@ def bambu_print_file_upload(item_id: int, file: UploadFile = File(...), db: Sess
 @router.post("/bambu/printers/{item_id}/start-print")
 def bambu_start_print(item_id: int, payload: BambuPrintStartRequest, db: Session = Depends(get_db)):
     item = get_or_404(db, BambuPrinter, item_id)
-    return start_bambu_sdcard_print(db, item, payload)
+    return start_bambu_remote_print(db, item, payload)
 
 
