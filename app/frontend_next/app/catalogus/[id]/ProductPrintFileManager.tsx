@@ -58,6 +58,7 @@ export function ProductPrintFileManager({ product, printers }: { product: Produc
     }
   }
 
+  const filename = product.print_file_path?.split("/").pop() || null;
   const selectedPrinter = printers.find((printer) => String(printer.id) === selectedPrinterId);
   const startBlockedReason = !product.print_file_path
     ? "Koppel eerst een printbestand aan dit product."
