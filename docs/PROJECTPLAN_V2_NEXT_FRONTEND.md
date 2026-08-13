@@ -420,6 +420,7 @@ Aanvulling 2026-07-26 - veilige printstart vanuit de site:
 - Praktische regel: als een printer al bezig is via Bambu Studio, blokkeert de site een nieuwe printstart; als de site een print start, ziet Bambu Studio de printer gewoon als bezet.
 - De enige ondersteunde workflow is remote upload: een product heeft een gekoppeld, printklaar `.gcode.3mf` bestand en de app stuurt dit bestand bij iedere printopdracht naar de gekozen printer.
 - Een handmatige SD-bestandmodus wordt niet gebouwd.
+- Remote Bambu-overdracht gebruikt de door LAN-modus ondersteunde tijdelijke `cache/`-map; gebruikers hoeven geen printerpad in te voeren.
 - Printstart werkt alleen via lokale LAN-aansturing met serienummer, LAN access code en MQTT-poort.
 - De gebruiker moet per printstart expliciet bevestigen.
 - De app mag niet starten als de printer volgens de laatst bekende status al bezig is, tenzij later bewust een force-flow wordt toegevoegd.

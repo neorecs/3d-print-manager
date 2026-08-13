@@ -296,7 +296,7 @@ def _upload_local_file_to_bambu_printer(printer: BambuPrinter, local_upload_path
     remote_filename = _bambu_remote_print_filename(source_path)
     remote_path = _upload_local_file_to_bambu_printer_with_curl(printer, access_code, source_path, remote_filename)
     if remote_path:
-        return f"ftp:///{quote(remote_path, safe='/')}"
+        return f"file:///sdcard/{quote(remote_path, safe='/')}"
 
     try:
         ftp = _ImplicitFTP_TLS(timeout=30)
@@ -305,13 +305,14 @@ def _upload_local_file_to_bambu_printer(printer: BambuPrinter, local_upload_path
         ftp.connect(printer.host, 990)
         ftp.login("bblp", access_code)
         ftp.prot_p()
+        ftp.cwd("cache")
         with source_path.open("rb") as handle:
             ftp.storbinary(f"STOR {remote_filename}", handle)
         ftp.quit()
     except Exception as exc:  # noqa: BLE001
         raise HTTPException(status_code=502, detail=f"Upload naar printer via FTPS mislukt: {exc}") from exc
 
-    return f"ftp:///{quote(remote_filename)}"
+    return f"file:///sdcard/cache/{quote(remote_filename)}"
 
 
 def _upload_local_file_to_bambu_printer_with_curl(printer: BambuPrinter, access_code: str, source_path: Path, filename: str) -> str | None:
@@ -327,7 +328,7 @@ def _upload_local_file_to_bambu_printer_with_curl(printer: BambuPrinter, access_
     with tempfile.TemporaryDirectory() as temp_dir:
         upload_source = Path(temp_dir) / filename
         shutil.copyfile(source_path, upload_source)
-        for remote_dir, remote_path in (("", filename), ("models/", f"models/{filename}")):
+        for remote_dir, remote_path in (("cache/", f"cache/{filename}"),):
             target_url = f"ftps://{printer.host}:990/{remote_dir}"
             command = [
                 "curl",
@@ -360,7 +361,7 @@ def _upload_local_file_to_bambu_printer_with_curl(printer: BambuPrinter, access_
     if "553" in failure_detail:
         failure_detail += (
             " | Bambu FTP-code 553 betekent meestal dat de printer het bestand niet kan aanmaken. "
-            "Controleer of de SD-kaart geplaatst, schrijfbaar en niet vol is, en of uploaden via Bambu Studio of WinSCP wel lukt."
+            "Controleer of de printeropslag beschikbaar en niet vol is, en of verzenden via Bambu Studio wel lukt."
         )
     raise HTTPException(status_code=502, detail=f"Upload naar printer via FTPS mislukt: {failure_detail}")
 
