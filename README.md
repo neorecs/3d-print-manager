@@ -131,7 +131,7 @@ Streamlit blijft beschikbaar als fallback. Nieuwe productiewaardige schermen en 
 
 ## NAS Next.js stack
 
-`docker-compose.next-nas.yml` draait de Next.js frontend samen met een private backendservice en Caddy als HTTPS-toegangspunt. De backend en frontend publiceren zelf geen poort. De browser communiceert uitsluitend via Caddy met Next.js; Next.js voegt de interne backend-identiteit en gebruikerssessie toe.
+`docker-compose.next-nas.yml` draait de Next.js frontend samen met een private backendservice. Die backend publiceert geen eigen poort. De browser communiceert uitsluitend met Next.js; Next.js voegt de interne backend-identiteit en gebruikerssessie toe.
 
 Voor NAS-deploy zijn minimaal deze environment variables nodig in Dockhand:
 
@@ -165,16 +165,14 @@ AUTH_ADMIN_EMAIL=
 AUTH_ADMIN_NAME=Beheerder
 AUTH_ADMIN_PASSWORD=
 AUTH_BACKEND_LOGIN=true
-AUTH_COOKIE_SECURE=true
+AUTH_COOKIE_SECURE=false
 ```
 
 Gebruik verschillende lange willekeurige waarden voor `AUTH_SECRET` en `BACKEND_INTERNAL_TOKEN`. De frontend valideert iedere beschermde sessie tegen de database. Wachtwoord-, rol-, MFA- en accountwijzigingen trekken bestaande sessies direct in.
 
 In de NAS-compose valt `AUTH_SECRET` tijdelijk terug op `CREDENTIAL_ENCRYPTION_KEY` als er nog geen losse `AUTH_SECRET` is ingesteld. Voor productie heeft een aparte lange `AUTH_SECRET` de voorkeur.
 
-De NAS-configuratie gebruikt `AUTH_COOKIE_SECURE=true`. Open de app via `https://10.5.1.150:38503`. Het oude adres `http://10.5.1.150:38502` verwijst automatisch door.
-
-Omdat de app alleen op het lokale netwerk staat, gebruikt Caddy een interne certificaatautoriteit. Installeer deze eenmalig per apparaat. Op Windows download je `http://10.5.1.150:38502/Installeer-HTTPS-certificaat.cmd` en voer je het bestand uit. Op telefoon of tablet download je `http://10.5.1.150:38502/local-ca.crt` en voeg je dit certificaat handmatig toe als vertrouwde CA. Deel of installeer nooit de private sleutel uit het Caddy-volume.
+Gebruik `AUTH_COOKIE_SECURE=false` zolang de app intern via gewone HTTP draait. Zet dit op `true` zodra je HTTPS gebruikt.
 
 Voor databasegebruikers kan de backend een eerste admin aanmaken via `/auth/bootstrap-admin` wanneer `AUTH_BOOTSTRAP_SECRET` tijdelijk is ingesteld. Zet daarna `AUTH_BACKEND_LOGIN=true` op de Next.js service zodat de login tegen de FastAPI `users` tabel controleert. Verwijder of leeg `AUTH_BOOTSTRAP_SECRET` na het aanmaken van de eerste admin.
 

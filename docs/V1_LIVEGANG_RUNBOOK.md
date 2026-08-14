@@ -12,8 +12,7 @@ Live betekent hier eerst: intern gebruiken met echte producten, echte voorraad, 
 
 | Punt | Status | Actie |
 | --- | --- | --- |
-| Next.js is hoofdfrontend | klaar | Gebruik `https://10.5.1.150:38503/` als hoofdscherm; poort 38502 verwijst door. |
-| HTTPS en secure cookies | klaar op NAS | Caddy gebruikt een interne CA. Installeer `local-ca.crt` eenmalig als vertrouwde CA op ieder apparaat. |
+| Next.js is hoofdfrontend | klaar | Gebruik `http://10.5.1.150:38502/` als hoofdscherm. |
 | Backend healthcheck | klaar in compose | NAS-compose controleert `/health`. |
 | Frontend healthcheck | klaar in compose | NAS-compose controleert de Next.js startpagina. |
 | PostgreSQL database | klaar | Draait op PostgreSQL; backup en hersteltest zijn gecontroleerd. |
