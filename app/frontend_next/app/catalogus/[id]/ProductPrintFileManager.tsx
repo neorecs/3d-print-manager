@@ -83,7 +83,9 @@ export function ProductPrintFileManager({ product, variants, printers }: { produ
       const slot = data.preparation?.recommended_slot;
       const warnings = Array.isArray(data.preparation?.warnings) ? data.preparation.warnings : [];
       setMessage([
-        `${data.preparation?.printer_name || "Printer"} voorbereid${slot ? ` met ${slot.label} (${slot.material})` : "; kies het filament handmatig in Bambu Studio"}.`,
+        slot
+          ? `Advies: gebruik ${data.preparation?.printer_name || "de printer"} met ${slot.label} (${slot.material}). Koppel deze rol bij Print plate in Bambu Studio.`
+          : `${data.preparation?.printer_name || "Printer"} voorbereid; kies het filament handmatig bij Print plate in Bambu Studio.`,
         ...warnings,
       ].join(" "));
       window.location.href = data.launcher_url;
@@ -222,7 +224,7 @@ export function ProductPrintFileManager({ product, variants, printers }: { produ
             <p className="text-xs font-black uppercase tracking-wide text-brand">Aanbevolen cloudworkflow</p>
             <h3 className="mt-1 text-lg font-bold text-ink">Printen via Bambu Studio</h3>
             <p className="mt-1 max-w-3xl text-sm leading-6 text-muted">
-              Hiermee blijven Bambu Studio, Bambu Handy en Bambu Cloud normaal beschikbaar. De manager levert het juiste voorbereide bestand; Bambu Studio verstuurt de print.
+              Hiermee blijven Bambu Studio, Bambu Handy en Bambu Cloud normaal beschikbaar. De manager opent het originele printbestand ongewijzigd; Bambu Studio verstuurt de print.
             </p>
           </div>
           <StatusBadge status={product.print_file_path ? "klaar" : "bestand ontbreekt"} />
@@ -230,7 +232,7 @@ export function ProductPrintFileManager({ product, variants, printers }: { produ
         <div className="mt-4 grid gap-3 md:grid-cols-3">
           <WorkflowStep number="1" title="Installeer eenmalig" description="Installeer op deze Windows-computer de veilige koppeling met Bambu Studio." />
           <WorkflowStep number="2" title="Open het bestand" description="De koppeling haalt het beveiligde bestand op en opent het lokaal in Bambu Studio, zonder websitewaarschuwing." />
-          <WorkflowStep number="3" title="Print plate" description="Start de opdracht vanuit Bambu Studio. Verwerk daarna het resultaat in Printplanning." />
+          <WorkflowStep number="3" title="Print plate" description="Koppel hier het bestaande projectfilament aan de geadviseerde AMS-rol en start de opdracht. Wijzig niet het filamentprofiel van het model." />
         </div>
         <div className="mt-4 grid gap-4 rounded-md border border-line bg-slate-950/35 p-4 lg:grid-cols-2">
           <label className="space-y-2">
@@ -274,7 +276,7 @@ export function ProductPrintFileManager({ product, variants, printers }: { produ
             </div>
           </div>
           <div className="lg:col-span-2 rounded-md border border-amber-400/25 bg-amber-400/10 px-3 py-2 text-sm text-amber-100">
-            De manager controleert het printermodel en kiest waar mogelijk automatisch de printer en AMS-sleuf met passend materiaal en kleur. Ontbreekt die rol, dan opent het bestand alsnog en kies je het filament handmatig in Bambu Studio. Bevestig voor verzending nog de fysieke printer <strong>{selectedPrinter?.name || ""}</strong>.
+            De manager controleert het printermodel en adviseert de printer en AMS-sleuf met passend materiaal en kleur. Het `.gcode.3mf` blijft intact. Koppel bij Print plate de bestaande filamentregel aan de AMS-sleuf; verander niet het filamentprofiel bovenaan, want daarmee kan de geslicete weergave verdwijnen. Bevestig voor verzending de fysieke printer <strong>{selectedPrinter?.name || ""}</strong>.
           </div>
         </div>
         <div className="mt-4 flex flex-wrap gap-3">

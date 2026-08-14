@@ -51,7 +51,7 @@ export function BambuStudioOpenAction({ product, variants, printers, fixedVarian
       const slot = data.preparation?.recommended_slot;
       const warnings = Array.isArray(data.preparation?.warnings) ? data.preparation.warnings : [];
       const preparationText = slot
-        ? `${data.preparation.printer_name} en ${slot.label} zijn automatisch gekozen.`
+        ? `Advies: gebruik ${data.preparation.printer_name} met ${slot.label}. Koppel deze rol bij Print plate in Bambu Studio.`
         : `${data.preparation?.printer_name || "De printer"} is gekozen. Selecteer het filament handmatig in Bambu Studio.`;
       setMessage([preparationText, ...warnings].join(" "));
       router.refresh();
@@ -100,7 +100,7 @@ export function BambuStudioOpenAction({ product, variants, printers, fixedVarian
               {activePrinters.map((printer) => <option key={printer.id} value={printer.id}>{printer.name} - {printer.model || "model onbekend"}</option>)}
             </select>
           </label>
-          <p className="text-xs leading-5 text-muted">De app kiest automatisch een andere compatibele printer als daar de juiste AMS-rol bekend is. Zonder match opent het bestand ook.</p>
+          <p className="text-xs leading-5 text-muted">De app adviseert automatisch een compatibele printer en AMS-rol. Het originele bestand blijft ongewijzigd. Koppel de rol bij Print plate; wijzig niet het filamentprofiel van het model.</p>
           {message ? <div className="rounded-md border border-emerald-400/25 bg-emerald-400/10 p-2 text-xs text-emerald-200">{message}</div> : null}
           {error ? <div className="rounded-md border border-red-400/25 bg-red-400/10 p-2 text-xs text-red-200">{error}</div> : null}
           <div className="flex gap-2">

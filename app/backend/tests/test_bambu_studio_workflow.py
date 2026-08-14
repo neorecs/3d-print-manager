@@ -17,15 +17,12 @@ class BambuStudioWorkflowTests(BackendTestCase):
         self.root = Path(self.temporary_directory.name)
         self.original_upload_root = bambu_studio_service.UPLOAD_ROOT
         self.original_export_root = bambu_studio_service.EXPORT_ROOT
-        self.original_prepared_root = bambu_studio_service.PREPARED_ROOT
         bambu_studio_service.UPLOAD_ROOT = self.root / "uploads"
         bambu_studio_service.EXPORT_ROOT = self.root / "exports"
-        bambu_studio_service.PREPARED_ROOT = self.root / "prepared"
 
     def tearDown(self) -> None:
         bambu_studio_service.UPLOAD_ROOT = self.original_upload_root
         bambu_studio_service.EXPORT_ROOT = self.original_export_root
-        bambu_studio_service.PREPARED_ROOT = self.original_prepared_root
         self.temporary_directory.cleanup()
         super().tearDown()
 
@@ -133,9 +130,9 @@ class BambuStudioWorkflowTests(BackendTestCase):
 
         self.assertEqual(raised.exception.status_code, 404)
 
-    def test_preparation_matches_variant_to_printer_ams_and_rewrites_color(self) -> None:
+    def test_preparation_matches_variant_to_printer_ams_without_rewriting_archive(self) -> None:
         product, variant = self.make_product_variant("STUDIO-AMS")
-        self.make_valid_print_file(product)
+        source = self.make_valid_print_file(product)
         printer = BambuPrinter(
             name="P2S Productie",
             model="P2S",
@@ -157,11 +154,8 @@ class BambuStudioWorkflowTests(BackendTestCase):
         response = bambu_studio_service.prepared_product_print_file_response(
             self.db, product, variant, printer, 0, 0, BackgroundTasks()
         )
-        with zipfile.ZipFile(Path(response.path)) as archive:
-            project = json.loads(archive.read("Metadata/project_settings.config"))
-            self.assertEqual(project["filament_colour"][0], "#991C1C")
-            slice_info = archive.read("Metadata/slice_info.config").decode("utf-8")
-            self.assertIn('color="#991C1C"', slice_info)
+        self.assertEqual(Path(response.path), source)
+        self.assertEqual(Path(response.path).read_bytes(), source.read_bytes())
 
     def test_preparation_rejects_material_that_differs_from_sliced_file(self) -> None:
         product, variant = self.make_product_variant("STUDIO-WRONG-MATERIAL")

@@ -3,9 +3,7 @@ import json
 import math
 import re
 import shutil
-import tempfile
 import zipfile
-from copy import copy
 from datetime import date
 from pathlib import Path
 from xml.etree import ElementTree
@@ -21,7 +19,6 @@ from models import BambuPrinter, Order, OrderItem, PrintBatch, PrintBatchItem, P
 
 EXPORT_ROOT = Path("exports") / "PrintJobs"
 UPLOAD_ROOT = Path("uploads")
-PREPARED_ROOT = UPLOAD_ROOT / "prepared_bambu_files"
 
 COLOR_NAMES = {
     "zwart": "#000000",
@@ -144,24 +141,9 @@ def prepared_product_print_file_response(
     if not slot:
         raise HTTPException(status_code=409, detail="De gekozen AMS-sleuf bevat niet het juiste materiaal")
 
-    source = resolve_product_print_file(product.print_file_path)
-    PREPARED_ROOT.mkdir(parents=True, exist_ok=True)
-    handle = tempfile.NamedTemporaryFile(prefix="prepared-", suffix=".gcode.3mf", dir=PREPARED_ROOT, delete=False)
-    target = Path(handle.name)
-    handle.close()
-    try:
-        _write_prepared_3mf(source, target, slot)
-    except Exception:
-        target.unlink(missing_ok=True)
-        raise
-    background_tasks.add_task(target.unlink, missing_ok=True)
-    return FileResponse(
-        target,
-        media_type="application/octet-stream",
-        filename=download_filename(product, source),
-        headers={"Cache-Control": "private, no-store"},
-        background=background_tasks,
-    )
+    # Keep sliced archives byte-for-byte intact. Rewriting filament metadata can
+    # make Bambu Studio invalidate the sliced model after a profile change.
+    return product_print_file_response(product)
 
 
 def inspect_product_print_file(product: Product) -> dict:
@@ -187,36 +169,6 @@ def inspect_product_print_file(product: Product) -> dict:
         "filament_material": filament.get("type") if filament is not None else None,
         "filament_color": _format_hex_color(filament.get("color")) if filament is not None else None,
     }
-
-
-def _write_prepared_3mf(source: Path, target: Path, slot: dict) -> None:
-    color = _format_hex_color(slot.get("color_hex"))
-    material = str(slot.get("material") or "").strip()
-    if not color or not material:
-        raise HTTPException(status_code=409, detail="De gekozen AMS-sleuf heeft geen bruikbare materiaal- en kleurgegevens")
-    with zipfile.ZipFile(source, "r") as source_zip, zipfile.ZipFile(target, "w") as target_zip:
-        for info in source_zip.infolist():
-            data = source_zip.read(info.filename)
-            if info.filename == "Metadata/slice_info.config":
-                root = ElementTree.fromstring(data)
-                filament = root.find(".//filament[@id='1']")
-                if filament is None:
-                    filament = root.find(".//filament")
-                if filament is not None:
-                    filament.set("color", color)
-                data = ElementTree.tostring(root, encoding="utf-8", xml_declaration=True)
-            elif info.filename == "Metadata/plate_1.json":
-                plate = json.loads(data)
-                colors = plate.get("filament_colors") if isinstance(plate.get("filament_colors"), list) else []
-                plate["filament_colors"] = [color, *colors[1:]] if colors else [color]
-                data = json.dumps(plate, separators=(",", ":")).encode("utf-8")
-            elif info.filename == "Metadata/project_settings.config":
-                settings = json.loads(data)
-                colors = settings.get("filament_colour") if isinstance(settings.get("filament_colour"), list) else []
-                settings["filament_colour"] = [color, *colors[1:]] if colors else [color]
-                data = json.dumps(settings, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
-            copied = copy(info)
-            target_zip.writestr(copied, data)
 
 
 def _printer_ams_slots(printer: BambuPrinter) -> list[dict]:
