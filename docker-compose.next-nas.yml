@@ -74,7 +74,7 @@ services:
     restart: unless-stopped
 
   postgres_backup:
-    image: postgres:16-alpine
+    build: ./ops/postgres-backup
     environment:
       DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
       BACKUP_DIR: /backups/daily
@@ -84,14 +84,12 @@ services:
       BACKUP_RUN_ONCE: ${BACKUP_RUN_ONCE:-false}
     volumes:
       - ${BACKUP_TARGET_PATH:-postgres_backups}:/backups
-      - ./ops/postgres-backup:/backup-tools:ro
-    command: ["/bin/sh", "/backup-tools/backup-loop.sh"]
     networks:
       - print_manager
     restart: unless-stopped
 
   uploads_backup:
-    image: alpine:3.21
+    build: ./ops/uploads-backup
     environment:
       UPLOAD_SOURCE_DIR: /uploads
       UPLOAD_BACKUP_DIR: /backups/uploads
@@ -102,8 +100,6 @@ services:
     volumes:
       - app_uploads:/uploads:ro
       - ${BACKUP_TARGET_PATH:-postgres_backups}:/backups
-      - ./ops/uploads-backup:/backup-tools:ro
-    command: ["/bin/sh", "/backup-tools/backup-loop.sh"]
     restart: unless-stopped
 
 networks:
