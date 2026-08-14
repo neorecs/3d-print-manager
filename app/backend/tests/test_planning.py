@@ -1,7 +1,39 @@
 from support import *
+from api.routes.planning import mark_print_job_bambu_studio_opened
+from models import BambuPrinter
+from schemas.common import PrintJobBambuStudioOpen
 
 
 class PlanningTestCase(BackendTestCase):
+    def test_opening_job_in_bambu_studio_assigns_printer_and_plans_job(self) -> None:
+        product, variant = self.make_product_variant("STUDIO-PLAN")
+        printer = BambuPrinter(name="P2S Productie", model="P2S", host="10.0.0.20", active=True)
+        job = PrintJob(
+            product_id=product.id,
+            product_variant_id=variant.id,
+            quantity_needed=2,
+            quantity_planned=2,
+            status="nieuw",
+        )
+        self.db.add_all([printer, job])
+        self.db.commit()
+        self.db.refresh(printer)
+        self.db.refresh(job)
+
+        result = mark_print_job_bambu_studio_opened(
+            job.id,
+            PrintJobBambuStudioOpen(
+                printer_id=printer.id,
+                product_id=product.id,
+                product_variant_id=variant.id,
+            ),
+            self.db,
+        )
+
+        self.assertEqual(result["printer_id"], printer.id)
+        self.assertEqual(result["status"], "gepland")
+        self.assertIsNotNone(result["bambu_studio_opened_at"])
+
     def test_print_result_sends_extra_successes_to_inventory_and_failed_to_movements(self) -> None:
         product, variant = self.make_product_variant("PRINT-RESULT")
         print_job = PrintJob(

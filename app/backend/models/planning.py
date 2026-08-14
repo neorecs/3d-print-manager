@@ -1,6 +1,6 @@
-from datetime import date
+from datetime import date, datetime
 
-from sqlalchemy import Date, ForeignKey, Integer, String
+from sqlalchemy import Date, DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from database import Base
@@ -26,6 +26,8 @@ class PrintJob(TimestampMixin, Base):
     estimated_filament_grams: Mapped[int | None] = mapped_column(Integer)
     status: Mapped[str] = mapped_column(String(80), default="nieuw", nullable=False)
     planned_date: Mapped[date | None] = mapped_column(Date)
+    printer_id: Mapped[int | None] = mapped_column(ForeignKey("bambu_printers.id"))
+    bambu_studio_opened_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
 
 class PrintBatch(TimestampMixin, Base):

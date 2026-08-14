@@ -66,9 +66,10 @@ def product_print_preparation(db: Session, product: Product, variant: ProductVar
     metadata = inspect_product_print_file(product)
     required_material = _normalize_material(variant.material)
     sliced_material = _normalize_material(metadata.get("filament_material"))
+    warnings: list[str] = []
     if not required_material:
-        raise HTTPException(status_code=409, detail="Vul eerst het materiaal van de productvariant in")
-    if sliced_material and sliced_material != required_material:
+        warnings.append("De variant heeft geen materiaal. Kies de filamentrol handmatig in Bambu Studio.")
+    if required_material and sliced_material and sliced_material != required_material:
         raise HTTPException(
             status_code=409,
             detail=f"Dit bestand is geslicet voor {metadata['filament_material']}, maar de variant vraagt {variant.material}. Slice het bestand opnieuw met het juiste materiaal.",
@@ -85,13 +86,20 @@ def product_print_preparation(db: Session, product: Product, variant: ProductVar
     slots = _printer_ams_slots(printer)
     material_slots = [slot for slot in slots if _normalize_material(slot.get("material")) == required_material]
     if not material_slots:
-        raise HTTPException(
-            status_code=409,
-            detail=f"Op {printer.name} is geen AMS-sleuf met {variant.material} gevonden. Vernieuw de printerstatus of plaats de juiste rol.",
+        warnings.append(
+            f"Op {printer.name} is geen passende AMS-rol gevonden. Kies of plaats het filament handmatig in Bambu Studio."
         )
-    requested_color = _parse_color(variant.color)
-    ranked = sorted(material_slots, key=lambda slot: _color_distance(requested_color, _parse_color(slot.get("color_hex"))))
-    recommended = ranked[0]
+        ranked = []
+        recommended = None
+    else:
+        requested_color = _parse_color(variant.color)
+        ranked = sorted(material_slots, key=lambda slot: _color_distance(requested_color, _parse_color(slot.get("color_hex"))))
+        recommended = ranked[0]
+        if requested_color is not None and _color_distance(requested_color, _parse_color(recommended.get("color_hex"))) > 140:
+            recommended = None
+            warnings.append(
+                f"Op {printer.name} is wel {variant.material} aanwezig, maar niet in de gevraagde kleur {variant.color}. Kies de rol handmatig in Bambu Studio."
+            )
     return {
         "product_id": product.id,
         "variant_id": variant.id,
@@ -104,6 +112,12 @@ def product_print_preparation(db: Session, product: Product, variant: ProductVar
         "file_material": metadata.get("filament_material"),
         "recommended_slot": recommended,
         "compatible_slots": ranked,
+        "color_distance": (
+            _color_distance(_parse_color(variant.color), _parse_color(recommended.get("color_hex")))
+            if recommended and _parse_color(variant.color) is not None
+            else None
+        ),
+        "warnings": warnings,
     }
 
 
@@ -117,6 +131,8 @@ def prepared_product_print_file_response(
     background_tasks: BackgroundTasks,
 ) -> FileResponse:
     preparation = product_print_preparation(db, product, variant, printer)
+    if ams_id < 0 or tray_id < 0:
+        return product_print_file_response(product)
     slot = next(
         (
             item

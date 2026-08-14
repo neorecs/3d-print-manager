@@ -63,6 +63,7 @@ from schemas.common import (
     PlatformCreate,
     PlatformCredentialCreate,
     PrintBatchCreate,
+    PrintJobBambuStudioOpen,
     PrintJobComplete,
     PrintJobCreate,
     ProductCreate,

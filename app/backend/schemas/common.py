@@ -326,6 +326,12 @@ class PrintJobComplete(BaseModel):
     quantity_to_order: int | None = None
 
 
+class PrintJobBambuStudioOpen(BaseModel):
+    printer_id: int
+    product_id: int
+    product_variant_id: int
+
+
 class PrintBatchCreate(BaseModel):
     batch_name: str
     planned_date: str | None = None

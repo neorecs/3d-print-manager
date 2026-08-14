@@ -77,6 +77,7 @@ function PrintPlanningContent({ data }: { data: PrintPlanningData }) {
           printJobs={data.printJobs}
           products={data.products}
           variants={data.variants}
+          printers={data.printers}
         />
       </SectionCard>
     </div>

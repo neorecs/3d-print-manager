@@ -4,6 +4,14 @@ import { bambuStudioFilename, createBambuStudioFileToken } from "@/lib/bambuStud
 
 const API_BASE_URL = process.env.FRONTEND_NEXT_API_BASE_URL || process.env.API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:38080";
 
+type Preparation = {
+  printer_id: number;
+  printer_name?: string;
+  recommended_slot?: { ams_id: number; tray_id: number } | null;
+  color_distance?: number | null;
+  warnings?: string[];
+};
+
 function externalOrigin(request: NextRequest) {
   const candidates = [
     request.headers.get("origin"),
@@ -43,23 +51,45 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   try {
     const payload = await request.json().catch(() => ({}));
     const variantId = Number(payload.variant_id);
-    const printerId = Number(payload.printer_id);
-    if (!Number.isInteger(variantId) || variantId <= 0 || !Number.isInteger(printerId) || printerId <= 0) {
+    const preferredPrinterId = Number(payload.printer_id);
+    const printJobId = payload.print_job_id == null ? null : Number(payload.print_job_id);
+    if (!Number.isInteger(variantId) || variantId <= 0 || !Number.isInteger(preferredPrinterId) || preferredPrinterId <= 0) {
       return NextResponse.json({ detail: "Kies eerst een productvariant en printer." }, { status: 400 });
     }
-    const preparationUrl = new URL(`${API_BASE_URL}/products/${productId}/print-file/preparation`);
-    preparationUrl.searchParams.set("variant_id", String(variantId));
-    preparationUrl.searchParams.set("printer_id", String(printerId));
-    const preparationResponse = await fetch(preparationUrl, { cache: "no-store" });
-    const preparation = await preparationResponse.json().catch(() => null);
-    if (!preparationResponse.ok || !preparation?.recommended_slot) {
-      return NextResponse.json(
-        { detail: preparation?.detail || "Geen passende AMS-sleuf gevonden." },
-        { status: preparationResponse.status },
-      );
+    if (printJobId !== null && (!Number.isInteger(printJobId) || printJobId <= 0)) {
+      return NextResponse.json({ detail: "Ongeldig printtaaknummer." }, { status: 400 });
     }
-    const amsId = Number(preparation.recommended_slot.ams_id);
-    const trayId = Number(preparation.recommended_slot.tray_id);
+
+    const printersResponse = await fetch(`${API_BASE_URL}/bambu/printers`, { cache: "no-store" });
+    const printers = await printersResponse.json().catch(() => []);
+    if (!printersResponse.ok || !Array.isArray(printers)) {
+      return NextResponse.json({ detail: "Printers konden niet worden geladen." }, { status: 503 });
+    }
+    const candidates = printers
+      .filter((printer) => printer.active)
+      .sort((left, right) => Number(right.id === preferredPrinterId) - Number(left.id === preferredPrinterId));
+    const preparations: Preparation[] = [];
+    let lastError = "Geen compatibele actieve printer gevonden.";
+    for (const printer of candidates) {
+      const preparationUrl = new URL(`${API_BASE_URL}/products/${productId}/print-file/preparation`);
+      preparationUrl.searchParams.set("variant_id", String(variantId));
+      preparationUrl.searchParams.set("printer_id", String(printer.id));
+      const preparationResponse = await fetch(preparationUrl, { cache: "no-store" });
+      const preparation = await preparationResponse.json().catch(() => null);
+      if (preparationResponse.ok && preparation) preparations.push(preparation);
+      else if (preparation?.detail) lastError = preparation.detail;
+    }
+    const matchingPreparations = preparations
+      .filter((item) => item.recommended_slot)
+      .sort((left, right) => Number(left.color_distance ?? 0) - Number(right.color_distance ?? 0));
+    const preparation = matchingPreparations[0] || preparations[0];
+    if (!preparation) {
+      return NextResponse.json({ detail: lastError }, { status: 409 });
+    }
+
+    const printerId = Number(preparation.printer_id);
+    const amsId = preparation.recommended_slot ? Number(preparation.recommended_slot.ams_id) : -1;
+    const trayId = preparation.recommended_slot ? Number(preparation.recommended_slot.tray_id) : -1;
     const context = `${variantId}:${printerId}:${amsId}:${trayId}`;
     const filename = bambuStudioFilename(product.internal_title || product.name || `product-${productId}`);
     const token = await createBambuStudioFileToken(productId, filename, context);
@@ -69,6 +99,16 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     fileUrlObject.searchParams.set("ams_id", String(amsId));
     fileUrlObject.searchParams.set("tray_id", String(trayId));
     const fileUrl = fileUrlObject.toString();
+    if (printJobId !== null) {
+      const jobResponse = await fetch(`${API_BASE_URL}/print-jobs/${printJobId}/bambu-studio-opened`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ printer_id: printerId, product_id: productId, product_variant_id: variantId }),
+      });
+      if (!jobResponse.ok) {
+        preparation.warnings = [...(preparation.warnings || []), "De printtaak kon niet automatisch als gepland worden opgeslagen."];
+      }
+    }
     return NextResponse.json({
       file_url: fileUrl,
       launcher_url: `printmanager://open?file=${encodeURIComponent(fileUrl)}`,

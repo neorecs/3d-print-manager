@@ -300,6 +300,8 @@ export type PrintJob = {
   estimated_filament_grams?: number | null;
   status?: string | null;
   planned_date?: string | null;
+  printer_id?: number | null;
+  bambu_studio_opened_at?: string | null;
 };
 
 export type PrintBatch = {
@@ -407,6 +409,7 @@ export type PrintPlanningData = {
   variants: ProductVariant[];
   orders: Order[];
   orderItems: OrderItem[];
+  printers: BambuPrinter[];
 };
 
 export type ProductCatalogRow = {
@@ -421,6 +424,7 @@ export type ProductCatalogData = {
   variants: ProductVariant[];
   inventory: ProductInventory[];
   platforms: Platform[];
+  printers: BambuPrinter[];
   rows: ProductCatalogRow[];
 };
 

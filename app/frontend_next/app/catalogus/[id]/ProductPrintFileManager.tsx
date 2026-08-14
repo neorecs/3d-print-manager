@@ -81,7 +81,11 @@ export function ProductPrintFileManager({ product, variants, printers }: { produ
         throw new Error(data?.detail || "De lokale Bambu-koppeling kon niet worden gestart");
       }
       const slot = data.preparation?.recommended_slot;
-      setMessage(`${data.preparation?.printer_name || "Printer"} voorbereid${slot ? ` met ${slot.label} (${slot.material})` : ""}. Bambu Studio wordt geopend.`);
+      const warnings = Array.isArray(data.preparation?.warnings) ? data.preparation.warnings : [];
+      setMessage([
+        `${data.preparation?.printer_name || "Printer"} voorbereid${slot ? ` met ${slot.label} (${slot.material})` : "; kies het filament handmatig in Bambu Studio"}.`,
+        ...warnings,
+      ].join(" "));
       window.location.href = data.launcher_url;
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Bambu Studio kon niet worden geopend");
@@ -270,7 +274,7 @@ export function ProductPrintFileManager({ product, variants, printers }: { produ
             </div>
           </div>
           <div className="lg:col-span-2 rounded-md border border-amber-400/25 bg-amber-400/10 px-3 py-2 text-sm text-amber-100">
-            De manager controleert het printermodel en kiest de best passende AMS-sleuf. Bevestig in Bambu Studio voor verzending nog de fysieke printer <strong>{selectedPrinter?.name || ""}</strong>; Bambu Studio accepteert deze apparaatkeuze niet vanuit een extern programma.
+            De manager controleert het printermodel en kiest waar mogelijk automatisch de printer en AMS-sleuf met passend materiaal en kleur. Ontbreekt die rol, dan opent het bestand alsnog en kies je het filament handmatig in Bambu Studio. Bevestig voor verzending nog de fysieke printer <strong>{selectedPrinter?.name || ""}</strong>.
           </div>
         </div>
         <div className="mt-4 flex flex-wrap gap-3">

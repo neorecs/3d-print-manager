@@ -91,11 +91,12 @@ export async function getDashboardData(): Promise<DashboardData> {
 }
 
 export async function getProductCatalogData(): Promise<ProductCatalogData> {
-  const [products, variants, inventory, platforms] = await Promise.all([
+  const [products, variants, inventory, platforms, printers] = await Promise.all([
     apiGet<Product[]>("/products"),
     apiGet<ProductVariant[]>("/product-variants"),
     apiGet<ProductInventory[]>("/inventory/products"),
     apiGet<Platform[]>("/platforms"),
+    apiGet<BambuPrinter[]>("/bambu/printers").catch(() => []),
   ]);
 
   const publicationsNested = await Promise.all(
@@ -108,6 +109,7 @@ export async function getProductCatalogData(): Promise<ProductCatalogData> {
     variants,
     inventory,
     platforms,
+    printers,
     rows: products.map((product) => ({
       product,
       variants: variants.filter((variant) => variant.product_id === product.id),
@@ -186,13 +188,14 @@ export async function getOrderDetailData(orderId: number): Promise<OrderDetailDa
 }
 
 export async function getPrintPlanningData(): Promise<PrintPlanningData> {
-  const [printJobs, printBatches, products, variants, orders, orderItems] = await Promise.all([
+  const [printJobs, printBatches, products, variants, orders, orderItems, printers] = await Promise.all([
     apiGet<PrintJob[]>("/print-jobs"),
     apiGet<PrintBatch[]>("/print-batches"),
     apiGet<Product[]>("/products"),
     apiGet<ProductVariant[]>("/product-variants"),
     apiGet<Order[]>("/orders"),
     apiGet<OrderItem[]>("/order-items"),
+    apiGet<BambuPrinter[]>("/bambu/printers").catch(() => []),
   ]);
 
   return {
@@ -202,6 +205,7 @@ export async function getPrintPlanningData(): Promise<PrintPlanningData> {
     variants,
     orders,
     orderItems,
+    printers,
   };
 }
 

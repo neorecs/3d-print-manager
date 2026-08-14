@@ -4,6 +4,7 @@ import { MetricCard } from "@/components/MetricCard";
 import { PageHeader } from "@/components/PageHeader";
 import { SectionCard } from "@/components/SectionCard";
 import { StatusBadge } from "@/components/StatusBadge";
+import { BambuStudioOpenAction } from "@/components/BambuStudioOpenAction";
 import { formatCurrency, formatMinutes, getProductCatalogData } from "@/lib/api";
 import type { ProductCatalogData, ProductCatalogRow } from "@/lib/types";
 
@@ -72,7 +73,7 @@ function CatalogContent({ data }: { data: ProductCatalogData }) {
         {data.rows.length ? (
           <div className="grid gap-4 xl:grid-cols-2">
             {data.rows.map((row) => (
-              <ProductCard key={row.product.id} row={row} />
+              <ProductCard key={row.product.id} row={row} printers={data.printers} />
             ))}
           </div>
         ) : (
@@ -83,7 +84,7 @@ function CatalogContent({ data }: { data: ProductCatalogData }) {
   );
 }
 
-function ProductCard({ row }: { row: ProductCatalogRow }) {
+function ProductCard({ row, printers }: { row: ProductCatalogRow; printers: ProductCatalogData["printers"] }) {
   const primaryVariant = row.variants[0];
   const freeStock = row.inventory.reduce(
     (total, item) => total + Math.max(Number(item.quantity_on_hand || 0) - Number(item.quantity_reserved || 0), 0),
@@ -133,9 +134,12 @@ function ProductCard({ row }: { row: ProductCatalogRow }) {
 
       <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-4">
         <div className="text-sm text-muted">{row.variants.length} variant(en), {row.publications.length} publicatie(s)</div>
-        <a className="rounded-xl border border-line px-3 py-2 text-sm font-black text-slate-200 hover:bg-white/5" href={`/catalogus/${row.product.id}`}>
-          Productdetail
-        </a>
+        <div className="flex min-w-[15rem] flex-col gap-2 sm:flex-row">
+          <BambuStudioOpenAction compact printers={printers} product={row.product} variants={row.variants} />
+          <a className="rounded-md border border-line px-3 py-2 text-center text-sm font-black text-slate-200 hover:bg-white/5" href={`/catalogus/${row.product.id}`}>
+            Productdetail
+          </a>
+        </div>
       </div>
     </article>
   );

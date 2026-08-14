@@ -1,3 +1,5 @@
+from datetime import datetime, timezone
+
 from fastapi import APIRouter
 from api.routes_shared import *
 from domain.statuses import (
@@ -38,6 +40,25 @@ def update_print_job(item_id: int, payload: PrintJobCreate, db: Session = Depend
     for key, value in payload.model_dump().items():
         setattr(item, key, value)
     db.commit()
+    return to_dict(item)
+
+
+@router.post("/print-jobs/{item_id}/bambu-studio-opened")
+def mark_print_job_bambu_studio_opened(
+    item_id: int, payload: PrintJobBambuStudioOpen, db: Session = Depends(get_db)
+):
+    item = get_or_404(db, PrintJob, item_id)
+    printer = get_or_404(db, BambuPrinter, payload.printer_id)
+    if item.product_id != payload.product_id or item.product_variant_id != payload.product_variant_id:
+        raise HTTPException(status_code=409, detail="De printtaak hoort niet bij het gekozen product en de gekozen variant")
+    if not printer.active:
+        raise HTTPException(status_code=409, detail="De gekozen printer is niet actief")
+    item.printer_id = printer.id
+    item.bambu_studio_opened_at = datetime.now(timezone.utc)
+    if item.status == PRINT_JOB_NEW:
+        item.status = PRINT_JOB_PLANNED
+    db.commit()
+    db.refresh(item)
     return to_dict(item)
 
 

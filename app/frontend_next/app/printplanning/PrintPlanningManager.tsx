@@ -3,8 +3,9 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { StatusBadge } from "@/components/StatusBadge";
+import { BambuStudioOpenAction } from "@/components/BambuStudioOpenAction";
 import { formatMinutes } from "@/lib/api";
-import type { Order, OrderItem, PrintBatch, PrintJob, Product, ProductVariant } from "@/lib/types";
+import type { BambuPrinter, Order, OrderItem, PrintBatch, PrintJob, Product, ProductVariant } from "@/lib/types";
 
 type JobDraft = {
   quantity_needed: string;
@@ -105,6 +106,7 @@ export function PrintPlanningManager({
   variants,
   orders,
   orderItems,
+  printers,
 }: {
   printJobs: PrintJob[];
   printBatches: PrintBatch[];
@@ -112,6 +114,7 @@ export function PrintPlanningManager({
   variants: ProductVariant[];
   orders: Order[];
   orderItems: OrderItem[];
+  printers: BambuPrinter[];
 }) {
   const router = useRouter();
   const productById = useMemo(() => new Map(products.map((product) => [product.id, product])), [products]);
@@ -384,7 +387,19 @@ export function PrintPlanningManager({
                       </label>
                     </div>
 
-                    <div className="mt-4 flex justify-end">
+                    <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                      {product && variant ? (
+                        <div className="w-full sm:max-w-sm">
+                          <BambuStudioOpenAction
+                            fixedVariantId={variant.id}
+                            printJobId={job.id}
+                            printers={printers}
+                            product={product}
+                            variants={[variant]}
+                          />
+                          {job.printer_id ? <p className="mt-2 text-xs text-muted">Toegewezen aan printer {job.printer_id}{job.bambu_studio_opened_at ? `, geopend ${new Date(job.bambu_studio_opened_at).toLocaleString("nl-NL")}` : ""}.</p> : null}
+                        </div>
+                      ) : null}
                       <button
                         className="rounded-md bg-brand px-4 py-2 text-sm font-black text-slate-950 disabled:cursor-not-allowed disabled:opacity-60"
                         disabled={busyKey !== null}

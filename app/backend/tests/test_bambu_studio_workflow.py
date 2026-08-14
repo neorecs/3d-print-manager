@@ -175,3 +175,20 @@ class BambuStudioWorkflowTests(BackendTestCase):
             bambu_studio_service.product_print_preparation(self.db, product, variant, printer)
         self.assertEqual(raised.exception.status_code, 409)
         self.assertIn("geslicet voor PLA", raised.exception.detail)
+
+    def test_missing_ams_match_warns_and_returns_original_file(self) -> None:
+        product, variant = self.make_product_variant("STUDIO-NO-AMS")
+        source = self.make_valid_print_file(product)
+        printer = BambuPrinter(name="P2S", model="P2S", host="10.0.0.20", ams_slots_json="[]")
+        self.db.add(printer)
+        self.db.commit()
+        self.db.refresh(printer)
+
+        preparation = bambu_studio_service.product_print_preparation(self.db, product, variant, printer)
+        self.assertIsNone(preparation["recommended_slot"])
+        self.assertIn("geen passende AMS-rol", preparation["warnings"][0])
+
+        response = bambu_studio_service.prepared_product_print_file_response(
+            self.db, product, variant, printer, -1, -1, BackgroundTasks()
+        )
+        self.assertEqual(Path(response.path), source)
