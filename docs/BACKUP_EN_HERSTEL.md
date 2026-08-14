@@ -92,11 +92,11 @@ Zonder geslaagde hersteltest:
 
 ## Laatste hersteltest
 
-Datum: 2026-06-29
+Datum: 2026-08-14
 
-- Backup: `print_manager_20260629T203756Z.dump`
-- Checksum: OK
-- Restore naar tijdelijke database: OK
+- Databasebackup: `print_manager_20260814T122224Z.dump`
+- Databasechecksum: OK
+- Restore naar tijdelijke database: OK, inclusief controle van de producttabel
+- Uploadsbackup: `print_manager_uploads_20260814T122224Z.tar.gz`
+- Uploadschecksum en archiefinhoud: OK
 - Tijdelijke database verwijderd: OK
-
-De eerdere hersteltest van 2026-06-29 controleerde alleen PostgreSQL. Na invoering van `uploads_backup` moet nog een nieuwe gezamenlijke hersteltest worden uitgevoerd.
