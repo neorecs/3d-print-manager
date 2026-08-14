@@ -22,7 +22,7 @@ type PreflightResult = {
 export function ProductPrintFileManager({ product, printers }: { product: Product; printers: BambuPrinter[] }) {
   const router = useRouter();
   const [uploading, setUploading] = useState(false);
-  const [busy, setBusy] = useState<"preflight" | "start" | null>(null);
+  const [busy, setBusy] = useState<"studio" | "preflight" | "start" | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [selectedPrinterId, setSelectedPrinterId] = useState(printers[0]?.id ? String(printers[0].id) : "");
@@ -55,6 +55,26 @@ export function ProductPrintFileManager({ product, printers }: { product: Produc
     } finally {
       setUploading(false);
       event.target.value = "";
+    }
+  }
+
+  async function openInBambuStudio() {
+    if (!product.print_file_path) return;
+    setBusy("studio");
+    setMessage(null);
+    setError(null);
+    try {
+      const response = await fetch(`/api/products/${product.id}/print-file/open-in-bambu-studio`, { method: "POST" });
+      const data = await response.json().catch(() => null);
+      if (!response.ok || !data?.protocol_url) {
+        throw new Error(data?.detail || "Bambu Studio-link kon niet worden gemaakt");
+      }
+      setMessage("Bambu Studio wordt geopend. Sta het openen van de app toe als je browser daarom vraagt.");
+      window.location.href = data.protocol_url;
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Bambu Studio kon niet worden geopend");
+    } finally {
+      setBusy(null);
     }
   }
 
@@ -162,13 +182,14 @@ export function ProductPrintFileManager({ product, printers }: { product: Produc
           </div>
           <div className="flex flex-wrap gap-2">
             {product.print_file_path ? (
-              <a
+              <button
                 className="inline-flex items-center justify-center rounded-md bg-brand px-4 py-2 text-sm font-black text-slate-950 hover:bg-brand/90"
-                download
-                href={`/api/products/${product.id}/print-file/download`}
+                disabled={busy !== null}
+                onClick={openInBambuStudio}
+                type="button"
               >
-                Download voor Bambu Studio
-              </a>
+                {busy === "studio" ? "Bambu Studio openen..." : "Open in Bambu Studio"}
+              </button>
             ) : null}
             <label className="inline-flex cursor-pointer items-center justify-center rounded-md border border-line bg-slate-950/35 px-4 py-2 text-sm font-black text-slate-200 hover:bg-white/5">
               {uploading ? "Uploaden..." : filename ? "Bestand vervangen" : "Printbestand kiezen"}
@@ -190,22 +211,33 @@ export function ProductPrintFileManager({ product, printers }: { product: Produc
           <StatusBadge status={product.print_file_path ? "klaar" : "bestand ontbreekt"} />
         </div>
         <div className="mt-4 grid gap-3 md:grid-cols-3">
-          <WorkflowStep number="1" title="Download" description="Download het gekoppelde .gcode.3mf bestand." />
-          <WorkflowStep number="2" title="Open en controleer" description="Open het bestand in Bambu Studio en controleer printer, plate, kleur, materiaal en AMS." />
+          <WorkflowStep number="1" title="Open Bambu Studio" description="De site geeft het gekoppelde bestand via een tijdelijk beveiligde link aan Bambu Studio door." />
+          <WorkflowStep number="2" title="Sta openen toe" description="Bevestig de browsermelding en daarna eventueel de melding over deze lokale website." />
           <WorkflowStep number="3" title="Print plate" description="Start de opdracht vanuit Bambu Studio. Verwerk daarna het resultaat in Printplanning." />
         </div>
         <div className="mt-4 flex flex-wrap gap-3">
           {product.print_file_path ? (
-            <a className="rounded-md bg-brand px-4 py-2 text-sm font-black text-slate-950 hover:bg-brand/90" download href={`/api/products/${product.id}/print-file/download`}>
-              Bestand downloaden
-            </a>
+            <button
+              className="rounded-md bg-brand px-4 py-2 text-sm font-black text-slate-950 hover:bg-brand/90 disabled:opacity-60"
+              disabled={busy !== null}
+              onClick={openInBambuStudio}
+              type="button"
+            >
+              {busy === "studio" ? "Bambu Studio openen..." : "Open direct in Bambu Studio"}
+            </button>
           ) : (
             <span className="rounded-md border border-amber-400/25 bg-amber-400/10 px-4 py-2 text-sm font-bold text-amber-100">Upload eerst een printbestand</span>
           )}
           <a className="rounded-md border border-line bg-slate-950/35 px-4 py-2 text-sm font-bold text-slate-300 hover:bg-white/5" href="/printplanning">
             Naar printplanning
           </a>
+          {product.print_file_path ? (
+            <a className="rounded-md border border-line bg-slate-950/35 px-4 py-2 text-sm font-bold text-slate-300 hover:bg-white/5" download href={`/api/products/${product.id}/print-file/download`}>
+              Alleen downloaden
+            </a>
+          ) : null}
         </div>
+        <p className="mt-3 text-xs leading-5 text-slate-400">Direct openen werkt op een computer waarop Bambu Studio is geïnstalleerd en als standaardapp voor Bambu Studio-links staat ingesteld.</p>
       </div>
 
       <details className="rounded-lg border border-line bg-slate-950/25">

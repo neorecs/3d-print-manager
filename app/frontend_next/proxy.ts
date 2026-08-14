@@ -10,6 +10,7 @@ const publicPaths = [
   "/api/auth/bootstrap-admin",
   "/api/auth/change-password",
   "/api/health",
+  "/api/bambu-studio/files",
 ];
 
 function isPublicPath(pathname: string) {

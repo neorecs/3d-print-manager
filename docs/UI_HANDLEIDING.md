@@ -28,11 +28,13 @@ Dit is de aanbevolen werkwijze zolang je Bambu Cloud en Bambu Handy wilt blijven
 
 1. Open `Producten` en kies het product.
 2. Ga naar `Printbestand beheren` en upload een printklaar `.gcode.3mf` bestand als dat nog ontbreekt.
-3. Kies `Download voor Bambu Studio`.
-4. Open het gedownloade bestand in Bambu Studio.
+3. Kies `Open direct in Bambu Studio`.
+4. Sta toe dat je browser Bambu Studio opent. Bambu Studio kan daarna nog vragen of je het bestand van deze lokale website vertrouwt.
 5. Controleer printer, plate, materiaal, kleur en AMS-toewijzing.
 6. Kies in Bambu Studio `Print plate`.
 7. Ga na afloop naar `Printplanning` en verwerk het printresultaat.
+
+Werkt direct openen niet op de gebruikte computer, kies dan `Alleen downloaden` en open het bestand vanuit de downloadmap. Direct openen werkt niet op een telefoon, omdat Bambu Studio daar niet beschikbaar is.
 
 Voor meerdere printtaken maak je eerst een batch in `Printplanning`. Kies daarna `Bambu Studio-pakket`. De ZIP-download bevat de productielijst, het orderoverzicht, uitleg en alle beschikbare productprintbestanden. De ingeklapte directe LAN-printstart op de productpagina is alleen voor een printer die daar bewust voor is ingericht.
 
