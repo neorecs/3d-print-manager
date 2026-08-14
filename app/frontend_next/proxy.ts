@@ -11,6 +11,7 @@ const publicPaths = [
   "/api/auth/change-password",
   "/api/health",
   "/api/bambu-studio/files",
+  "/downloads",
 ];
 
 function isPublicPath(pathname: string) {

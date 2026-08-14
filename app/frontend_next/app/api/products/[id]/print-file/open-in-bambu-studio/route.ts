@@ -26,6 +26,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const fileUrl = new URL(`/api/bambu-studio/files/${token}/${filename}`, request.url).toString();
     return NextResponse.json({
       file_url: fileUrl,
+      launcher_url: `printmanager://open?file=${encodeURIComponent(fileUrl)}`,
       protocol_url: `bambustudio://open?file=${encodeURIComponent(fileUrl)}`,
       expires_in_seconds: 600,
     });

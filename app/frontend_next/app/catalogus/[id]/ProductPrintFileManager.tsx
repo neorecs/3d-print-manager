@@ -66,11 +66,11 @@ export function ProductPrintFileManager({ product, printers }: { product: Produc
     try {
       const response = await fetch(`/api/products/${product.id}/print-file/open-in-bambu-studio`, { method: "POST" });
       const data = await response.json().catch(() => null);
-      if (!response.ok || !data?.protocol_url) {
-        throw new Error(data?.detail || "Bambu Studio-link kon niet worden gemaakt");
+      if (!response.ok || !data?.launcher_url) {
+        throw new Error(data?.detail || "De lokale Bambu-koppeling kon niet worden gestart");
       }
-      setMessage("Bambu Studio wordt geopend. Sta het openen van de app toe als je browser daarom vraagt.");
-      window.location.href = data.protocol_url;
+      setMessage("De lokale koppeling wordt geopend. Sta dit toe als je browser daarom vraagt; Bambu Studio opent daarna automatisch.");
+      window.location.href = data.launcher_url;
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Bambu Studio kon niet worden geopend");
     } finally {
@@ -211,8 +211,8 @@ export function ProductPrintFileManager({ product, printers }: { product: Produc
           <StatusBadge status={product.print_file_path ? "klaar" : "bestand ontbreekt"} />
         </div>
         <div className="mt-4 grid gap-3 md:grid-cols-3">
-          <WorkflowStep number="1" title="Open Bambu Studio" description="De site geeft het gekoppelde bestand via een tijdelijk beveiligde link aan Bambu Studio door." />
-          <WorkflowStep number="2" title="Sta openen toe" description="Bevestig de browsermelding en daarna eventueel de melding over deze lokale website." />
+          <WorkflowStep number="1" title="Installeer eenmalig" description="Installeer op deze Windows-computer de veilige koppeling met Bambu Studio." />
+          <WorkflowStep number="2" title="Open het bestand" description="De koppeling haalt het beveiligde bestand op en opent het lokaal in Bambu Studio, zonder websitewaarschuwing." />
           <WorkflowStep number="3" title="Print plate" description="Start de opdracht vanuit Bambu Studio. Verwerk daarna het resultaat in Printplanning." />
         </div>
         <div className="mt-4 flex flex-wrap gap-3">
@@ -228,6 +228,13 @@ export function ProductPrintFileManager({ product, printers }: { product: Produc
           ) : (
             <span className="rounded-md border border-amber-400/25 bg-amber-400/10 px-4 py-2 text-sm font-bold text-amber-100">Upload eerst een printbestand</span>
           )}
+          <a
+            className="rounded-md border border-brand/40 bg-brand/10 px-4 py-2 text-sm font-bold text-brand hover:bg-brand/15"
+            download
+            href="/downloads/Installeer-Bambu-koppeling.cmd"
+          >
+            Windows-koppeling installeren
+          </a>
           <a className="rounded-md border border-line bg-slate-950/35 px-4 py-2 text-sm font-bold text-slate-300 hover:bg-white/5" href="/printplanning">
             Naar printplanning
           </a>
@@ -237,7 +244,7 @@ export function ProductPrintFileManager({ product, printers }: { product: Produc
             </a>
           ) : null}
         </div>
-        <p className="mt-3 text-xs leading-5 text-slate-400">Direct openen werkt op een computer waarop Bambu Studio is geïnstalleerd en als standaardapp voor Bambu Studio-links staat ingesteld.</p>
+        <p className="mt-3 text-xs leading-5 text-slate-400">Eenmalig per Windows-computer installeren. De launcher accepteert uitsluitend tijdelijke printbestanden van jouw eigen 3D Print Manager.</p>
       </div>
 
       <details className="rounded-lg border border-line bg-slate-950/25">

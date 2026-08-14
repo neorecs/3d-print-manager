@@ -332,9 +332,11 @@ docker-compose.yml
 De aanbevolen workflow houdt Bambu Cloud, Bambu Handy en Bambu Studio beschikbaar:
 
 1. Koppel op de productdetailpagina een door Bambu Studio voorbereid `.gcode.3mf` bestand.
-2. Kies `Open direct in Bambu Studio`. De browser vraagt toestemming om Bambu Studio te starten.
-3. Gebruik `Alleen downloaden` als Bambu Studio niet op deze computer is geïnstalleerd of de applicatielink niet is gekoppeld.
-4. Controleer printer, plate, materiaal/kleur en AMS-toewijzing en kies `Print plate`.
-5. Verwerk na afloop het printresultaat in Printplanning.
+2. Installeer eenmalig de `Windows-koppeling` op iedere computer waarmee je Bambu Studio wilt openen.
+3. Kies `Open direct in Bambu Studio` en sta toe dat de browser de lokale 3D Print Manager-koppeling opent.
+4. De koppeling downloadt en valideert het beveiligde bestand en opent het daarna lokaal in Bambu Studio.
+5. Gebruik `Alleen downloaden` als reserveoptie.
+6. Controleer printer, plate, materiaal/kleur en AMS-toewijzing en kies `Print plate`.
+7. Verwerk na afloop het printresultaat in Printplanning.
 
 Een batchpakket bevat de productielijst, het orderoverzicht, een korte handleiding en alle unieke gekoppelde printbestanden. Direct starten via LAN/MQTT staat apart als geavanceerde modus en is niet nodig voor deze cloudworkflow.
