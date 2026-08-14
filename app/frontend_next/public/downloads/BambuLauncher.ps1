@@ -2,7 +2,7 @@ param(
     [Parameter(Position = 0)]
     [string]$ProtocolUrl,
     [switch]$Install,
-    [string]$TrustedOrigin = "http://10.5.1.150:38502"
+    [string]$TrustedOrigin = "https://10.5.1.150:38503"
 )
 
 $ErrorActionPreference = "Stop"

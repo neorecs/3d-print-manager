@@ -1,7 +1,7 @@
 @echo off
 setlocal
 title 3D Print Manager - Bambu Studio koppeling
-set "SITE_URL=http://10.5.1.150:38502"
+set "SITE_URL=https://10.5.1.150:38503"
 set "INSTALL_DIR=%LOCALAPPDATA%\3DPrintManager\BambuLauncher"
 
 echo De koppeling met Bambu Studio wordt geinstalleerd...
