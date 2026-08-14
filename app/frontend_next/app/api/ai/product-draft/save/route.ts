@@ -1,6 +1,7 @@
+import { backendFetch, getBackendBaseUrl } from "@/lib/backend-auth";
 import { NextRequest, NextResponse } from "next/server";
 
-const API_BASE_URL = process.env.FRONTEND_NEXT_API_BASE_URL || process.env.API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:38080";
+const API_BASE_URL = getBackendBaseUrl();
 
 type Platform = {
   id: number;
@@ -22,7 +23,7 @@ type DraftVariant = {
 };
 
 async function backend(path: string, init?: RequestInit) {
-  const response = await fetch(`${API_BASE_URL}${path}`, {
+  const response = await backendFetch(`${API_BASE_URL}${path}`, {
     ...init,
     headers: {
       "Content-Type": "application/json",

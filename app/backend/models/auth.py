@@ -20,6 +20,7 @@ class User(TimestampMixin, Base):
     mfa_enabled: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     totp_secret_encrypted: Mapped[str | None] = mapped_column(Text, nullable=True)
     last_login_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    session_version: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
 
 
 class AuditLog(Base):

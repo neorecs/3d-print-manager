@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 
 from core.config import get_settings
 from database import get_db
+from models import User
 from schemas.common import AuthBootstrapAdmin, AuthLogin, AuthMfaConfirm, AuthMfaSetup, AuthPasswordChange, AuthPasswordReset, AuthUserCreate, AuthUserUpdate
 from services.auth_service import (
     authenticate_user,
@@ -34,6 +35,7 @@ def user_payload(user) -> dict:
         "last_login_at": user.last_login_at.isoformat() if user.last_login_at else None,
         "created_at": user.created_at.isoformat() if user.created_at else None,
         "updated_at": user.updated_at.isoformat() if user.updated_at else None,
+        "session_version": user.session_version,
     }
 
 
@@ -102,8 +104,22 @@ def users_reset_password(user_id: int, payload: AuthPasswordReset, db: Session =
 
 
 @router.post("/change-password")
-def change_password(payload: AuthPasswordChange, db: Session = Depends(get_db)) -> dict:
-    user = change_own_password(db, payload.email, payload.current_password, payload.new_password)
+def change_password(payload: AuthPasswordChange, request: Request, db: Session = Depends(get_db)) -> dict:
+    user = change_own_password(db, request.state.user_email, payload.current_password, payload.new_password)
+    return {"user": user_payload(user)}
+
+
+@router.get("/bootstrap-status")
+def bootstrap_status(db: Session = Depends(get_db)) -> dict:
+    settings = get_settings()
+    return {"available": bool(settings.auth_bootstrap_secret) and not has_admin_user(db)}
+
+
+@router.get("/session/validate")
+def validate_session(request: Request, db: Session = Depends(get_db)) -> dict:
+    user = db.get(User, request.state.user_id)
+    if not user:
+        raise HTTPException(status_code=401, detail="Gebruiker niet gevonden.")
     return {"user": user_payload(user)}
 
 
@@ -119,11 +135,11 @@ def audit_logs(limit: int = 100, db: Session = Depends(get_db)) -> list[dict]:
 
 
 @router.post("/mfa/setup")
-def mfa_setup(payload: AuthMfaSetup, db: Session = Depends(get_db)) -> dict:
-    return start_mfa_setup(db, payload.email, payload.password)
+def mfa_setup(payload: AuthMfaSetup, request: Request, db: Session = Depends(get_db)) -> dict:
+    return start_mfa_setup(db, request.state.user_email, payload.password)
 
 
 @router.post("/mfa/confirm")
-def mfa_confirm(payload: AuthMfaConfirm, db: Session = Depends(get_db)) -> dict:
-    user = confirm_mfa_setup(db, payload.email, payload.password, payload.code)
+def mfa_confirm(payload: AuthMfaConfirm, request: Request, db: Session = Depends(get_db)) -> dict:
+    user = confirm_mfa_setup(db, request.state.user_email, payload.password, payload.code)
     return {"user": user_payload(user)}

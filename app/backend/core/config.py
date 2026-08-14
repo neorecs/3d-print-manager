@@ -16,6 +16,8 @@ class Settings(BaseSettings):
     upload_accounting_max_bytes: int = 25 * 1024 * 1024
     upload_print_file_max_bytes: int = 500 * 1024 * 1024
     auth_bootstrap_secret: str | None = None
+    auth_secret: str | None = None
+    backend_internal_token: str | None = None
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 

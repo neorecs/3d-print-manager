@@ -72,6 +72,11 @@ export default async function SettingsPage() {
               detail="Echte tokens worden alleen veilig opgeslagen met CREDENTIAL_ENCRYPTION_KEY."
             />
             <CheckRow
+              label="Backend afgeschermd"
+              ok={readiness.internal_api_configured && readiness.session_signing_configured}
+              detail="Alle backendaanvragen vereisen een interne sleutel en een actuele gebruikerssessie."
+            />
+            <CheckRow
               label="Database ingesteld"
               ok={readiness.database_reachable}
               detail="De app voert een echte verbindingscontrole met PostgreSQL uit."
@@ -92,9 +97,19 @@ export default async function SettingsPage() {
               detail="De laatste backup van foto's, documenten en printbestanden mag maximaal 48 uur oud zijn."
             />
             <CheckRow
+              label="Hersteltest recent"
+              ok={readiness.restore_test_recent}
+              detail="Database en uploads zijn in de afgelopen 90 dagen gezamenlijk teruggezet en gecontroleerd."
+            />
+            <CheckRow
               label="Database-login"
               ok={readiness.auth_enabled && readiness.auth_backend_login}
               detail="De hoofdinterface gebruikt ingeschakelde databaseaccounts voor toegang."
+            />
+            <CheckRow
+              label="HTTPS-sessie"
+              ok={readiness.secure_cookie_enabled}
+              detail="Voor externe toegang moeten HTTPS en secure cookies actief zijn."
             />
             <CheckRow
               label="Backupplan aanwezig"

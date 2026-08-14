@@ -11,6 +11,11 @@ from services.bambu_studio_service import (
 
 router = APIRouter()
 
+
+@router.get("/product-publications")
+def list_all_product_publications(db: Session = Depends(get_db)):
+    return list_rows(db.scalars(select(ProductPlatformPublication).order_by(ProductPlatformPublication.id)).all())
+
 @router.get("/products")
 def list_products(db: Session = Depends(get_db)):
     return list_rows(db.scalars(select(Product).order_by(Product.id)).all())

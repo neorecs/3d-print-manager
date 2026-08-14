@@ -4,7 +4,7 @@ Centrale beheerlaag voor 3D-printactiviteiten: producten, platformpublicaties, o
 
 ## Status
 
-Versie 0.13 live-hardening:
+Versie 0.14 beveiliging, gegevensintegriteit en UX-hardening:
 
 - FastAPI backend
 - PostgreSQL database
@@ -77,11 +77,16 @@ Versie 0.13 live-hardening:
 - Daglimiet en gebruiksregistratie voor betaalde AI-aanvragen
 - Begrensde uploads per bestandstype
 - Dagelijkse backup van PostgreSQL en de permanente uploadopslag
-- Live-readiness op basis van werkelijk recente database- en bestandsbackups
+- Live-readiness op basis van werkelijk recente database-, bestandsbackups en hersteltests
+- Backend alleen toegankelijk via de interne frontendverbinding en een geldige, intrekbare gebruikerssessie
+- Productmedia, documenten en printbestanden via beveiligde downloadroutes
+- Traceerbare handmatige voorraadwijzigingen met gebruiker, bron en voor/na-standen
+- Cent-nauwkeurige btw-berekening en blokkade op boeken in afgesloten btw-perioden
+- Gepagineerde product- en orderoverzichten en een volledig doorklikbaar dashboard
 - Cloudvriendelijke Bambu Studio-workflow als standaard: downloaden, controleren en vanuit Bambu Studio printen
 - Directe Bambu-printstart via LAN blijft als ingeklapte geavanceerde optie beschikbaar
 
-Uploads worden lokaal opgeslagen onder `app/backend/uploads/` en via de API geserveerd onder `/uploads/...`. Deze map staat in `.gitignore`.
+Uploads worden lokaal opgeslagen onder `app/backend/uploads/` en alleen na sessiecontrole via `/secure-files/...` geserveerd. Deze map staat in `.gitignore`.
 
 Platformpublicaties kunnen een eigen fotoselectie gebruiken. Als er geen platformselectie is ingesteld, gebruikt de publicatie automatisch de centrale productfoto's op productvolgorde.
 
@@ -115,23 +120,26 @@ Er zijn tijdelijk twee frontends:
 - `app/frontend_streamlit`: bestaande prototype/fallback UI.
 - `app/frontend_next`: nieuwe officiële React/Next.js frontend.
 
-De Next.js frontend gebruikt de FastAPI backend via:
+De Next.js server gebruikt de FastAPI backend intern via:
 
 ```env
-NEXT_PUBLIC_API_BASE_URL=http://localhost:38080
+API_BASE_URL=http://backend:8000
+BACKEND_INTERNAL_TOKEN=een-lange-willekeurige-waarde
 ```
 
 Streamlit blijft beschikbaar als fallback. Nieuwe productiewaardige schermen en verbeteringen horen in Next.js. De uitfaseringslijst staat in `docs/STREAMLIT_UITFASERING.md`.
 
 ## NAS Next.js stack
 
-`docker-compose.next-nas.yml` draait de Next.js frontend samen met een private Git-managed backendservice. Die backend publiceert geen eigen poort en is bedoeld voor de nieuwe Next.js UI. De oudere publieke backend op poort `38080` kan tijdelijk blijven bestaan voor bestaande links en fallback-schermen.
+`docker-compose.next-nas.yml` draait de Next.js frontend samen met een private backendservice. Die backend publiceert geen eigen poort. De browser communiceert uitsluitend met Next.js; Next.js voegt de interne backend-identiteit en gebruikerssessie toe.
 
 Voor NAS-deploy zijn minimaal deze environment variables nodig in Dockhand:
 
 ```env
 DATABASE_URL=
 CREDENTIAL_ENCRYPTION_KEY=
+AUTH_SECRET=
+BACKEND_INTERNAL_TOKEN=
 ```
 
 Zet secrets niet in Git. De Next.js service gebruikt intern standaard `http://backend:8000`.
@@ -156,11 +164,11 @@ AUTH_SECRET=
 AUTH_ADMIN_EMAIL=
 AUTH_ADMIN_NAME=Beheerder
 AUTH_ADMIN_PASSWORD=
-AUTH_BACKEND_LOGIN=false
+AUTH_BACKEND_LOGIN=true
 AUTH_COOKIE_SECURE=false
 ```
 
-Gebruik een lange willekeurige waarde voor `AUTH_SECRET` en een sterk adminwachtwoord. De login beschermt de Next.js pagina's en Next.js API-routes en beperkt herhaalde loginpogingen; houd de FastAPI backend daarnaast alleen intern bereikbaar. Zet `AUTH_ENABLED=false` alleen bewust voor lokale ontwikkeling of tijdelijke diagnose.
+Gebruik verschillende lange willekeurige waarden voor `AUTH_SECRET` en `BACKEND_INTERNAL_TOKEN`. De frontend valideert iedere beschermde sessie tegen de database. Wachtwoord-, rol-, MFA- en accountwijzigingen trekken bestaande sessies direct in.
 
 In de NAS-compose valt `AUTH_SECRET` tijdelijk terug op `CREDENTIAL_ENCRYPTION_KEY` als er nog geen losse `AUTH_SECRET` is ingesteld. Voor productie heeft een aparte lange `AUTH_SECRET` de voorkeur.
 
@@ -232,11 +240,22 @@ De huidige suite controleert onder andere:
 - Bambu-preflight blokkeert starten zonder gekoppeld remote uploadbestand;
 - AI-daglimiet en tokenregistratie.
 
-Voor een snelle containercheck van alleen de auth/loginbasis:
+Voor de volledige backend-suite in een schone testcontainer:
 
 ```powershell
 docker compose -f docker-compose.test.yml run --rm backend_tests
 ```
+
+De frontend bouw- en rooktest draait met:
+
+```powershell
+Set-Location app/frontend_next
+npm install
+npm run build
+node scripts/smoke-test.mjs
+```
+
+De uitgevoerde auditmaatregelen staan in `docs/AUDIT_13_AANBEVELINGEN.md`.
 
 De tests zijn opgesplitst per domein:
 

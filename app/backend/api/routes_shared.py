@@ -6,7 +6,7 @@ import uuid
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Response, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Request, Response, UploadFile
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -88,6 +88,7 @@ from services.accounting_service import (
     create_accounting_sale_from_order,
     csv_download,
     fill_vat_amounts,
+    ensure_accounting_date_open,
     get_filament_price_per_gram,
     parse_date_range,
     parse_optional_date,
@@ -106,12 +107,14 @@ from publishing.service import (
 from inventory.service import (
     add_inventory_movement,
     adjust_product_inventory as adjust_inventory_stock,
+    create_product_inventory as create_inventory_record,
     inventory_snapshot,
     link_order_item_by_sku,
     list_product_inventory_rows,
     process_order_inventory as process_order_inventory_service,
     release_product_inventory as release_inventory_stock,
     reserve_product_inventory as reserve_inventory_stock,
+    replace_product_inventory as replace_inventory_record,
 )
 from services.dummy_data import seed_dummy_data
 

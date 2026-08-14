@@ -60,5 +60,13 @@ export async function POST(request: NextRequest) {
     role: result.role,
     must_change_password: Boolean(result.mustChangePassword),
   });
-  return setSessionCookie(response, result.email, result.name, result.role, Boolean(result.mustChangePassword));
+  return setSessionCookie(
+    response,
+    result.email,
+    result.name,
+    result.role,
+    Boolean(result.mustChangePassword),
+    result.userId,
+    result.sessionVersion,
+  );
 }

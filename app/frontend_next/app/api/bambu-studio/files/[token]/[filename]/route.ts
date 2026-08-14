@@ -1,8 +1,9 @@
+import { backendFetch, getBackendBaseUrl } from "@/lib/backend-auth";
 import { NextRequest } from "next/server";
 
 import { verifyBambuStudioFileToken } from "@/lib/bambuStudioLaunch";
 
-const API_BASE_URL = process.env.FRONTEND_NEXT_API_BASE_URL || process.env.API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:38080";
+const API_BASE_URL = getBackendBaseUrl();
 
 export const dynamic = "force-dynamic";
 
@@ -30,7 +31,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   preparedUrl.searchParams.set("printer_id", String(printerId));
   preparedUrl.searchParams.set("ams_id", String(amsId));
   preparedUrl.searchParams.set("tray_id", String(trayId));
-  const response = await fetch(preparedUrl, { cache: "no-store" });
+  const response = await backendFetch(preparedUrl, { cache: "no-store" });
   if (!response.ok) {
     const data = await response.json().catch(() => null);
     return Response.json(data || { detail: "Printbestand kon niet worden opgehaald" }, { status: response.status });

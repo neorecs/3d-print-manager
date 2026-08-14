@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class PlatformCreate(BaseModel):
@@ -295,10 +295,10 @@ class FilamentSpoolCreate(BaseModel):
     brand: str
     material: str
     color: str
-    initial_weight_grams: float
-    remaining_weight_grams: float
-    purchase_price: float
-    minimum_remaining_grams: float = 100
+    initial_weight_grams: float = Field(gt=0)
+    remaining_weight_grams: float = Field(ge=0)
+    purchase_price: float = Field(ge=0)
+    minimum_remaining_grams: float = Field(default=100, ge=0)
     location: str | None = None
     active: bool = True
 
@@ -309,21 +309,21 @@ class PrintJobCreate(BaseModel):
     product_variant_id: int
     color: str | None = None
     material: str | None = None
-    quantity_needed: int = 0
-    quantity_planned: int = 0
-    quantity_succeeded: int = 0
-    quantity_failed: int = 0
-    quantity_to_order: int = 0
-    quantity_to_inventory: int = 0
-    estimated_print_time_minutes: int | None = None
-    estimated_filament_grams: int | None = None
+    quantity_needed: int = Field(default=0, ge=0)
+    quantity_planned: int = Field(default=0, ge=0)
+    quantity_succeeded: int = Field(default=0, ge=0)
+    quantity_failed: int = Field(default=0, ge=0)
+    quantity_to_order: int = Field(default=0, ge=0)
+    quantity_to_inventory: int = Field(default=0, ge=0)
+    estimated_print_time_minutes: int | None = Field(default=None, ge=0)
+    estimated_filament_grams: int | None = Field(default=None, ge=0)
     status: str = "nieuw"
 
 
 class PrintJobComplete(BaseModel):
-    quantity_succeeded: int
-    quantity_failed: int = 0
-    quantity_to_order: int | None = None
+    quantity_succeeded: int = Field(ge=0)
+    quantity_failed: int = Field(default=0, ge=0)
+    quantity_to_order: int | None = Field(default=None, ge=0)
 
 
 class PrintJobBambuStudioOpen(BaseModel):

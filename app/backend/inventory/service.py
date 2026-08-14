@@ -40,6 +40,65 @@ def list_product_inventory_rows(db: Session) -> list[dict]:
     return rows
 
 
+def create_product_inventory(db: Session, values: dict, performed_by: str = "system") -> dict:
+    validate_inventory_values(values)
+    inventory = ProductInventory(**values)
+    db.add(inventory)
+    db.flush()
+    if inventory.quantity_on_hand or inventory.quantity_reserved:
+        before = {"quantity_on_hand": 0, "quantity_reserved": 0, "free_stock": 0}
+        add_inventory_movement(
+            db,
+            inventory,
+            "correctie",
+            inventory.quantity_on_hand,
+            before=before,
+            source="inventory_creation",
+            reason="Beginvoorraad geregistreerd",
+            performed_by=performed_by,
+        )
+    db.commit()
+    db.refresh(inventory)
+    return to_dict(inventory)
+
+
+def replace_product_inventory(db: Session, inventory_id: int, values: dict, performed_by: str = "system") -> dict:
+    validate_inventory_values(values)
+    inventory = db.scalar(select(ProductInventory).where(ProductInventory.id == inventory_id).with_for_update())
+    if not inventory:
+        raise HTTPException(status_code=404, detail="ProductInventory not found")
+    if values["product_variant_id"] != inventory.product_variant_id:
+        raise HTTPException(status_code=400, detail="De productvariant van een voorraadregel kan niet worden gewijzigd")
+    before = inventory_snapshot(inventory)
+    for key, value in values.items():
+        setattr(inventory, key, value)
+    after = inventory_snapshot(inventory)
+    if before != after:
+        add_inventory_movement(
+            db,
+            inventory,
+            "correctie",
+            after["quantity_on_hand"] - before["quantity_on_hand"],
+            before=before,
+            source="inventory_editor",
+            reason="Voorraadregel handmatig bijgewerkt",
+            performed_by=performed_by,
+        )
+    db.commit()
+    db.refresh(inventory)
+    data = to_dict(inventory)
+    data["free_stock"] = inventory.free_stock
+    return data
+
+
+def validate_inventory_values(values: dict) -> None:
+    on_hand = int(values.get("quantity_on_hand", 0))
+    reserved = int(values.get("quantity_reserved", 0))
+    minimum = int(values.get("minimum_stock_level", 0))
+    if on_hand < 0 or reserved < 0 or minimum < 0 or reserved > on_hand:
+        raise HTTPException(status_code=400, detail="Voorraad, reserveringen en minimum moeten geldig en niet-negatief zijn")
+
+
 def inventory_snapshot(inventory: ProductInventory) -> dict[str, int]:
     return {
         "quantity_on_hand": inventory.quantity_on_hand,
@@ -189,7 +248,7 @@ def process_order_item_inventory(db: Session, item: OrderItem) -> dict:
     return data
 
 
-def adjust_product_inventory(db: Session, inventory: ProductInventory, quantity: int) -> dict:
+def adjust_product_inventory(db: Session, inventory: ProductInventory, quantity: int, performed_by: str = "system") -> dict:
     inventory = db.scalar(select(ProductInventory).where(ProductInventory.id == inventory.id).with_for_update())
     if not inventory:
         raise HTTPException(status_code=404, detail="ProductInventory not found")
@@ -208,12 +267,13 @@ def adjust_product_inventory(db: Session, inventory: ProductInventory, quantity:
         before=before,
         source="manual_inventory_adjustment",
         reason="Handmatige voorraadcorrectie",
+        performed_by=performed_by,
     )
     db.commit()
     return to_dict(inventory)
 
 
-def reserve_product_inventory(db: Session, inventory: ProductInventory, quantity: int) -> dict:
+def reserve_product_inventory(db: Session, inventory: ProductInventory, quantity: int, performed_by: str = "system") -> dict:
     inventory = db.scalar(select(ProductInventory).where(ProductInventory.id == inventory.id).with_for_update())
     if not inventory:
         raise HTTPException(status_code=404, detail="ProductInventory not found")
@@ -230,27 +290,30 @@ def reserve_product_inventory(db: Session, inventory: ProductInventory, quantity
         before=before,
         source="manual_inventory_reservation",
         reason="Handmatige reservering",
+        performed_by=performed_by,
     )
     db.commit()
     return to_dict(inventory)
 
 
-def release_product_inventory(db: Session, inventory: ProductInventory, quantity: int) -> dict:
+def release_product_inventory(db: Session, inventory: ProductInventory, quantity: int, performed_by: str = "system") -> dict:
     inventory = db.scalar(select(ProductInventory).where(ProductInventory.id == inventory.id).with_for_update())
     if not inventory:
         raise HTTPException(status_code=404, detail="ProductInventory not found")
     validate_positive_quantity(quantity)
+    if inventory.quantity_reserved < quantity:
+        raise HTTPException(status_code=400, detail="Er is minder voorraad gereserveerd dan je probeert vrij te geven")
     before = inventory_snapshot(inventory)
-    inventory.quantity_reserved = max(0, inventory.quantity_reserved - quantity)
-    released = before["quantity_reserved"] - inventory.quantity_reserved
+    inventory.quantity_reserved -= quantity
     add_inventory_movement(
         db,
         inventory,
         "reservering_vrijgegeven",
-        released,
+        quantity,
         before=before,
         source="manual_inventory_release",
         reason="Handmatige reservering vrijgegeven",
+        performed_by=performed_by,
     )
     db.commit()
     return to_dict(inventory)

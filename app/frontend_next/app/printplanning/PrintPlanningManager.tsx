@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { StatusBadge } from "@/components/StatusBadge";
 import { BambuStudioOpenAction } from "@/components/BambuStudioOpenAction";
-import { formatMinutes } from "@/lib/api";
+import { formatMinutes } from "@/lib/format";
 import type { BambuPrinter, Order, OrderItem, PrintBatch, PrintJob, Product, ProductVariant } from "@/lib/types";
 
 type JobDraft = {
@@ -143,8 +143,8 @@ export function PrintPlanningManager({
         const quantity = job.quantity_planned || job.quantity_needed || 1;
         group.jobs.push(job);
         group.quantity += quantity;
-        group.minutes += Number(job.estimated_print_time_minutes || 0) * quantity;
-        group.filament += Number(job.estimated_filament_grams || 0) * quantity;
+        group.minutes += Number(job.estimated_print_time_minutes || 0);
+        group.filament += Number(job.estimated_filament_grams || 0);
         grouped.set(key, group);
       });
     return Array.from(grouped.values()).sort((a, b) => b.jobs.length - a.jobs.length || a.material.localeCompare(b.material));

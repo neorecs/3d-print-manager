@@ -8,7 +8,8 @@ import { BambuStudioOpenAction } from "@/components/BambuStudioOpenAction";
 import { formatCurrency, formatMinutes, getProductCatalogData } from "@/lib/api";
 import type { ProductCatalogData, ProductCatalogRow } from "@/lib/types";
 
-export default async function CatalogPage() {
+export default async function CatalogPage({ searchParams }: { searchParams: Promise<{ page?: string }> }) {
+  const requestedPage = Math.max(1, Number((await searchParams).page || 1) || 1);
   let data: ProductCatalogData | null = null;
   let error: string | null = null;
 
@@ -34,7 +35,7 @@ export default async function CatalogPage() {
           </div>
         }
       />
-      {error || !data ? <CatalogError message={error || "Geen catalogusdata beschikbaar"} /> : <CatalogContent data={data} />}
+      {error || !data ? <CatalogError message={error || "Geen catalogusdata beschikbaar"} /> : <CatalogContent data={data} requestedPage={requestedPage} />}
     </AppShell>
   );
 }
@@ -47,7 +48,7 @@ function CatalogError({ message }: { message: string }) {
   );
 }
 
-function CatalogContent({ data }: { data: ProductCatalogData }) {
+function CatalogContent({ data, requestedPage }: { data: ProductCatalogData; requestedPage: number }) {
   const activeProducts = data.rows.filter((row) => row.product.active !== false);
   const lowStock = data.rows.filter((row) =>
     row.inventory.some((item) => item.quantity_on_hand - item.quantity_reserved <= item.minimum_stock_level),
@@ -58,6 +59,10 @@ function CatalogContent({ data }: { data: ProductCatalogData }) {
     const cost = Number(variant.cost_price || 0);
     return total + Math.max(price - cost, 0);
   }, 0);
+  const pageSize = 20;
+  const pageCount = Math.max(1, Math.ceil(data.rows.length / pageSize));
+  const page = Math.min(requestedPage, pageCount);
+  const visibleRows = data.rows.slice((page - 1) * pageSize, page * pageSize);
 
   return (
     <div className="space-y-6">
@@ -72,19 +77,26 @@ function CatalogContent({ data }: { data: ProductCatalogData }) {
       <SectionCard title="Productbeheer" description="Scan productfoto, SKU, voorraad, printtijd, materiaal, prijzen, marge en verkoopkanalen in een overzicht.">
         {data.rows.length ? (
           <div className="grid gap-4 xl:grid-cols-2">
-            {data.rows.map((row) => (
-              <ProductCard key={row.product.id} row={row} printers={data.printers} />
+            {visibleRows.map((row) => (
+              <ProductCard key={row.product.id} row={row} printers={data.printers} platforms={data.platforms} />
             ))}
           </div>
         ) : (
           <EmptyState title="Nog geen producten" description="Maak je eerste product aan of gebruik de AI Product Assistent voor een concept." />
         )}
+        {pageCount > 1 ? (
+          <div className="mt-5 flex items-center justify-between border-t border-line pt-4 text-sm font-bold">
+            <a className={`rounded-md border border-line px-3 py-2 ${page === 1 ? "pointer-events-none opacity-40" : "hover:border-brand"}`} href={`/catalogus?page=${page - 1}`}>Vorige</a>
+            <span className="text-muted">Pagina {page} van {pageCount}</span>
+            <a className={`rounded-md border border-line px-3 py-2 ${page === pageCount ? "pointer-events-none opacity-40" : "hover:border-brand"}`} href={`/catalogus?page=${page + 1}`}>Volgende</a>
+          </div>
+        ) : null}
       </SectionCard>
     </div>
   );
 }
 
-function ProductCard({ row, printers }: { row: ProductCatalogRow; printers: ProductCatalogData["printers"] }) {
+function ProductCard({ row, printers, platforms }: { row: ProductCatalogRow; printers: ProductCatalogData["printers"]; platforms: ProductCatalogData["platforms"] }) {
   const primaryVariant = row.variants[0];
   const freeStock = row.inventory.reduce(
     (total, item) => total + Math.max(Number(item.quantity_on_hand || 0) - Number(item.quantity_reserved || 0), 0),
@@ -93,9 +105,10 @@ function ProductCard({ row, printers }: { row: ProductCatalogRow; printers: Prod
   const minimumStock = row.inventory.reduce((total, item) => total + Number(item.minimum_stock_level || 0), 0);
   const price = Number(primaryVariant?.default_sale_price || 0);
   const cost = Number(primaryVariant?.cost_price || 0);
-  const margin = price ? Math.round(((price - cost) / price) * 100) : 0;
+  const margin = price && cost ? Math.round(((price - cost) / price) * 100) : null;
   const sku = primaryVariant?.sku || `PRD-${String(row.product.id).padStart(4, "0")}`;
-  const channels = row.publications.length ? row.publications.map((publication) => `Platform ${publication.platform_id}`).join(", ") : "Nog niet gekoppeld";
+  const platformNames = new Map(platforms.map((platform) => [platform.id, platform.name]));
+  const channels = row.publications.length ? row.publications.map((publication) => platformNames.get(publication.platform_id) || "Onbekend kanaal").join(", ") : "Nog niet gekoppeld";
 
   return (
     <article className="rounded-2xl border border-line bg-panelSoft p-4 shadow-card">
@@ -125,7 +138,7 @@ function ProductCard({ row, printers }: { row: ProductCatalogRow; printers: Prod
         <Small label="Voorraad" value={`${freeStock} / min ${minimumStock}`} />
         <Small label="Printtijd" value={primaryVariant?.estimated_print_time_minutes ? formatMinutes(primaryVariant.estimated_print_time_minutes) : "-"} />
         <Small label="Filament" value={`${primaryVariant?.material || "-"} ${primaryVariant?.color || ""}`.trim()} />
-        <Small label="Marge" value={price ? `${margin}%` : "-"} />
+        <Small label="Marge" value={margin !== null ? `${margin}%` : "Nog te berekenen"} />
         <Small label="Kostprijs" value={cost ? formatCurrency(cost) : "-"} />
         <Small label="Verkoopprijs" value={price ? formatCurrency(price) : "-"} />
         <Small label="Printbestand" value={row.product.print_file_path ? "Gekoppeld" : "Ontbreekt"} />

@@ -1,6 +1,7 @@
+import { backendFetch, getBackendBaseUrl } from "@/lib/backend-auth";
 import { NextRequest, NextResponse } from "next/server";
 
-const API_BASE_URL = process.env.FRONTEND_NEXT_API_BASE_URL || process.env.API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:38080";
+const API_BASE_URL = getBackendBaseUrl();
 const allowedActions = new Set(["publish", "sync", "pause"]);
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -12,7 +13,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     return NextResponse.json({ detail: "Onbekende publicatieactie" }, { status: 400 });
   }
 
-  const response = await fetch(`${API_BASE_URL}/product-publications/${id}/${action}`, {
+  const response = await backendFetch(`${API_BASE_URL}/product-publications/${id}/${action}`, {
     method: "POST",
   });
 

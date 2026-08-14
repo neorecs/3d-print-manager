@@ -44,13 +44,15 @@ import {
   VatPeriod,
   VatSummary,
 } from "./types";
+import { backendFetch, getBackendBaseUrl } from "./backend-auth";
+export { formatCurrency, formatMinutes } from "./format";
 
 function getApiBaseUrl() {
-  return process.env.FRONTEND_NEXT_API_BASE_URL || process.env.API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:38080";
+  return getBackendBaseUrl();
 }
 
 async function apiGet<T>(path: string): Promise<T> {
-  const response = await fetch(`${getApiBaseUrl()}${path}`, {
+  const response = await backendFetch(`${getApiBaseUrl()}${path}`, {
     cache: "no-store",
   });
 
@@ -62,31 +64,32 @@ async function apiGet<T>(path: string): Promise<T> {
 }
 
 export async function getDashboardData(): Promise<DashboardData> {
-  const [products, platforms, orders, inventory, filament, printJobs, recommendations] = await Promise.all([
+  const [products, platforms, orders, orderItems, variants, inventory, filament, printJobs, recommendations, printers, publications] = await Promise.all([
     apiGet<Product[]>("/products"),
     apiGet<Platform[]>("/platforms"),
     apiGet<Order[]>("/orders"),
+    apiGet<OrderItem[]>("/order-items"),
+    apiGet<ProductVariant[]>("/product-variants"),
     apiGet<ProductInventory[]>("/inventory/products"),
     apiGet<FilamentSpool[]>("/filament"),
     apiGet<PrintJob[]>("/print-jobs"),
     apiGet<StockRecommendation[]>("/stock-recommendations"),
+    apiGet<BambuPrinter[]>("/bambu/printers").catch(() => []),
+    apiGet<ProductPublication[]>("/product-publications"),
   ]);
-
-  const publicationsNested = await Promise.all(
-    products.slice(0, 30).map((product) =>
-      apiGet<ProductPublication[]>(`/products/${product.id}/publications`).catch(() => []),
-    ),
-  );
 
   return {
     products,
     platforms,
     orders,
+    orderItems,
+    variants,
     inventory,
     filament,
     printJobs,
     recommendations,
-    publications: publicationsNested.flat(),
+    publications,
+    printers,
   };
 }
 
@@ -99,10 +102,7 @@ export async function getProductCatalogData(): Promise<ProductCatalogData> {
     apiGet<BambuPrinter[]>("/bambu/printers").catch(() => []),
   ]);
 
-  const publicationsNested = await Promise.all(
-    products.map((product) => apiGet<ProductPublication[]>(`/products/${product.id}/publications`).catch(() => [])),
-  );
-  const publications = publicationsNested.flat();
+  const publications = await apiGet<ProductPublication[]>("/product-publications");
 
   return {
     products,
@@ -347,14 +347,18 @@ export async function getSystemReadiness(): Promise<SystemReadiness> {
       connectors_live_mode: false,
       live_calls_blocked: true,
       credential_encryption_configured: false,
+      internal_api_configured: false,
+      session_signing_configured: false,
       database_configured: false,
       database_reachable: false,
       upload_storage_writable: false,
       upload_backup_configured: false,
       database_backup_recent: false,
       upload_backup_recent: false,
+      restore_test_recent: false,
       auth_enabled: false,
       auth_backend_login: false,
+      secure_cookie_enabled: false,
       ai_enabled: false,
       ai_configured: false,
       openai_model: "onbekend",
@@ -366,22 +370,4 @@ export async function getSystemReadiness(): Promise<SystemReadiness> {
       next_checks: ["Controleer of backend en database draaien."],
     };
   }
-}
-
-export function formatCurrency(value?: number | null) {
-  return new Intl.NumberFormat("nl-NL", {
-    style: "currency",
-    currency: "EUR",
-    maximumFractionDigits: 2,
-  }).format(value || 0);
-}
-
-export function formatMinutes(value: number) {
-  if (value < 60) {
-    return `${value} min`;
-  }
-
-  const hours = Math.floor(value / 60);
-  const minutes = value % 60;
-  return minutes ? `${hours}u ${minutes}m` : `${hours}u`;
 }

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { getSessionFromRequest, authIsEnabled } from "./lib/auth";
+import { AUTH_COOKIE_NAME, authIsEnabled, validateBackendSession, verifySessionToken } from "./lib/auth";
 
 const publicPaths = [
   "/login",
@@ -8,6 +8,7 @@ const publicPaths = [
   "/api/auth/logout",
   "/api/auth/session",
   "/api/auth/bootstrap-admin",
+  "/api/auth/bootstrap-status",
   "/api/auth/change-password",
   "/api/health",
   "/api/bambu-studio/files",
@@ -48,7 +49,9 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  const session = await getSessionFromRequest(request);
+  const rawToken = request.cookies.get(AUTH_COOKIE_NAME)?.value;
+  const signedSession = await verifySessionToken(rawToken);
+  const session = signedSession && rawToken ? await validateBackendSession(rawToken, signedSession) : null;
   if (session) {
     const deniedMessage = roleDenied(request, session.role);
     if (deniedMessage) {

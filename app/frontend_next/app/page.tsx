@@ -8,13 +8,6 @@ import { StatusBadge } from "@/components/StatusBadge";
 import { formatCurrency, formatMinutes, getDashboardData } from "@/lib/api";
 import type { DashboardData } from "@/lib/types";
 
-const printerMock = [
-  { name: "X1C Farm 01", status: "print bezig", progress: 68, task: "Dumpling Rood batch", tone: "blue" as const },
-  { name: "P1S Farm 02", status: "beschikbaar", progress: 0, task: "Wacht op batch", tone: "green" as const },
-  { name: "A1 Mini 03", status: "aandacht nodig", progress: 34, task: "Keychain set", tone: "amber" as const },
-  { name: "P1P 04", status: "offline", progress: 0, task: "Geen verbinding", tone: "slate" as const },
-];
-
 export default async function DashboardPage() {
   let data: DashboardData | null = null;
   let error: string | null = null;
@@ -52,34 +45,66 @@ function DashboardContent({ data }: { data: DashboardData }) {
     return new Date(order.order_date).toDateString() === new Date().toDateString();
   });
   const openPrintJobs = data.printJobs.filter((job) => !["verwerkt", "geannuleerd"].includes(job.status || ""));
-  const printingJobs = openPrintJobs.filter((job) => ["bezig", "gepland", "nieuw"].includes(job.status || ""));
   const lowInventory = data.inventory.filter((item) => item.quantity_on_hand - item.quantity_reserved <= item.minimum_stock_level);
   const lowFilament = data.filament.filter((item) => item.active && item.remaining_weight_grams <= item.minimum_remaining_grams);
   const syncNeeded = data.publications.filter((publication) => publication.publication_status === "synchronisatie_nodig");
-  const revenue = data.orders.reduce((total, order) => total + Number(order.total_amount || 0), 0);
-  const inventoryValue = data.inventory.reduce((total, item) => total + Math.max(item.quantity_on_hand - item.quantity_reserved, 0) * 12.5, 0);
-  const estimatedPrintMinutes = openPrintJobs.reduce(
-    (total, job) => total + Number(job.estimated_print_time_minutes || 0) * Math.max(job.quantity_planned || job.quantity_needed || 1, 1),
+  const now = new Date();
+  const monthOrders = data.orders.filter((order) => {
+    if (!order.order_date) return false;
+    const orderDate = new Date(order.order_date);
+    return orderDate.getFullYear() === now.getFullYear() && orderDate.getMonth() === now.getMonth();
+  });
+  const revenue = monthOrders.reduce((total, order) => total + Number(order.total_amount || 0), 0);
+  const variantById = new Map(data.variants.map((variant) => [variant.id, variant]));
+  const inventoryValue = data.inventory.reduce(
+    (total, item) => total + Math.max(item.quantity_on_hand - item.quantity_reserved, 0) * Number(variantById.get(item.product_variant_id)?.cost_price || 0),
     0,
   );
-  const productBars = data.products.slice(0, 5).map((product, index) => ({
-    label: product.internal_title || product.name,
-    value: Math.max(12 - index * 2, 3),
-    note: `${Math.max(12 - index * 2, 3)} orders`,
-    href: `/catalogus/${product.id}`,
-  }));
+  const estimatedPrintMinutes = openPrintJobs.reduce(
+    (total, job) => total + Number(job.estimated_print_time_minutes || 0),
+    0,
+  );
+  const soldByProduct = new Map<number, number>();
+  data.orderItems.forEach((item) => {
+    if (item.product_id) soldByProduct.set(item.product_id, (soldByProduct.get(item.product_id) || 0) + Number(item.quantity_ordered || 0));
+  });
+  const productBars = data.products
+    .map((product) => ({
+      label: product.internal_title || product.name,
+      value: soldByProduct.get(product.id) || 0,
+      note: `${soldByProduct.get(product.id) || 0} verkocht`,
+      href: `/catalogus/${product.id}`,
+    }))
+    .filter((item) => item.value > 0)
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 5);
   const inventoryBars = lowInventory.slice(0, 5).map((item) => ({
     label: `Variant ${item.product_variant_id}`,
     value: Math.max(item.minimum_stock_level - (item.quantity_on_hand - item.quantity_reserved), 1),
     note: `${item.quantity_on_hand - item.quantity_reserved} vrij`,
     href: "/voorraad",
   }));
+  const printerState = (printer: DashboardData["printers"][number]) => (printer.printer_state || "offline").toLowerCase();
+  const onlinePrinters = data.printers.filter((printer) => printer.active && !["offline", "unknown", "onbekend"].includes(printerState(printer)));
+  const printingPrinters = data.printers.filter((printer) => ["running", "printing", "print", "bezig"].includes(printerState(printer)));
+  const pausedPrinters = data.printers.filter((printer) => printerState(printer).includes("pause"));
+  const errorPrinters = data.printers.filter((printer) => ["failed", "error", "fout"].some((state) => printerState(printer).includes(state)));
+  const offlinePrinters = data.printers.filter((printer) => !printer.active || ["offline", "unknown", "onbekend"].includes(printerState(printer)));
+  const monthlyRevenue = Array.from({ length: 12 }, (_, month) =>
+    data.orders
+      .filter((order) => {
+        if (!order.order_date) return false;
+        const orderDate = new Date(order.order_date);
+        return orderDate.getFullYear() === now.getFullYear() && orderDate.getMonth() === month;
+      })
+      .reduce((total, order) => total + Number(order.total_amount || 0), 0),
+  );
 
   return (
     <div className="space-y-6">
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
-        <MetricCard href="/bambu-printers" label="Actieve printers" value={printerMock.filter((printer) => printer.status !== "offline").length} note={`${printerMock.length} geregistreerd`} tone="good" />
-        <MetricCard href="/printplanning" label="Prints bezig" value={printingJobs.length || 1} note={formatMinutes(estimatedPrintMinutes || 182)} tone="warning" />
+        <MetricCard href="/bambu-printers" label="Actieve printers" value={onlinePrinters.length} note={`${data.printers.length} geregistreerd`} tone="good" />
+        <MetricCard href="/printplanning" label="Prints bezig" value={printingPrinters.length} note={formatMinutes(estimatedPrintMinutes)} tone="warning" />
         <MetricCard href="/orders" label="Orders vandaag" value={todayOrders.length} note="nieuw binnengekomen" />
         <MetricCard href="/orders" label="Openstaande orders" value={openOrders.length} note="nog te verwerken" tone="warning" />
         <MetricCard href="/voorraad" label="Voorraadwaarde" value={formatCurrency(inventoryValue)} note="indicatieve waarde" />
@@ -90,11 +115,11 @@ function DashboardContent({ data }: { data: DashboardData }) {
         <SectionCard title="Printerstatus" description="Farmstatus op basis van printer- en printwachtrijsignalen.">
           <StatusSummary
             items={[
-              { label: "Online", value: 3, tone: "green", href: "/bambu-printers" },
-              { label: "Print bezig", value: 1, tone: "blue", href: "/printplanning" },
-              { label: "Pauze", value: 0, tone: "slate", href: "/bambu-printers" },
-              { label: "Foutmelding", value: 0, tone: "red", href: "/bambu-printers" },
-              { label: "Onderhoud", value: 1, tone: "amber", href: "/bambu-printers" },
+              { label: "Online", value: onlinePrinters.length, tone: "green", href: "/bambu-printers" },
+              { label: "Print bezig", value: printingPrinters.length, tone: "blue", href: "/printplanning" },
+              { label: "Pauze", value: pausedPrinters.length, tone: "slate", href: "/bambu-printers" },
+              { label: "Foutmelding", value: errorPrinters.length, tone: "red", href: "/bambu-printers" },
+              { label: "Offline", value: offlinePrinters.length, tone: "amber", href: "/bambu-printers" },
             ]}
           />
         </SectionCard>
@@ -115,7 +140,7 @@ function DashboardContent({ data }: { data: DashboardData }) {
               { label: "Rollen op voorraad", value: data.filament.length, tone: "green", href: "/filament" },
               { label: "Bijna leeg", value: lowFilament.length, tone: lowFilament.length ? "amber" : "green", href: "/filament" },
               { label: "Onder minimum", value: lowFilament.length, tone: lowFilament.length ? "red" : "green", href: "/filament" },
-              { label: "Verbruik 7 dagen", value: "1.8 kg", tone: "blue", href: "/analyse" },
+              { label: "Gepland verbruik", value: `${(openPrintJobs.reduce((total, job) => total + Number(job.estimated_filament_grams || 0), 0) / 1000).toFixed(1)} kg`, tone: "blue", href: "/analyse" },
               { label: "Kleuren actief", value: new Set(data.filament.map((item) => item.color)).size, tone: "slate", href: "/filament" },
             ]}
           />
@@ -123,32 +148,33 @@ function DashboardContent({ data }: { data: DashboardData }) {
       </div>
 
       <div className="grid gap-5 xl:grid-cols-[1.2fr_.8fr]">
-        <SectionCard title="Printer live overzicht" description="Mockstatus aangevuld met printplanning totdat alle printerdata live beschikbaar is.">
+        <SectionCard title="Printer live overzicht" description="Laatst ontvangen status van de geregistreerde Bambu-printers.">
           <div className="grid gap-4 md:grid-cols-2">
-            {printerMock.map((printer) => (
-              <a className="block rounded-xl focus:outline-none focus:ring-2 focus:ring-brand/50" href="/bambu-printers" key={printer.name}>
+            {data.printers.map((printer) => (
+              <a className="block rounded-xl focus:outline-none focus:ring-2 focus:ring-brand/50" href="/bambu-printers" key={printer.id}>
               <SoftPanel>
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <div className="break-words text-lg font-black text-ink">{printer.name}</div>
-                    <div className="mt-1 break-words text-sm text-muted">{printer.task}</div>
+                    <div className="mt-1 break-words text-sm text-muted">{printer.current_task || "Geen actieve opdracht"}</div>
                   </div>
-                  <StatusBadge status={printer.status} />
+                  <StatusBadge status={printer.printer_state || "onbekend"} />
                 </div>
                 <div className="mt-4 h-2.5 overflow-hidden rounded-full bg-slate-800">
-                  <div className="h-full rounded-full bg-brand" style={{ width: `${printer.progress}%` }} />
+                  <div className="h-full rounded-full bg-brand" style={{ width: `${Math.max(0, Math.min(100, Number(printer.print_progress || 0)))}%` }} />
                 </div>
                 <div className="mt-3 flex flex-wrap justify-between gap-2 text-sm text-muted">
-                  <span>{printer.progress}%</span>
-                  <span>Nozzle 215C / Bed 60C</span>
+                  <span>{Math.round(Number(printer.print_progress || 0))}%</span>
+                  <span>Nozzle {Math.round(Number(printer.nozzle_temperature || 0))}C / Bed {Math.round(Number(printer.bed_temperature || 0))}C</span>
                 </div>
               </SoftPanel>
               </a>
             ))}
+            {!data.printers.length ? <EmptyState title="Geen printers" description="Voeg een printer toe om live status te tonen." /> : null}
           </div>
         </SectionCard>
         <SectionCard title="Omzettrend" description="Voorbeeldgrafiek voor maandelijkse omzetontwikkeling.">
-          <MiniBars values={[9, 12, 10, 16, 14, 19, 21, 18, 24, 26, 23, 31]} />
+          <MiniBars values={monthlyRevenue} />
         </SectionCard>
       </div>
 

@@ -26,7 +26,6 @@ const navigation = [
       { label: "Filament", href: "/filament", icon: "F" },
       { label: "Printers", href: "/bambu-printers", icon: "R" },
       { label: "Printwachtrij", href: "/printplanning", icon: "Q" },
-      { label: "Onderhoud", href: "/bambu-printers", icon: "M" },
     ],
   },
   {
@@ -91,32 +90,36 @@ export function AppShell({ children }: { children: ReactNode }) {
         <header className="sticky top-0 z-20 border-b border-line bg-[#070b12]/85 backdrop-blur-xl">
           <div className="flex min-h-16 items-center justify-between gap-3 px-4 py-3 sm:px-5 lg:px-8">
             <div className="min-w-0">
-              <div className="text-sm font-bold text-slate-200">Nieuwe Next.js cockpit</div>
-              <div className="line-clamp-2 text-xs leading-5 text-muted">Productie, voorraad, verkoop en printers in een beheerlaag</div>
+              <div className="text-sm font-bold text-slate-200">3D Print Manager</div>
+              <div className="line-clamp-2 text-xs leading-5 text-muted">Productie, voorraad, verkoop en printers</div>
             </div>
             <div className="flex shrink-0 items-center gap-2 sm:gap-3">
               <div className="whitespace-nowrap rounded-full border border-brand/25 bg-brand/10 px-2.5 py-1 text-[11px] font-black text-brand sm:px-3 sm:text-xs">
-                Prototype V2
+                Lokaal beveiligd
               </div>
               <LogoutButton />
             </div>
           </div>
-          <div className="professional-scrollbar flex gap-2 overflow-x-auto border-t border-line px-4 py-2 lg:hidden">
-            {navigation.flatMap((group) => group.items).map((item) => {
-              const active = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
-              return (
-                <Link
-                  className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-black ${
-                    active ? "bg-brand text-slate-950" : "bg-panelSoft text-slate-300"
-                  }`}
-                  href={item.href}
-                  key={`mobile-${item.label}`}
-                >
-                  {item.label}
-                </Link>
-              );
-            })}
-          </div>
+          <details className="group border-t border-line lg:hidden">
+            <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between px-4 py-2 text-sm font-black text-slate-200">
+              Navigatie
+              <span aria-hidden="true" className="text-brand transition group-open:rotate-180">v</span>
+            </summary>
+            <nav className="grid max-h-[65vh] grid-cols-2 gap-2 overflow-y-auto border-t border-line bg-[#090f1a] p-3">
+              {navigation.flatMap((group) => group.items).map((item) => {
+                const active = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
+                return (
+                  <Link
+                    className={`flex min-h-12 items-center rounded-md px-3 py-2 text-sm font-bold ${active ? "bg-brand text-slate-950" : "bg-panelSoft text-slate-200"}`}
+                    href={item.href}
+                    key={`mobile-${item.label}`}
+                  >
+                    {item.label}
+                  </Link>
+                );
+              })}
+            </nav>
+          </details>
         </header>
         <main className="px-4 py-6 sm:px-5 lg:px-8">{children}</main>
       </div>

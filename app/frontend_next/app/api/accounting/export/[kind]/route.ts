@@ -1,8 +1,9 @@
+import { backendFetch, getBackendBaseUrl } from "@/lib/backend-auth";
 import { NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
 
-const API_BASE_URL = process.env.FRONTEND_NEXT_API_BASE_URL || process.env.API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:38080";
+const API_BASE_URL = getBackendBaseUrl();
 
 const exportPaths: Record<string, { path: string; filename: string }> = {
   sales: { path: "/accounting/sales/export.csv", filename: "verkoopboek.csv" },
@@ -20,7 +21,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ kind
 
   const incomingUrl = new URL(request.url);
   const query = incomingUrl.searchParams.toString();
-  const response = await fetch(`${API_BASE_URL}${target.path}${query ? `?${query}` : ""}`, { cache: "no-store" });
+  const response = await backendFetch(`${API_BASE_URL}${target.path}${query ? `?${query}` : ""}`, { cache: "no-store" });
   const content = await response.text();
 
   return new NextResponse(content, {

@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from urllib.parse import quote
 
 from fastapi import HTTPException
@@ -76,10 +76,13 @@ def update_user(
     new_active = is_active if is_active is not None else user.is_active
     ensure_not_removing_last_active_admin(db, user, new_role, new_active)
 
+    access_changed = user.role != new_role or user.is_active != new_active
     if display_name is not None:
         user.display_name = display_name
     user.role = new_role
     user.is_active = new_active
+    if access_changed:
+        user.session_version += 1
     db.add(user)
     db.commit()
     db.refresh(user)
@@ -93,6 +96,7 @@ def reset_user_password(db: Session, user_id: int, password: str) -> User:
     user = get_user_or_404(db, user_id)
     user.password_hash = hash_password(password)
     user.must_change_password = True
+    user.session_version += 1
     db.add(user)
     db.commit()
     db.refresh(user)
@@ -113,6 +117,7 @@ def change_own_password(db: Session, email: str, current_password: str, new_pass
 
     user.password_hash = hash_password(new_password)
     user.must_change_password = False
+    user.session_version += 1
     db.add(user)
     db.commit()
     db.refresh(user)
@@ -124,6 +129,7 @@ def reset_user_mfa(db: Session, user_id: int) -> User:
     user = get_user_or_404(db, user_id)
     user.mfa_enabled = False
     user.totp_secret_encrypted = None
+    user.session_version += 1
     db.add(user)
     db.commit()
     db.refresh(user)
@@ -139,9 +145,20 @@ def authenticate_user(
     ip_address: str | None = None,
     user_agent: str | None = None,
 ) -> User:
-    user = get_user_by_email(db, email)
+    normalized_email = email.strip().lower()
+    cutoff = datetime.now(timezone.utc) - timedelta(minutes=15)
+    failed_attempts = db.scalar(
+        select(func.count(AuditLog.id)).where(
+            AuditLog.action.in_(["auth.login_failed", "auth.mfa_login_failed"]),
+            AuditLog.summary == f"Mislukte login voor {normalized_email}.",
+            AuditLog.created_at >= cutoff,
+        )
+    ) or 0
+    if failed_attempts >= 5:
+        raise HTTPException(status_code=429, detail="Te veel loginpogingen. Probeer het over 15 minuten opnieuw.")
+    user = get_user_by_email(db, normalized_email)
     if not user or not user.is_active or not verify_password(password, user.password_hash):
-        record_audit_log(db, None, "auth.login_failed", "user", None, f"Mislukte login voor {email}.", ip_address, user_agent)
+        record_audit_log(db, None, "auth.login_failed", "user", None, f"Mislukte login voor {normalized_email}.", ip_address, user_agent)
         raise HTTPException(status_code=401, detail="E-mailadres of wachtwoord klopt niet.")
 
     if user.mfa_enabled:

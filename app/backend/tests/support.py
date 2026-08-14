@@ -28,7 +28,11 @@ from core.credentials import decrypt_credential, encrypt_credential, is_encrypte
 from connectors.shopify.connector import ShopifyConnector  # noqa: E402
 from connectors.etsy.connector import EtsyConnector  # noqa: E402
 from database import Base  # noqa: E402
-from inventory.service import adjust_product_inventory as adjust_inventory_service  # noqa: E402
+from inventory.service import (  # noqa: E402
+    adjust_product_inventory as adjust_inventory_service,
+    release_product_inventory as release_inventory_stock,
+    reserve_product_inventory as reserve_inventory_stock,
+)
 from services.ai_product_assistant import generate_product_translation  # noqa: E402
 from models import (  # noqa: E402
     InventoryMovement,

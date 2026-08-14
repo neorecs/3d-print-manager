@@ -44,7 +44,7 @@ function FilamentContent({ data }: { data: FilamentData }) {
   const totalRemaining = activeSpools.reduce((total, spool) => total + Number(spool.remaining_weight_grams || 0), 0);
   const plannedFilament = data.printJobs
     .filter((job) => !["verwerkt", "geannuleerd"].includes(job.status || ""))
-    .reduce((total, job) => total + Number(job.estimated_filament_grams || 0) * Math.max(job.quantity_planned || job.quantity_needed || 1, 1), 0);
+    .reduce((total, job) => total + Number(job.estimated_filament_grams || 0), 0);
 
   return (
     <div className="space-y-6">

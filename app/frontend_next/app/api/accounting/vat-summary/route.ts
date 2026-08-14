@@ -1,11 +1,12 @@
+import { backendFetch, getBackendBaseUrl } from "@/lib/backend-auth";
 import { NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
 
-const API_BASE_URL = process.env.FRONTEND_NEXT_API_BASE_URL || process.env.API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:38080";
+const API_BASE_URL = getBackendBaseUrl();
 
 export async function GET() {
-  const response = await fetch(`${API_BASE_URL}/accounting/vat-summary`, { cache: "no-store" });
+  const response = await backendFetch(`${API_BASE_URL}/accounting/vat-summary`, { cache: "no-store" });
   const data = await response.json().catch(() => ({ detail: "Backend gaf geen JSON terug" }));
   return NextResponse.json(data, { status: response.status });
 }

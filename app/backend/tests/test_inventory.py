@@ -137,3 +137,23 @@ class InventoryTestCase(BackendTestCase):
         self.assertEqual(inventory.quantity_on_hand, 4)
         self.assertEqual(inventory.quantity_reserved, 3)
         self.assertEqual(movements, [])
+
+    def test_manual_inventory_actions_record_the_user_and_reject_over_release(self) -> None:
+        product, variant = self.make_product_variant("INV-AUDIT")
+        inventory = ProductInventory(
+            product_id=product.id,
+            product_variant_id=variant.id,
+            quantity_on_hand=5,
+            quantity_reserved=0,
+        )
+        self.db.add(inventory)
+        self.db.commit()
+
+        reserve_inventory_stock(self.db, inventory, 2, "admin@example.com")
+        with self.assertRaises(HTTPException):
+            release_inventory_stock(self.db, inventory, 3, "admin@example.com")
+        release_inventory_stock(self.db, inventory, 2, "admin@example.com")
+
+        movements = self.db.scalars(select(InventoryMovement).order_by(InventoryMovement.id)).all()
+        self.assertEqual([movement.performed_by for movement in movements], ["admin@example.com", "admin@example.com"])
+        self.assertEqual(inventory.quantity_reserved, 0)

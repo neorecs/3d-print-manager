@@ -50,12 +50,16 @@ class AuthTestCase(BackendTestCase):
     def test_user_must_change_temporary_password(self) -> None:
         user = create_admin_user(self.db, "admin@example.com", "tijdelijk-wachtwoord-123", "Admin")
         self.assertTrue(user.must_change_password)
+        original_session_version = user.session_version
 
         changed = change_own_password(self.db, "admin@example.com", "tijdelijk-wachtwoord-123", "nieuw-sterk-wachtwoord-456")
         self.assertFalse(changed.must_change_password)
+        self.assertGreater(changed.session_version, original_session_version)
+        changed_session_version = changed.session_version
 
         reset = reset_user_password(self.db, changed.id, "ander-tijdelijk-wachtwoord-789")
         self.assertTrue(reset.must_change_password)
+        self.assertGreater(reset.session_version, changed_session_version)
 
     def test_mfa_setup_stores_secret_encrypted_and_confirm_enables_mfa(self) -> None:
         user = create_admin_user(self.db, "admin@example.com", "sterk-wachtwoord-123", "Admin")

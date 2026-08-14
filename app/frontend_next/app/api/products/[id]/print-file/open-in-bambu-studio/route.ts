@@ -1,8 +1,9 @@
+import { backendFetch, getBackendBaseUrl } from "@/lib/backend-auth";
 import { NextRequest, NextResponse } from "next/server";
 
 import { bambuStudioFilename, createBambuStudioFileToken } from "@/lib/bambuStudioLaunch";
 
-const API_BASE_URL = process.env.FRONTEND_NEXT_API_BASE_URL || process.env.API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:38080";
+const API_BASE_URL = getBackendBaseUrl();
 
 type Preparation = {
   printer_id: number;
@@ -39,7 +40,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     return NextResponse.json({ detail: "Ongeldig productnummer" }, { status: 400 });
   }
 
-  const productResponse = await fetch(`${API_BASE_URL}/products/${productId}`, { cache: "no-store" });
+  const productResponse = await backendFetch(`${API_BASE_URL}/products/${productId}`, { cache: "no-store" });
   const product = await productResponse.json().catch(() => null);
   if (!productResponse.ok || !product) {
     return NextResponse.json({ detail: product?.detail || "Product niet gevonden" }, { status: productResponse.status });
@@ -60,7 +61,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       return NextResponse.json({ detail: "Ongeldig printtaaknummer." }, { status: 400 });
     }
 
-    const printersResponse = await fetch(`${API_BASE_URL}/bambu/printers`, { cache: "no-store" });
+    const printersResponse = await backendFetch(`${API_BASE_URL}/bambu/printers`, { cache: "no-store" });
     const printers = await printersResponse.json().catch(() => []);
     if (!printersResponse.ok || !Array.isArray(printers)) {
       return NextResponse.json({ detail: "Printers konden niet worden geladen." }, { status: 503 });
@@ -74,7 +75,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       const preparationUrl = new URL(`${API_BASE_URL}/products/${productId}/print-file/preparation`);
       preparationUrl.searchParams.set("variant_id", String(variantId));
       preparationUrl.searchParams.set("printer_id", String(printer.id));
-      const preparationResponse = await fetch(preparationUrl, { cache: "no-store" });
+      const preparationResponse = await backendFetch(preparationUrl, { cache: "no-store" });
       const preparation = await preparationResponse.json().catch(() => null);
       if (preparationResponse.ok && preparation) preparations.push(preparation);
       else if (preparation?.detail) lastError = preparation.detail;
@@ -100,7 +101,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     fileUrlObject.searchParams.set("tray_id", String(trayId));
     const fileUrl = fileUrlObject.toString();
     if (printJobId !== null) {
-      const jobResponse = await fetch(`${API_BASE_URL}/print-jobs/${printJobId}/bambu-studio-opened`, {
+      const jobResponse = await backendFetch(`${API_BASE_URL}/print-jobs/${printJobId}/bambu-studio-opened`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ printer_id: printerId, product_id: productId, product_variant_id: variantId }),

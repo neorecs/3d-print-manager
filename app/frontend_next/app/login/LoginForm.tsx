@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 export function LoginForm({ nextPath }: { nextPath: string }) {
@@ -19,6 +19,14 @@ export function LoginForm({ nextPath }: { nextPath: string }) {
   const [setupMessage, setSetupMessage] = useState("");
   const [setupError, setSetupError] = useState("");
   const [isCreatingAccount, setIsCreatingAccount] = useState(false);
+  const [bootstrapAvailable, setBootstrapAvailable] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/auth/bootstrap-status")
+      .then((response) => response.json())
+      .then((data) => setBootstrapAvailable(Boolean(data.available)))
+      .catch(() => setBootstrapAvailable(false));
+  }, []);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -149,7 +157,7 @@ export function LoginForm({ nextPath }: { nextPath: string }) {
         {isSubmitting ? "Bezig met inloggen..." : "Inloggen"}
       </button>
     </form>
-      <div className="border-t border-line pt-5">
+      {bootstrapAvailable ? <div className="border-t border-line pt-5">
         <button
           className="text-sm font-bold text-brand hover:text-teal-200"
           onClick={() => setShowSetup((value) => !value)}
@@ -237,7 +245,7 @@ export function LoginForm({ nextPath }: { nextPath: string }) {
             </button>
           </form>
         ) : null}
-      </div>
+      </div> : null}
     </div>
   );
 }

@@ -1,9 +1,7 @@
 FROM node:22-alpine AS deps
 WORKDIR /app
 COPY package.json package-lock.json* ./
-# The local/NAS Docker network can miss the corporate/root CA chain for npm.
-# Keep this scoped to the disposable build image so the host and runtime app stay unchanged.
-RUN npm config set strict-ssl false && npm install
+RUN npm install
 
 FROM node:22-alpine AS builder
 WORKDIR /app

@@ -1,13 +1,14 @@
 import csv
 import io
 from datetime import date
+from decimal import Decimal, ROUND_HALF_UP
 
 from fastapi import HTTPException, Response
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from api.utils import to_dict
-from domain.statuses import ACCOUNTING_CONCEPT, ACCOUNTING_DOCUMENT_ARCHIVED
+from domain.statuses import ACCOUNTING_CLOSED, ACCOUNTING_CONCEPT, ACCOUNTING_DOCUMENT_ARCHIVED
 from models import (
     AccountingDocument,
     AccountingFiscalSetting,
@@ -19,7 +20,15 @@ from models import (
     OrderItem,
     OrderProfitCalculation,
     ProductVariant,
+    VatPeriod,
 )
+
+
+CENT = Decimal("0.01")
+
+
+def money(value) -> Decimal:
+    return Decimal(str(value or 0)).quantize(CENT, rounding=ROUND_HALF_UP)
 
 
 def parse_optional_date(value: str | None):
@@ -37,17 +46,38 @@ def parse_date_range(start_date: str | None = None, end_date: str | None = None)
 
 
 def fill_vat_amounts(data: dict) -> dict:
-    net_amount = float(data.get("net_amount") or 0)
-    vat_rate = float(data.get("vat_rate") or 0)
+    net_amount = money(data.get("net_amount"))
+    vat_rate = Decimal(str(data.get("vat_rate") or 0))
     vat_amount = data.get("vat_amount")
     gross_amount = data.get("gross_amount")
     if vat_amount is None:
-        vat_amount = round(net_amount * vat_rate / 100, 2)
+        vat_amount = (net_amount * vat_rate / Decimal("100")).quantize(CENT, rounding=ROUND_HALF_UP)
+    else:
+        vat_amount = money(vat_amount)
     if gross_amount is None:
-        gross_amount = round(net_amount + float(vat_amount), 2)
-    data["vat_amount"] = vat_amount
-    data["gross_amount"] = gross_amount
+        gross_amount = net_amount + vat_amount
+    data["net_amount"] = net_amount
+    data["vat_rate"] = vat_rate
+    data["vat_amount"] = money(vat_amount)
+    data["gross_amount"] = money(gross_amount)
     return data
+
+
+def ensure_accounting_date_open(db: Session, entry_date: date | None) -> None:
+    if not entry_date:
+        return
+    closed = db.scalar(
+        select(VatPeriod).where(
+            VatPeriod.status == ACCOUNTING_CLOSED,
+            VatPeriod.start_date <= entry_date,
+            VatPeriod.end_date >= entry_date,
+        )
+    )
+    if closed:
+        raise HTTPException(
+            status_code=409,
+            detail=f"Btw-periode {closed.period_name} is afgesloten. Boek een correctie in een open periode.",
+        )
 
 
 def csv_download(filename: str, fieldnames: list[str], rows: list[dict]) -> Response:
@@ -83,18 +113,18 @@ def accounting_purchases_query(start: date | None = None, end: date | None = Non
 def accounting_vat_summary_data(db: Session, start: date | None = None, end: date | None = None) -> dict:
     sales = db.scalars(accounting_sales_query(start, end)).all()
     purchases = db.scalars(accounting_purchases_query(start, end)).all()
-    sales_net = sum(float(item.net_amount or 0) for item in sales)
-    sales_vat = sum(float(item.vat_amount or 0) for item in sales)
-    purchase_net = sum(float(item.net_amount or 0) for item in purchases)
-    purchase_vat = sum(float(item.vat_amount or 0) for item in purchases)
+    sales_net = sum((money(item.net_amount) for item in sales), Decimal("0"))
+    sales_vat = sum((money(item.vat_amount) for item in sales), Decimal("0"))
+    purchase_net = sum((money(item.net_amount) for item in purchases), Decimal("0"))
+    purchase_vat = sum((money(item.vat_amount) for item in purchases), Decimal("0"))
     missing_sale_docs = sum(1 for item in sales if not db.scalar(select(AccountingDocument.id).where(AccountingDocument.sale_id == item.id, AccountingDocument.status != ACCOUNTING_DOCUMENT_ARCHIVED)))
     missing_purchase_docs = sum(1 for item in purchases if not db.scalar(select(AccountingDocument.id).where(AccountingDocument.purchase_id == item.id, AccountingDocument.status != ACCOUNTING_DOCUMENT_ARCHIVED)))
     return {
-        "sales_net": round(sales_net, 2),
-        "sales_vat": round(sales_vat, 2),
-        "purchase_net": round(purchase_net, 2),
-        "purchase_vat": round(purchase_vat, 2),
-        "vat_due": round(sales_vat - purchase_vat, 2),
+        "sales_net": float(money(sales_net)),
+        "sales_vat": float(money(sales_vat)),
+        "purchase_net": float(money(purchase_net)),
+        "purchase_vat": float(money(purchase_vat)),
+        "vat_due": float(money(sales_vat - purchase_vat)),
         "sales_count": len(sales),
         "purchase_count": len(purchases),
         "missing_document_count": missing_sale_docs + missing_purchase_docs,
@@ -133,11 +163,11 @@ def seed_default_cost_settings(db: Session) -> None:
         db.commit()
 
 
-def calculate_order_gross_amount(db: Session, order: Order) -> float:
+def calculate_order_gross_amount(db: Session, order: Order) -> Decimal:
     if order.total_amount is not None:
-        return round(float(order.total_amount), 2)
+        return money(order.total_amount)
     items = db.scalars(select(OrderItem).where(OrderItem.order_id == order.id)).all()
-    return round(sum(float(item.unit_sale_price or 0) * int(item.quantity_ordered or 0) for item in items), 2)
+    return money(sum((money(item.unit_sale_price) * int(item.quantity_ordered or 0) for item in items), Decimal("0")))
 
 
 def create_accounting_sale_from_order(db: Session, order: Order) -> dict:
@@ -148,13 +178,16 @@ def create_accounting_sale_from_order(db: Session, order: Order) -> dict:
         data["message"] = "Verkoopboeking bestond al voor deze order."
         return data
 
+    invoice_date = order.order_date.date() if order.order_date else date.today()
+    ensure_accounting_date_open(db, invoice_date)
     gross_amount = calculate_order_gross_amount(db, order)
     if gross_amount <= 0:
         raise HTTPException(status_code=400, detail="Order heeft geen positief bedrag om te boeken")
 
-    vat_rate = 21.0
-    net_amount = round(gross_amount / (1 + vat_rate / 100), 2)
-    vat_amount = round(gross_amount - net_amount, 2)
+    vat_setting = db.scalar(select(AccountingFiscalSetting).where(AccountingFiscalSetting.setting_name == "default_vat_rate"))
+    vat_rate = Decimal(vat_setting.value) if vat_setting else Decimal("21")
+    net_amount = money(gross_amount / (Decimal("1") + vat_rate / Decimal("100")))
+    vat_amount = money(gross_amount - net_amount)
     invoice_number = order.internal_order_number
     if db.scalar(select(AccountingSale.id).where(AccountingSale.invoice_number == invoice_number)):
         invoice_number = f"{order.internal_order_number}-{order.id}"
@@ -163,13 +196,13 @@ def create_accounting_sale_from_order(db: Session, order: Order) -> dict:
         order_id=order.id,
         platform_id=order.platform_id,
         invoice_number=invoice_number,
-        invoice_date=order.order_date.date() if order.order_date else date.today(),
+        invoice_date=invoice_date,
         customer_name=order.customer_name,
         description=f"Verkooporder {order.internal_order_number}",
         net_amount=net_amount,
         vat_rate=vat_rate,
         vat_amount=vat_amount,
-        gross_amount=round(gross_amount, 2),
+        gross_amount=money(gross_amount),
         currency=order.currency or "EUR",
         status=ACCOUNTING_CONCEPT,
         source="order_import",

@@ -1,0 +1,37 @@
+name: Quality checks
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  backend-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker compose -f docker-compose.test.yml run --rm backend_tests
+
+  frontend-build-and-smoke:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app/frontend_next
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install --no-audit --no-fund
+      - run: npm run build
+        env:
+          AUTH_ENABLED: "true"
+          AUTH_BACKEND_LOGIN: "true"
+          AUTH_SECRET: "ci-auth-secret-at-least-32-characters-long"
+          BACKEND_INTERNAL_TOKEN: "ci-internal-token-at-least-32-characters"
+      - run: npm start &
+        env:
+          AUTH_ENABLED: "true"
+          AUTH_BACKEND_LOGIN: "true"
+          AUTH_SECRET: "ci-auth-secret-at-least-32-characters-long"
+          BACKEND_INTERNAL_TOKEN: "ci-internal-token-at-least-32-characters"
+      - run: sleep 5 && node scripts/smoke-test.mjs

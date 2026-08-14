@@ -1,8 +1,9 @@
+import { backendFetch, getBackendBaseUrl } from "@/lib/backend-auth";
 import { NextRequest, NextResponse } from "next/server";
 
 import { getSessionFromRequest, setSessionCookie } from "@/lib/auth";
 
-const API_BASE_URL = process.env.FRONTEND_NEXT_API_BASE_URL || process.env.API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:38080";
+const API_BASE_URL = getBackendBaseUrl();
 
 export async function POST(request: NextRequest) {
   const session = await getSessionFromRequest(request);
@@ -15,7 +16,7 @@ export async function POST(request: NextRequest) {
   const timeout = setTimeout(() => controller.abort(), 15000);
   let response: Response;
   try {
-    response = await fetch(`${API_BASE_URL}/auth/change-password`, {
+    response = await backendFetch(`${API_BASE_URL}/auth/change-password`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -39,5 +40,13 @@ export async function POST(request: NextRequest) {
 
   const user = data.user || {};
   const nextResponse = NextResponse.json({ user, must_change_password: false });
-  return setSessionCookie(nextResponse, user.email || session.email, user.display_name || session.name, user.role || session.role, false);
+  return setSessionCookie(
+    nextResponse,
+    user.email || session.email,
+    user.display_name || session.name,
+    user.role || session.role,
+    false,
+    Number(user.id || session.userId),
+    Number(user.session_version || session.sessionVersion),
+  );
 }

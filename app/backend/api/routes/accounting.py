@@ -19,6 +19,7 @@ def list_accounting_sales(
 def create_accounting_sale(payload: AccountingSaleCreate, db: Session = Depends(get_db)):
     data = payload.model_dump()
     data["invoice_date"] = parse_optional_date(data.get("invoice_date"))
+    ensure_accounting_date_open(db, data["invoice_date"])
     item = AccountingSale(**fill_vat_amounts(data))
     db.add(item)
     db.commit()
@@ -34,6 +35,7 @@ def credit_accounting_sale(item_id: int, payload: AccountingCorrectionCreate, db
     if original.status == ACCOUNTING_CORRECTED or db.scalar(select(AccountingSale.id).where(AccountingSale.correction_of_sale_id == original.id)):
         raise HTTPException(status_code=400, detail="Deze verkoopboeking is al gecorrigeerd")
     correction_date = parse_optional_date(payload.correction_date) or date.today()
+    ensure_accounting_date_open(db, correction_date)
     item = AccountingSale(
         order_id=original.order_id,
         platform_id=original.platform_id,
@@ -42,10 +44,10 @@ def credit_accounting_sale(item_id: int, payload: AccountingCorrectionCreate, db
         customer_name=original.customer_name,
         customer_country=original.customer_country,
         description=f"Credit/correctie op verkoopboeking {original.invoice_number or original.id}",
-        net_amount=-float(original.net_amount or 0),
-        vat_rate=float(original.vat_rate or 0),
-        vat_amount=-float(original.vat_amount or 0),
-        gross_amount=-float(original.gross_amount or 0),
+        net_amount=-money(original.net_amount),
+        vat_rate=money(original.vat_rate),
+        vat_amount=-money(original.vat_amount),
+        gross_amount=-money(original.gross_amount),
         currency=original.currency,
         status=ACCOUNTING_BOOKED,
         source="correction",
@@ -75,6 +77,7 @@ def list_accounting_purchases(
 def create_accounting_purchase(payload: AccountingPurchaseCreate, db: Session = Depends(get_db)):
     data = payload.model_dump()
     data["invoice_date"] = parse_optional_date(data.get("invoice_date"))
+    ensure_accounting_date_open(db, data["invoice_date"])
     item = AccountingPurchase(**fill_vat_amounts(data))
     db.add(item)
     db.commit()
@@ -90,16 +93,17 @@ def correct_accounting_purchase(item_id: int, payload: AccountingCorrectionCreat
     if original.payment_status == ACCOUNTING_CORRECTED or db.scalar(select(AccountingPurchase.id).where(AccountingPurchase.correction_of_purchase_id == original.id)):
         raise HTTPException(status_code=400, detail="Deze inkoopboeking is al gecorrigeerd")
     correction_date = parse_optional_date(payload.correction_date) or date.today()
+    ensure_accounting_date_open(db, correction_date)
     item = AccountingPurchase(
         supplier_name=original.supplier_name,
         invoice_number=f"COR-{original.invoice_number or original.id}",
         invoice_date=correction_date,
         category=original.category,
         description=f"Correctie op inkoopboeking {original.invoice_number or original.id}",
-        net_amount=-float(original.net_amount or 0),
-        vat_rate=float(original.vat_rate or 0),
-        vat_amount=-float(original.vat_amount or 0),
-        gross_amount=-float(original.gross_amount or 0),
+        net_amount=-money(original.net_amount),
+        vat_rate=money(original.vat_rate),
+        vat_amount=-money(original.vat_amount),
+        gross_amount=-money(original.gross_amount),
         currency=original.currency,
         payment_status=ACCOUNTING_CORRECTED,
         source="correction",
@@ -224,6 +228,16 @@ def close_vat_period(payload: VatPeriodCloseCreate, db: Session = Depends(get_db
     if not start or not end:
         raise HTTPException(status_code=400, detail="Start- en einddatum zijn verplicht")
     summary = accounting_vat_summary_data(db, start, end)
+    overlapping = db.scalar(
+        select(VatPeriod).where(
+            VatPeriod.status == ACCOUNTING_CLOSED,
+            VatPeriod.start_date <= end,
+            VatPeriod.end_date >= start,
+            VatPeriod.period_name != payload.period_name,
+        )
+    )
+    if overlapping:
+        raise HTTPException(status_code=409, detail=f"Periode overlapt met afgesloten periode {overlapping.period_name}")
     item = db.scalar(select(VatPeriod).where(VatPeriod.period_name == payload.period_name))
     if item and item.status == ACCOUNTING_CLOSED:
         raise HTTPException(status_code=400, detail="Deze btw-periode is al afgesloten")

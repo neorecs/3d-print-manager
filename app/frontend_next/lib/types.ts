@@ -366,6 +366,9 @@ export type DashboardData = {
   printJobs: PrintJob[];
   recommendations: StockRecommendation[];
   publications: ProductPublication[];
+  printers: BambuPrinter[];
+  variants: ProductVariant[];
+  orderItems: OrderItem[];
 };
 
 export type OrdersData = {
@@ -519,14 +522,18 @@ export type SystemReadiness = {
   connectors_live_mode: boolean;
   live_calls_blocked: boolean;
   credential_encryption_configured: boolean;
+  internal_api_configured: boolean;
+  session_signing_configured: boolean;
   database_configured: boolean;
   database_reachable: boolean;
   upload_storage_writable: boolean;
   upload_backup_configured: boolean;
   database_backup_recent: boolean;
   upload_backup_recent: boolean;
+  restore_test_recent: boolean;
   auth_enabled: boolean;
   auth_backend_login: boolean;
+  secure_cookie_enabled: boolean;
   ai_enabled: boolean;
   ai_configured: boolean;
   openai_model: string;

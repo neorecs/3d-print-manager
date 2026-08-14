@@ -2,7 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
-import { formatCurrency } from "@/lib/api";
+import { formatCurrency } from "@/lib/format";
 import type { FilamentSpool } from "@/lib/types";
 
 type FilamentDraft = {

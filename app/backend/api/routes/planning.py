@@ -64,7 +64,9 @@ def mark_print_job_bambu_studio_opened(
 
 @router.post("/print-jobs/{item_id}/complete")
 def complete_print_job(item_id: int, payload: PrintJobComplete, db: Session = Depends(get_db)):
-    item = get_or_404(db, PrintJob, item_id)
+    item = db.scalar(select(PrintJob).where(PrintJob.id == item_id).with_for_update())
+    if not item:
+        raise HTTPException(status_code=404, detail="PrintJob not found")
     if payload.quantity_succeeded < 0 or payload.quantity_failed < 0:
         raise HTTPException(status_code=400, detail="Aantallen mogen niet negatief zijn")
 
@@ -88,6 +90,7 @@ def complete_print_job(item_id: int, payload: PrintJobComplete, db: Session = De
     else:
         item.status = PRINT_JOB_PRINTED
 
+    db.scalar(select(ProductVariant).where(ProductVariant.id == item.product_variant_id).with_for_update())
     inventory = ensure_product_inventory_for_print_job(db, item)
     inventory_delta = item.quantity_to_inventory - previous_to_inventory
     failed_delta = item.quantity_failed - previous_failed
@@ -133,7 +136,7 @@ def ensure_product_inventory_for_print_job(db: Session, print_job: PrintJob) -> 
         select(ProductInventory).where(
             ProductInventory.product_id == print_job.product_id,
             ProductInventory.product_variant_id == print_job.product_variant_id,
-        )
+        ).with_for_update()
     )
     if inventory:
         return inventory

@@ -43,11 +43,11 @@ function PrintPlanningContent({ data }: { data: PrintPlanningData }) {
   const failedJobs = data.printJobs.filter((job) => ["deels_mislukt", "mislukt"].includes(job.status || ""));
   const totalQuantity = openJobs.reduce((total, job) => total + Number(job.quantity_planned || job.quantity_needed || 0), 0);
   const totalMinutes = openJobs.reduce(
-    (total, job) => total + Number(job.estimated_print_time_minutes || 0) * Math.max(job.quantity_planned || job.quantity_needed || 1, 1),
+    (total, job) => total + Number(job.estimated_print_time_minutes || 0),
     0,
   );
   const totalFilament = openJobs.reduce(
-    (total, job) => total + Number(job.estimated_filament_grams || 0) * Math.max(job.quantity_planned || job.quantity_needed || 1, 1),
+    (total, job) => total + Number(job.estimated_filament_grams || 0),
     0,
   );
 

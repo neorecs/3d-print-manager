@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
+import { backendFetch, getBackendBaseUrl } from "@/lib/backend";
 
 export const AUTH_COOKIE_NAME = "print_manager_session";
 const SESSION_MAX_AGE_SECONDS = 60 * 60 * 12;
 
-type SessionPayload = {
+export type SessionPayload = {
+  userId: number;
+  sessionVersion: number;
   email: string;
   name: string;
   role: "admin" | "operator" | "viewer";
@@ -81,7 +84,7 @@ export function authIsEnabled() {
 }
 
 type LoginResult =
-  | { ok: true; email: string; name: string; role: SessionPayload["role"]; mustChangePassword?: boolean }
+  | { ok: true; userId: number; sessionVersion: number; email: string; name: string; role: SessionPayload["role"]; mustChangePassword?: boolean }
   | { ok: false; error: string; mfaRequired?: boolean };
 
 export async function verifySessionToken(token?: string | null): Promise<SessionPayload | null> {
@@ -90,6 +93,8 @@ export async function verifySessionToken(token?: string | null): Promise<Session
       email: "dev@local",
       name: "Lokale gebruiker",
       role: "admin",
+      userId: 0,
+      sessionVersion: 1,
       mustChangePassword: false,
       exp: Math.floor(Date.now() / 1000) + SESSION_MAX_AGE_SECONDS,
     };
@@ -104,7 +109,13 @@ export async function verifySessionToken(token?: string | null): Promise<Session
 
   try {
     const payload = JSON.parse(base64UrlDecode(body)) as SessionPayload;
-    if (!payload.email || !payload.exp || payload.exp < Math.floor(Date.now() / 1000)) return null;
+    if (
+      !payload.email
+      || !Number.isInteger(payload.userId)
+      || !Number.isInteger(payload.sessionVersion)
+      || !payload.exp
+      || payload.exp < Math.floor(Date.now() / 1000)
+    ) return null;
     return payload;
   } catch {
     return null;
@@ -119,13 +130,38 @@ export async function getSessionFromCookieStore(cookieValue?: string | null) {
   return verifySessionToken(cookieValue);
 }
 
+
+export async function validateBackendSession(token: string, session: SessionPayload): Promise<SessionPayload | null> {
+  try {
+    const response = await backendFetch(`${getBackendBaseUrl()}/auth/session/validate`, {
+      headers: { "X-Session-Token": token },
+      cache: "no-store",
+    });
+    if (!response.ok) return null;
+    const data = await response.json();
+    const user = data.user;
+    if (!user?.id || !user?.is_active) return null;
+    return {
+      ...session,
+      userId: Number(user.id),
+      sessionVersion: Number(user.session_version || 1),
+      email: user.email,
+      name: user.display_name || user.email,
+      role: user.role,
+      mustChangePassword: Boolean(user.must_change_password),
+    };
+  } catch {
+    return null;
+  }
+}
+
 export async function validateLogin(email: string, password: string, mfaCode?: string): Promise<LoginResult> {
   if (process.env.AUTH_BACKEND_LOGIN === "true") {
     return validateBackendLogin(email, password, mfaCode);
   }
 
   if (!isAuthEnabled()) {
-    return { ok: true, email: "dev@local", name: "Lokale gebruiker", role: "admin" };
+    return { ok: true, userId: 0, sessionVersion: 1, email: "dev@local", name: "Lokale gebruiker", role: "admin" };
   }
 
   const expectedEmail = process.env.AUTH_ADMIN_EMAIL;
@@ -138,13 +174,11 @@ export async function validateLogin(email: string, password: string, mfaCode?: s
     return { ok: false, error: "E-mailadres of wachtwoord klopt niet." };
   }
 
-  return { ok: true, email: expectedEmail, name: process.env.AUTH_ADMIN_NAME || "Beheerder", role: "admin" };
+  return { ok: true, userId: 0, sessionVersion: 1, email: expectedEmail, name: process.env.AUTH_ADMIN_NAME || "Beheerder", role: "admin" };
 }
 
 async function validateBackendLogin(email: string, password: string, mfaCode?: string): Promise<LoginResult> {
-  const apiBaseUrl =
-    process.env.FRONTEND_NEXT_API_BASE_URL || process.env.API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:38080";
-  const response = await fetch(`${apiBaseUrl}/auth/login`, {
+  const response = await backendFetch(`${getBackendBaseUrl()}/auth/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email, password, mfa_code: mfaCode || null }),
@@ -162,6 +196,8 @@ async function validateBackendLogin(email: string, password: string, mfaCode?: s
 
   return {
     ok: true,
+    userId: Number(data.user.id),
+    sessionVersion: Number(data.user.session_version || 1),
     email: data.user.email,
     name: data.user.display_name || data.user.email,
     role: data.user.role || "viewer",
@@ -175,12 +211,14 @@ export async function setSessionCookie(
   name: string,
   role: SessionPayload["role"] = "admin",
   mustChangePassword = false,
+  userId = 0,
+  sessionVersion = 1,
 ) {
   const secret = getAuthSecret();
   if (!secret) return response;
 
   const exp = Math.floor(Date.now() / 1000) + SESSION_MAX_AGE_SECONDS;
-  const token = await createSessionToken({ email, name, role, mustChangePassword, exp }, secret);
+  const token = await createSessionToken({ userId, sessionVersion, email, name, role, mustChangePassword, exp }, secret);
 
   response.cookies.set(AUTH_COOKIE_NAME, token, {
     httpOnly: true,

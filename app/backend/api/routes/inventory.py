@@ -9,31 +9,16 @@ def list_product_inventory(db: Session = Depends(get_db)):
 
 
 @router.post("/inventory/products")
-def create_product_inventory(payload: ProductInventoryCreate, db: Session = Depends(get_db)):
-    if payload.quantity_on_hand < 0 or payload.quantity_reserved < 0 or payload.quantity_reserved > payload.quantity_on_hand:
-        raise HTTPException(status_code=400, detail="Voorraad en reserveringen moeten geldig en niet-negatief zijn")
+def create_product_inventory(payload: ProductInventoryCreate, request: Request, db: Session = Depends(get_db)):
     existing = db.scalar(select(ProductInventory).where(ProductInventory.product_variant_id == payload.product_variant_id))
     if existing:
         raise HTTPException(status_code=409, detail="Voor deze productvariant bestaat al een voorraadregel")
-    item = ProductInventory(**payload.model_dump())
-    db.add(item)
-    db.commit()
-    db.refresh(item)
-    return to_dict(item)
+    return create_inventory_record(db, payload.model_dump(), request.state.user_email)
 
 
 @router.put("/inventory/products/{item_id}")
-def update_product_inventory(item_id: int, payload: ProductInventoryCreate, db: Session = Depends(get_db)):
-    if payload.quantity_on_hand < 0 or payload.quantity_reserved < 0 or payload.quantity_reserved > payload.quantity_on_hand:
-        raise HTTPException(status_code=400, detail="Voorraad en reserveringen moeten geldig en niet-negatief zijn")
-    item = get_or_404(db, ProductInventory, item_id)
-    for key, value in payload.model_dump().items():
-        setattr(item, key, value)
-    db.commit()
-    db.refresh(item)
-    data = to_dict(item)
-    data["free_stock"] = item.free_stock
-    return data
+def update_product_inventory(item_id: int, payload: ProductInventoryCreate, request: Request, db: Session = Depends(get_db)):
+    return replace_inventory_record(db, item_id, payload.model_dump(), request.state.user_email)
 
 
 @router.get("/inventory/movements")
@@ -42,21 +27,21 @@ def list_inventory_movements(db: Session = Depends(get_db)):
 
 
 @router.post("/inventory/products/{item_id}/adjust")
-def adjust_product_inventory(item_id: int, quantity: int, db: Session = Depends(get_db)):
+def adjust_product_inventory(item_id: int, quantity: int, request: Request, db: Session = Depends(get_db)):
     item = get_or_404(db, ProductInventory, item_id)
-    return adjust_inventory_stock(db, item, quantity)
+    return adjust_inventory_stock(db, item, quantity, request.state.user_email)
 
 
 @router.post("/inventory/products/{item_id}/reserve")
-def reserve_product_inventory(item_id: int, quantity: int, db: Session = Depends(get_db)):
+def reserve_product_inventory(item_id: int, quantity: int, request: Request, db: Session = Depends(get_db)):
     item = get_or_404(db, ProductInventory, item_id)
-    return reserve_inventory_stock(db, item, quantity)
+    return reserve_inventory_stock(db, item, quantity, request.state.user_email)
 
 
 @router.post("/inventory/products/{item_id}/release")
-def release_product_inventory(item_id: int, quantity: int, db: Session = Depends(get_db)):
+def release_product_inventory(item_id: int, quantity: int, request: Request, db: Session = Depends(get_db)):
     item = get_or_404(db, ProductInventory, item_id)
-    return release_inventory_stock(db, item, quantity)
+    return release_inventory_stock(db, item, quantity, request.state.user_email)
 
 
 @router.get("/filament")
@@ -88,7 +73,11 @@ def update_filament(item_id: int, payload: FilamentSpoolCreate, db: Session = De
 
 @router.post("/filament/{item_id}/adjust")
 def adjust_filament(item_id: int, remaining_weight_grams: float, db: Session = Depends(get_db)):
+    if remaining_weight_grams < 0:
+        raise HTTPException(status_code=400, detail="Resterend gewicht mag niet negatief zijn")
     item = get_or_404(db, FilamentSpool, item_id)
+    if remaining_weight_grams > item.initial_weight_grams:
+        raise HTTPException(status_code=400, detail="Resterend gewicht kan niet hoger zijn dan het startgewicht")
     item.remaining_weight_grams = remaining_weight_grams
     db.commit()
     return to_dict(item)

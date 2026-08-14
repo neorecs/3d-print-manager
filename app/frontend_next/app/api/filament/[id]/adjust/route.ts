@@ -1,6 +1,7 @@
+import { backendFetch, getBackendBaseUrl } from "@/lib/backend-auth";
 import { NextRequest, NextResponse } from "next/server";
 
-const API_BASE_URL = process.env.FRONTEND_NEXT_API_BASE_URL || process.env.API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:38080";
+const API_BASE_URL = getBackendBaseUrl();
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -11,7 +12,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     return NextResponse.json({ detail: "Resterend gewicht moet een positief getal zijn" }, { status: 400 });
   }
 
-  const response = await fetch(`${API_BASE_URL}/filament/${id}/adjust?remaining_weight_grams=${encodeURIComponent(String(remaining))}`, {
+  const response = await backendFetch(`${API_BASE_URL}/filament/${id}/adjust?remaining_weight_grams=${encodeURIComponent(String(remaining))}`, {
     method: "POST",
   });
 

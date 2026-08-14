@@ -44,7 +44,7 @@ function OrderContent({ data }: { data: OrderDetailData }) {
   const ordered = data.order.items.reduce((total, item) => total + Number(item.quantity_ordered || 0), 0);
   const fromInventory = data.order.items.reduce((total, item) => total + Number(item.quantity_from_inventory || 0), 0);
   const toPrint = data.order.items.reduce((total, item) => total + Number(item.quantity_to_print || 0), 0);
-  const printMinutes = data.printJobs.reduce((total, job) => total + Number(job.estimated_print_time_minutes || 0) * Math.max(job.quantity_planned || job.quantity_needed || 1, 1), 0);
+  const printMinutes = data.printJobs.reduce((total, job) => total + Number(job.estimated_print_time_minutes || 0), 0);
 
   return (
     <div className="space-y-6">
