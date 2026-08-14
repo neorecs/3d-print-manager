@@ -87,15 +87,13 @@ services:
     restart: unless-stopped
 
   caddy:
-    image: caddy:2.10-alpine
+    build: ./ops/caddy
     ports:
       - "38502:80"
       - "38503:443"
     networks:
       - print_manager
     volumes:
-      - ./ops/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
-      - ./ops/caddy/Installeer-HTTPS-certificaat.cmd:/srv/https/Installeer-HTTPS-certificaat.cmd:ro
       - caddy_data:/data
       - caddy_config:/config
     depends_on:
