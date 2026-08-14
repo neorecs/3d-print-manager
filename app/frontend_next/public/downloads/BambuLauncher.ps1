@@ -74,7 +74,10 @@ try {
 
     $trustedOrigin = (Get-ItemProperty -Path $settingsKey -Name "TrustedOrigin").TrustedOrigin
     if ($fileUri.Scheme -notin @("http", "https")) { throw "Alleen HTTP- of HTTPS-bestanden zijn toegestaan." }
-    if ($fileUri.GetLeftPart([UriPartial]::Authority) -ne $trustedOrigin) { throw "Het bestand komt niet van jouw ingestelde 3D Print Manager." }
+    $receivedOrigin = $fileUri.GetLeftPart([UriPartial]::Authority)
+    if ($receivedOrigin -ne $trustedOrigin) {
+        throw "Het bestand komt van $receivedOrigin, maar de ingestelde 3D Print Manager is $trustedOrigin. Installeer de Windows-koppeling opnieuw vanaf de productpagina."
+    }
     if (-not $fileUri.AbsolutePath.StartsWith("/api/bambu-studio/files/")) { throw "Het bestandspad is niet toegestaan." }
     if (-not $fileUri.AbsolutePath.EndsWith(".gcode.3mf", [StringComparison]::OrdinalIgnoreCase)) { throw "Alleen printklare .gcode.3mf-bestanden zijn toegestaan." }
 

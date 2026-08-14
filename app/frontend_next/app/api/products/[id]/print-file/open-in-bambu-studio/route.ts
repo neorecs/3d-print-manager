@@ -4,6 +4,26 @@ import { bambuStudioFilename, createBambuStudioFileToken } from "@/lib/bambuStud
 
 const API_BASE_URL = process.env.FRONTEND_NEXT_API_BASE_URL || process.env.API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:38080";
 
+function externalOrigin(request: NextRequest) {
+  const candidates = [
+    request.headers.get("origin"),
+    request.headers.get("x-forwarded-host")
+      ? `${request.headers.get("x-forwarded-proto") || "http"}://${request.headers.get("x-forwarded-host")}`
+      : null,
+    new URL(request.url).origin,
+  ];
+  for (const candidate of candidates) {
+    if (!candidate) continue;
+    try {
+      const url = new URL(candidate);
+      if (url.protocol === "http:" || url.protocol === "https:") return url.origin;
+    } catch {
+      // Ignore malformed proxy headers and continue with the next candidate.
+    }
+  }
+  throw new Error("Het externe websiteadres kon niet worden bepaald.");
+}
+
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const productId = Number(id);
@@ -23,7 +43,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   try {
     const filename = bambuStudioFilename(product.internal_title || product.name || `product-${productId}`);
     const token = await createBambuStudioFileToken(productId, filename);
-    const fileUrl = new URL(`/api/bambu-studio/files/${token}/${filename}`, request.url).toString();
+    const fileUrl = new URL(`/api/bambu-studio/files/${token}/${filename}`, externalOrigin(request)).toString();
     return NextResponse.json({
       file_url: fileUrl,
       launcher_url: `printmanager://open?file=${encodeURIComponent(fileUrl)}`,
