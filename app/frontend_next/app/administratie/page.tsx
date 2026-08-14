@@ -1,5 +1,6 @@
 import { AppShell } from "@/components/AppShell";
 import { EmptyState } from "@/components/EmptyState";
+import { ErrorState } from "@/components/ErrorState";
 import { MetricCard } from "@/components/MetricCard";
 import { PageHeader } from "@/components/PageHeader";
 import { SectionCard } from "@/components/SectionCard";
@@ -39,11 +40,7 @@ export default async function AccountingPage({ searchParams }: { searchParams: P
 }
 
 function AccountingError({ message }: { message: string }) {
-  return (
-    <SectionCard title="Administratie niet bereikbaar" description="Controleer of de FastAPI backend draait en de migraties zijn uitgevoerd.">
-      <EmptyState title="Geen administratiedata" description={message} />
-    </SectionCard>
-  );
+  return <ErrorState message={message} retryHref="/administratie" title="Administratie kon niet worden geladen" />;
 }
 
 function AccountingContent({ data, filters }: { data: AccountingData; filters: { startDate?: string; endDate?: string } }) {

@@ -448,7 +448,7 @@ export function PrintPlanningManager({
         </div>
         {printBatches.length ? (
           <div className="table-scroll">
-            <table className="data-table">
+            <table className="data-table data-table-responsive">
               <thead>
                 <tr>
                   <th>Batch</th>
@@ -463,13 +463,13 @@ export function PrintPlanningManager({
               <tbody>
                 {printBatches.map((batch) => (
                   <tr key={batch.id}>
-                    <td className="font-semibold">{batch.batch_name}</td>
-                    <td>{batch.material || "-"}</td>
-                    <td>{batch.color || "-"}</td>
-                    <td><StatusBadge status={batch.status} /></td>
-                    <td className="text-right">{batch.estimated_total_print_time_minutes ? formatMinutes(batch.estimated_total_print_time_minutes) : "-"}</td>
-                    <td className="text-right">{batch.estimated_total_filament_grams || 0}g</td>
-                    <td className="text-right">
+                    <td className="font-semibold" data-label="Batch">{batch.batch_name}</td>
+                    <td data-label="Materiaal">{batch.material || "-"}</td>
+                    <td data-label="Kleur">{batch.color || "-"}</td>
+                    <td data-label="Status"><StatusBadge status={batch.status} /></td>
+                    <td className="text-right" data-label="Printtijd">{batch.estimated_total_print_time_minutes ? formatMinutes(batch.estimated_total_print_time_minutes) : "-"}</td>
+                    <td className="text-right" data-label="Filament">{batch.estimated_total_filament_grams || 0}g</td>
+                    <td className="text-right" data-label="Actie">
                       <button
                         className="rounded-md border border-line bg-slate-950/35 px-3 py-2 text-sm font-bold text-slate-300 hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-60"
                         disabled={busyKey !== null}

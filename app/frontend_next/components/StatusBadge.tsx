@@ -2,6 +2,26 @@ type StatusBadgeProps = {
   status?: string | null;
 };
 
+const statusLabels: Record<string, string> = {
+  klaar_voor_publicatie: "Klaar voor publicatie",
+  synchronisatie_nodig: "Synchronisatie nodig",
+  omgezet_naar_printtaak: "Printtaak aangemaakt",
+  volledig_op_voorraad: "Volledig op voorraad",
+  deels_op_voorraad: "Deels op voorraad",
+  niet_op_voorraad: "Niet op voorraad",
+  deels_te_printen: "Deels te printen",
+  volledig_te_printen: "Volledig te printen",
+  deels_mislukt: "Deels mislukt",
+  niet_gepubliceerd: "Niet gepubliceerd",
+  status_opgehaald: "Status bijgewerkt",
+  aandacht_nodig: "Aandacht nodig",
+};
+
+export function formatStatus(status?: string | null) {
+  const value = status || "onbekend";
+  return statusLabels[value.toLowerCase()] || value.replace(/_/g, " ").replace(/^./, (letter) => letter.toUpperCase());
+}
+
 function statusTone(status: string) {
   const normalized = status.toLowerCase();
   if (["klaar", "gepubliceerd", "verwerkt", "afgerond", "online"].some((item) => normalized.includes(item))) {
@@ -23,7 +43,7 @@ export function StatusBadge({ status }: StatusBadgeProps) {
   const value = status || "onbekend";
   return (
     <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-bold ring-1 ${statusTone(value)}`}>
-      {value.replace(/_/g, " ")}
+      {formatStatus(value)}
     </span>
   );
 }

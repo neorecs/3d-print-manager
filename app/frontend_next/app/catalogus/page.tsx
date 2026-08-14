@@ -1,5 +1,6 @@
 import { AppShell } from "@/components/AppShell";
 import { EmptyState } from "@/components/EmptyState";
+import { ErrorState } from "@/components/ErrorState";
 import { MetricCard } from "@/components/MetricCard";
 import { PageHeader } from "@/components/PageHeader";
 import { SectionCard } from "@/components/SectionCard";
@@ -41,11 +42,7 @@ export default async function CatalogPage({ searchParams }: { searchParams: Prom
 }
 
 function CatalogError({ message }: { message: string }) {
-  return (
-    <SectionCard title="Catalogus niet bereikbaar" description="Controleer of de FastAPI backend draait.">
-      <EmptyState title="Geen productdata" description={`Details: ${message}`} />
-    </SectionCard>
-  );
+  return <ErrorState message={message} retryHref="/catalogus" title="Producten konden niet worden geladen" />;
 }
 
 function CatalogContent({ data, requestedPage }: { data: ProductCatalogData; requestedPage: number }) {
@@ -82,7 +79,7 @@ function CatalogContent({ data, requestedPage }: { data: ProductCatalogData; req
             ))}
           </div>
         ) : (
-          <EmptyState title="Nog geen producten" description="Maak je eerste product aan of gebruik de AI Product Assistent voor een concept." />
+          <EmptyState title="Nog geen producten" description="Maak je eerste product aan of gebruik de AI Product Assistent voor een concept." actionHref="/catalogus/nieuw" actionLabel="Eerste product maken" />
         )}
         {pageCount > 1 ? (
           <div className="mt-5 flex items-center justify-between border-t border-line pt-4 text-sm font-bold">

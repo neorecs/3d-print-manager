@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { AppShell } from "@/components/AppShell";
 import { EmptyState } from "@/components/EmptyState";
+import { ErrorState } from "@/components/ErrorState";
 import { MetricCard } from "@/components/MetricCard";
 import { PageHeader } from "@/components/PageHeader";
 import { SectionCard } from "@/components/SectionCard";
@@ -21,8 +22,8 @@ export default async function SalesChannelsPage() {
 
   return (
     <AppShell>
-      <PageHeader title="Verkoopkanalen" description="Beheer platformen, connectorstatus en publicaties voor Etsy, Shopify en latere kanalen." />
-      {error || !data ? <SectionCard title="Verkoopkanalen niet bereikbaar"><EmptyState title="Geen data" description={error || "Geen data beschikbaar"} /></SectionCard> : <SalesChannelsContent data={data} />}
+      <PageHeader title="Verkoopkanalen" description="Beheer Etsy, Shopify en latere verkoopkanalen, inclusief koppelingen en productpublicaties." />
+      {error || !data ? <ErrorState message={error} retryHref="/verkoopkanalen" title="Verkoopkanalen konden niet worden geladen" /> : <SalesChannelsContent data={data} />}
     </AppShell>
   );
 }
@@ -38,7 +39,7 @@ function SalesChannelsContent({ data }: { data: SalesChannelsData }) {
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
         <MetricCard label="Kanalen" value={data.platforms.length} note="geregistreerd" />
         <MetricCard label="Doellanden" value={activeMarkets.length} note="actief" tone={activeMarkets.length ? "good" : "warning"} />
-        <MetricCard label="Live klaar" value={ready.length} note="credentials compleet" tone={ready.length ? "good" : "warning"} />
+        <MetricCard label="Klaar voor live" value={ready.length} note="toegang compleet" tone={ready.length ? "good" : "warning"} />
         <MetricCard label="Publicaties" value={data.publications.length} note="gekoppelde producten" />
         <MetricCard label="Sync nodig" value={syncNeeded.length} note="bijwerken vereist" tone={syncNeeded.length ? "warning" : "good"} />
       </div>
@@ -47,11 +48,11 @@ function SalesChannelsContent({ data }: { data: SalesChannelsData }) {
         <SalesMarketsManager markets={data.markets} />
       </SectionCard>
 
-      <SectionCard title="Platformen beheren" description="Credentials zelf worden veilig in de backend opgeslagen; dit scherm toont status en basisgegevens.">
+      <SectionCard title="Kanalen beheren" description="Toegangsgegevens worden veilig versleuteld opgeslagen; dit scherm toont de status en basisgegevens.">
         <SalesChannelsManager platforms={data.platforms} />
       </SectionCard>
 
-      <SectionCard title="Connectorstatus" description="Zie per kanaal welke credentials nog ontbreken voordat live import/sync veilig kan.">
+      <SectionCard title="Koppelingsstatus" description="Zie per kanaal welke toegang nog ontbreekt voordat live importeren en synchroniseren veilig kan.">
         {data.statuses.length ? (
           <div className="table-scroll">
             <table className="data-table">

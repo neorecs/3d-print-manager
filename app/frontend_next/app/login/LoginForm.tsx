@@ -2,11 +2,13 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Eye, EyeOff } from "lucide-react";
 
 export function LoginForm({ nextPath }: { nextPath: string }) {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [mfaCode, setMfaCode] = useState("");
   const [mfaRequired, setMfaRequired] = useState(false);
   const [error, setError] = useState("");
@@ -96,10 +98,11 @@ export function LoginForm({ nextPath }: { nextPath: string }) {
         <label className="text-xs font-black uppercase tracking-[.14em] text-muted" htmlFor="email">
           E-mailadres
         </label>
+        <div className="relative mt-2">
         <input
           autoComplete="email"
           autoFocus
-          className="mt-2 w-full rounded-xl border border-line bg-[#111b2d] px-4 py-3 text-sm font-semibold text-white outline-none transition focus:border-brand"
+          className="w-full rounded-md border border-line bg-[#111b2d] px-4 py-3 pr-12 text-sm font-semibold text-white transition focus:border-brand"
           id="email"
           name="email"
           onChange={(event) => setEmail(event.target.value)}
@@ -119,9 +122,17 @@ export function LoginForm({ nextPath }: { nextPath: string }) {
           name="password"
           onChange={(event) => setPassword(event.target.value)}
           required
-          type="password"
+          type={showPassword ? "text" : "password"}
           value={password}
         />
+        <button aria-label={showPassword ? "Wachtwoord verbergen" : "Wachtwoord tonen"} className="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-muted hover:text-white" onClick={() => setShowPassword((value) => !value)} type="button">
+          {showPassword ? <EyeOff aria-hidden="true" className="h-5 w-5" /> : <Eye aria-hidden="true" className="h-5 w-5" />}
+        </button>
+        </div>
+        <details className="mt-2 text-sm text-muted">
+          <summary className="cursor-pointer font-bold text-brand">Wachtwoord vergeten?</summary>
+          <p className="mt-2 leading-5">Een andere beheerder kan onder Instellingen → Gebruikers een tijdelijk wachtwoord instellen. Ben je de enige beheerder, gebruik dan de herstelprocedure op de NAS; wachtwoorden worden nooit per e-mail verstuurd.</p>
+        </details>
       </div>
       {mfaRequired ? (
         <div>

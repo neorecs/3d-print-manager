@@ -1,5 +1,7 @@
 import { AppShell } from "@/components/AppShell";
+import { CollapsibleHelp } from "@/components/CollapsibleHelp";
 import { EmptyState } from "@/components/EmptyState";
+import { ErrorState } from "@/components/ErrorState";
 import { MetricCard } from "@/components/MetricCard";
 import { PageHeader } from "@/components/PageHeader";
 import { SectionCard } from "@/components/SectionCard";
@@ -30,11 +32,7 @@ export default async function FilamentPage() {
 }
 
 function FilamentError({ message }: { message: string }) {
-  return (
-    <SectionCard title="Filament niet bereikbaar" description="Controleer of de FastAPI backend draait.">
-      <EmptyState title="Geen filamentdata" description={`Filament kan nog niet worden geladen. Details: ${message}`} />
-    </SectionCard>
-  );
+  return <ErrorState message={message} retryHref="/filament" title="Filamentgegevens konden niet worden geladen" />;
 }
 
 function FilamentContent({ data }: { data: FilamentData }) {
@@ -48,13 +46,7 @@ function FilamentContent({ data }: { data: FilamentData }) {
 
   return (
     <div className="space-y-6">
-      <SectionCard title="Wat doe ik hier?" description="Filamentvoorraad is apart van productvoorraad. Dit gaat over materiaalrollen en kosten.">
-        <div className="grid gap-3 md:grid-cols-3">
-          <WorkflowStep title="1. Rol vastleggen" text="Registreer merk, materiaal, kleur, gewicht, prijs en locatie." />
-          <WorkflowStep title="2. Gewicht bijwerken" text="Werk resterend gewicht bij na prints of bij een weegcorrectie." />
-          <WorkflowStep title="3. Voorraad bewaken" text="Gebruik minimumgewicht om lage voorraad tijdig te signaleren." />
-        </div>
-      </SectionCard>
+      <CollapsibleHelp><p>Leg merk, materiaal, kleur, gewicht, prijs en locatie per rol vast. Werk het resterende gewicht bij na een print of weegcorrectie. De minimumwaarde zorgt dat een bijna lege rol tijdig wordt gemeld.</p></CollapsibleHelp>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
         <MetricCard label="Actieve rollen" value={activeSpools.length} note={`${data.filament.length} totaal`} />

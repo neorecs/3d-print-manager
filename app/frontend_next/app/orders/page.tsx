@@ -1,5 +1,6 @@
 import { AppShell } from "@/components/AppShell";
 import { EmptyState } from "@/components/EmptyState";
+import { ErrorState } from "@/components/ErrorState";
 import { MetricCard } from "@/components/MetricCard";
 import { PageHeader } from "@/components/PageHeader";
 import { SectionCard } from "@/components/SectionCard";
@@ -34,11 +35,7 @@ export default async function OrdersPage({ searchParams }: { searchParams: Promi
 }
 
 function OrdersError({ message }: { message: string }) {
-  return (
-    <SectionCard title="Orders niet bereikbaar" description="Controleer of de FastAPI backend draait.">
-      <EmptyState title="Geen orderdata" description={`Details: ${message}`} />
-    </SectionCard>
-  );
+  return <ErrorState message={message} retryHref="/orders" title="Orders konden niet worden geladen" />;
 }
 
 function OrdersContent({ data, selectedStatus, requestedPage }: { data: OrdersData; selectedStatus: string; requestedPage: number }) {
@@ -67,7 +64,7 @@ function OrdersContent({ data, selectedStatus, requestedPage }: { data: OrdersDa
 
   return (
     <div className="space-y-6">
-      <SectionCard title="Orders importeren" description="Haal nieuwe orders op uit je verkoopkanalen. In mockmodus blijft dit veilig en worden er geen live platformcalls gedaan.">
+      <SectionCard title="Orders importeren" description="Haal nieuwe orders op uit je ingestelde verkoopkanalen. In de veilige teststand worden geen wijzigingen naar verkoopkanalen gestuurd.">
         <ShopifyImportButton />
       </SectionCard>
 

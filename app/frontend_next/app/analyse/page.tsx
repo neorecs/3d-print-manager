@@ -1,5 +1,6 @@
 import { AppShell } from "@/components/AppShell";
 import { EmptyState } from "@/components/EmptyState";
+import { ErrorState } from "@/components/ErrorState";
 import { MetricCard } from "@/components/MetricCard";
 import { PageHeader } from "@/components/PageHeader";
 import { BarList, MiniBars, SoftPanel } from "@/components/ProfessionalWidgets";
@@ -25,7 +26,7 @@ export default async function AnalyticsPage() {
         description="Omzet, winst, filamentverbruik, printerbezetting en voorraadadvies voor betere productieplanning."
         actions={<GenerateRecommendationsButton />}
       />
-      {error || !data ? <SectionCard title="Analyse niet bereikbaar"><EmptyState title="Geen analysedata" description={error || "Geen data beschikbaar"} /></SectionCard> : <AnalyticsContent data={data} />}
+      {error || !data ? <ErrorState message={error} retryHref="/analyse" title="Analyse kon niet worden geladen" /> : <AnalyticsContent data={data} />}
     </AppShell>
   );
 }
@@ -36,58 +37,34 @@ function AnalyticsContent({ data }: { data: AnalyticsData }) {
   const sold = data.salesTrends.reduce((total, row) => total + Number(row.quantity_sold || 0), 0);
   const openRecommendations = data.recommendations.filter((row) => !["genegeerd", "omgezet_naar_printtaak"].includes(row.status || ""));
   const margin = revenue ? Math.round((profit / revenue) * 100) : 0;
-  const topProducts = data.topProducts.length
-    ? data.topProducts.map((row) => ({ label: row.product || "Product", value: row.quantity_sold, note: formatCurrency(row.revenue) }))
-    : [
-        { label: "Dumpling Rood", value: 42, note: "mocktrend" },
-        { label: "Desk Organizer", value: 31, note: "mocktrend" },
-        { label: "Keychain set", value: 24, note: "mocktrend" },
-      ];
+  const topProducts = data.topProducts.map((row) => ({ label: row.product || "Product", value: row.quantity_sold, note: formatCurrency(row.revenue) }));
+  const revenueBars = data.topProducts.slice(0, 12).map((row) => Number(row.revenue || 0));
 
   return (
     <div className="space-y-6">
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
-        <MetricCard label="Verkocht" value={sold || 97} note="laatste 30 dagen" />
-        <MetricCard label="Omzet" value={formatCurrency(revenue || 1840)} note="per maand" />
-        <MetricCard label="Geschatte winst" value={formatCurrency(profit || 725)} note={`${margin || 39}% marge`} tone="good" />
-        <MetricCard label="Filamentverbruik" value="4.7 kg" note="voorbeeld per maand" />
+        <MetricCard label="Verkocht" value={sold} note="laatste 30 dagen" />
+        <MetricCard label="Omzet" value={formatCurrency(revenue)} note="laatste 30 dagen" />
+        <MetricCard label="Geschatte winst" value={formatCurrency(profit)} note={`${margin}% marge`} tone="good" />
+        <MetricCard label="Producttrends" value={data.salesTrends.length} note="met historische data" />
         <MetricCard label="Open adviezen" value={openRecommendations.length} note="voorraadadvies" tone={openRecommendations.length ? "warning" : "good"} />
       </div>
 
       <div className="grid gap-5 xl:grid-cols-3">
-        <SectionCard title="Omzet per maand" description="Voorbeeldgrafiek totdat er meer historische data is.">
-          <MiniBars values={[8, 11, 13, 10, 15, 18, 16, 22, 24, 21, 28, 31]} />
+        <SectionCard title="Omzetverdeling" description="Werkelijke omzet van de best verkochte producten in de gekozen periode.">
+          {revenueBars.length ? <MiniBars values={revenueBars} /> : <EmptyState title="Nog geen omzettrend" description="De grafiek verschijnt zodra er verwerkte orderhistorie is." actionHref="/orders" actionLabel="Naar orders" />}
         </SectionCard>
         <SectionCard title="Winst per product" description="Rangschik op marge en absolute winst.">
-          <BarList items={topProducts} />
+          {topProducts.length ? <BarList items={topProducts} /> : <EmptyState title="Nog geen winstdata" description="Verkoop- en kostengegevens zijn nodig om producten te vergelijken." actionHref="/catalogus" actionLabel="Naar producten" />}
         </SectionCard>
-        <SectionCard title="Printerbezetting" description="Indicatieve bezetting per printer voor capaciteitsplanning.">
-          <BarList
-            items={[
-              { label: "X1C Farm 01", value: 82, note: "82%" },
-              { label: "P1S Farm 02", value: 64, note: "64%" },
-              { label: "A1 Mini 03", value: 48, note: "48%" },
-              { label: "P1P 04", value: 28, note: "28%" },
-            ]}
-            maxValue={100}
-          />
+        <SectionCard title="Printerbezetting" description="Wordt berekend zodra voldoende echte printerhistorie beschikbaar is.">
+          <EmptyState title="Nog geen bezettingshistorie" description="Actuele printerstatus is beschikbaar onder Printers; historische bezetting wordt hier pas getoond met voldoende metingen." actionHref="/bambu-printers" actionLabel="Naar printers" />
         </SectionCard>
       </div>
 
       <div className="grid gap-5 xl:grid-cols-2">
-        <SectionCard title="Filamentverbruik per maand" description="Gebruik dit om materiaalinkoop en batchkleuren te plannen.">
-          <div className="grid gap-4 md:grid-cols-2">
-            <SoftPanel>
-              <div className="text-sm font-black text-muted">PLA</div>
-              <div className="mt-2 text-3xl font-black">3.2 kg</div>
-              <div className="mt-3 h-2 rounded-full bg-slate-800"><div className="h-full w-[72%] rounded-full bg-brand" /></div>
-            </SoftPanel>
-            <SoftPanel>
-              <div className="text-sm font-black text-muted">PETG</div>
-              <div className="mt-2 text-3xl font-black">1.1 kg</div>
-              <div className="mt-3 h-2 rounded-full bg-slate-800"><div className="h-full w-[34%] rounded-full bg-sky-400" /></div>
-            </SoftPanel>
-          </div>
+        <SectionCard title="Filamentverbruik" description="Werkelijk geboekt verbruik wordt hier per materiaal samengevat zodra printresultaten dit registreren.">
+          <EmptyState title="Nog geen verbruiksmetingen" description="Verwerk printresultaten om materiaalverbruik op te bouwen." actionHref="/printplanning" actionLabel="Naar productie" />
         </SectionCard>
         <SectionCard title="Verwachte voorraadbehoefte" description="Advies op basis van trend, vrije voorraad en veiligheidsvoorraad.">
           {data.recommendations.length ? (

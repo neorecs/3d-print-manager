@@ -1,5 +1,6 @@
 import { AppShell } from "@/components/AppShell";
 import { EmptyState } from "@/components/EmptyState";
+import { ErrorState } from "@/components/ErrorState";
 import { MetricCard } from "@/components/MetricCard";
 import { PageHeader } from "@/components/PageHeader";
 import { ActivityItem, BarList, MiniBars, SoftPanel, StatusSummary } from "@/components/ProfessionalWidgets";
@@ -31,11 +32,7 @@ export default async function DashboardPage() {
 }
 
 function DashboardError({ message }: { message: string }) {
-  return (
-    <SectionCard title="Backend niet bereikbaar" description="De visuele basis blijft beschikbaar, maar live data kon niet worden geladen.">
-      <EmptyState title="Nog geen dashboarddata" description={`Details: ${message}`} />
-    </SectionCard>
-  );
+  return <ErrorState message={message} title="Dashboardgegevens niet beschikbaar" />;
 }
 
 function DashboardContent({ data }: { data: DashboardData }) {
@@ -173,8 +170,8 @@ function DashboardContent({ data }: { data: DashboardData }) {
             {!data.printers.length ? <EmptyState title="Geen printers" description="Voeg een printer toe om live status te tonen." /> : null}
           </div>
         </SectionCard>
-        <SectionCard title="Omzettrend" description="Voorbeeldgrafiek voor maandelijkse omzetontwikkeling.">
-          <MiniBars values={monthlyRevenue} />
+        <SectionCard title="Omzettrend" description="Werkelijke orderomzet per maand in het huidige jaar.">
+          {monthlyRevenue.some((value) => value > 0) ? <MiniBars values={monthlyRevenue} /> : <EmptyState title="Nog geen omzet" description="De omzetgrafiek verschijnt zodra orders met een bedrag zijn geïmporteerd." actionHref="/orders" actionLabel="Naar orders" />}
         </SectionCard>
       </div>
 

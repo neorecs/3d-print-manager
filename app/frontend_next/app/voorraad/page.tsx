@@ -1,5 +1,7 @@
 import { AppShell } from "@/components/AppShell";
+import { CollapsibleHelp } from "@/components/CollapsibleHelp";
 import { EmptyState } from "@/components/EmptyState";
+import { ErrorState } from "@/components/ErrorState";
 import { MetricCard } from "@/components/MetricCard";
 import { PageHeader } from "@/components/PageHeader";
 import { SectionCard } from "@/components/SectionCard";
@@ -30,11 +32,7 @@ export default async function InventoryPage() {
 }
 
 function InventoryError({ message }: { message: string }) {
-  return (
-    <SectionCard title="Productvoorraad niet bereikbaar" description="Controleer of de FastAPI backend draait.">
-      <EmptyState title="Geen voorraaddata" description={message} />
-    </SectionCard>
-  );
+  return <ErrorState message={message} retryHref="/voorraad" title="Voorraad kon niet worden geladen" />;
 }
 
 function InventoryContent({ data }: { data: InventoryData }) {
@@ -45,13 +43,7 @@ function InventoryContent({ data }: { data: InventoryData }) {
 
   return (
     <div className="space-y-6">
-      <SectionCard title="Wat doe ik hier?" description="Productvoorraad is wat al geprint is. Filamentvoorraad staat apart onder Filament.">
-        <div className="grid gap-3 md:grid-cols-3">
-          <Step title="1. Vrije voorraad" text="Vrij = op voorraad min gereserveerd voor orders." />
-          <Step title="2. Minimum bewaken" text="Lage voorraad geeft aan welke varianten aangevuld moeten worden." />
-          <Step title="3. Bewegingen controleren" text="Elke reservering, correctie, retour of printresultaat blijft traceerbaar." />
-        </div>
-      </SectionCard>
+      <CollapsibleHelp><p>Productvoorraad bestaat uit producten die al geprint zijn. Vrije voorraad is wat op voorraad ligt min reserveringen voor orders. Minimumvoorraad en alle bewegingen blijven traceerbaar. Filamentrollen beheer je apart onder <a className="font-bold text-brand" href="/filament">Filament</a>.</p></CollapsibleHelp>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
         <MetricCard label="Voorraadregels" value={data.inventory.length} note="productvarianten" />
@@ -64,7 +56,7 @@ function InventoryContent({ data }: { data: InventoryData }) {
       <SectionCard title="Voorraadregels" description="Open het product om voorraadregels inhoudelijk te wijzigen.">
         {data.inventory.length ? (
           <div className="table-scroll">
-            <table className="data-table">
+            <table className="data-table data-table-responsive">
               <thead>
                 <tr>
                   <th>Product</th>
@@ -85,15 +77,15 @@ function InventoryContent({ data }: { data: InventoryData }) {
                   const low = free(item) <= Number(item.minimum_stock_level || 0);
                   return (
                     <tr key={item.id}>
-                      <td className="font-semibold"><a className="hover:text-brand" href={`/catalogus/${item.product_id}`}>{product?.internal_title || product?.name || `Product ${item.product_id}`}</a></td>
-                      <td>{variant?.variant_name || variant?.sku || `Variant ${item.product_variant_id}`}</td>
-                      <td>{item.color || variant?.color || "-"}</td>
-                      <td>{item.material || variant?.material || "-"}</td>
-                      <td className="text-right">{item.quantity_on_hand}</td>
-                      <td className="text-right">{item.quantity_reserved}</td>
-                      <td className="text-right font-bold">{free(item)}</td>
-                      <td><StatusBadge status={low ? "lage voorraad" : "voldoende"} /></td>
-                      <td>{item.location || "-"}</td>
+                      <td className="font-semibold" data-label="Product"><a className="hover:text-brand" href={`/catalogus/${item.product_id}`}>{product?.internal_title || product?.name || `Product ${item.product_id}`}</a></td>
+                      <td data-label="Variant">{variant?.variant_name || variant?.sku || `Variant ${item.product_variant_id}`}</td>
+                      <td data-label="Kleur">{item.color || variant?.color || "-"}</td>
+                      <td data-label="Materiaal">{item.material || variant?.material || "-"}</td>
+                      <td className="text-right" data-label="Op voorraad">{item.quantity_on_hand}</td>
+                      <td className="text-right" data-label="Gereserveerd">{item.quantity_reserved}</td>
+                      <td className="text-right font-bold" data-label="Vrij">{free(item)}</td>
+                      <td data-label="Status"><StatusBadge status={low ? "lage voorraad" : "voldoende"} /></td>
+                      <td data-label="Locatie">{item.location || "-"}</td>
                     </tr>
                   );
                 })}
@@ -108,7 +100,7 @@ function InventoryContent({ data }: { data: InventoryData }) {
       <SectionCard title="Laatste voorraadbewegingen" description="Traceerbare wijzigingen uit orders, printresultaten en correcties.">
         {data.movements.length ? (
           <div className="table-scroll">
-            <table className="data-table">
+            <table className="data-table data-table-responsive">
               <thead>
                 <tr>
                   <th>Moment</th>
@@ -121,11 +113,11 @@ function InventoryContent({ data }: { data: InventoryData }) {
               <tbody>
                 {data.movements.slice(0, 25).map((item) => (
                   <tr key={item.id}>
-                    <td>{item.created_at ? new Date(item.created_at).toLocaleString("nl-NL") : "-"}</td>
-                    <td><StatusBadge status={item.movement_type} /></td>
-                    <td className="text-right font-semibold">{item.quantity}</td>
-                    <td>{item.source || (item.print_job_id ? `Printtaak ${item.print_job_id}` : item.order_id ? `Order ${item.order_id}` : "-")}</td>
-                    <td>{item.note || item.reason || "-"}</td>
+                    <td data-label="Moment">{item.created_at ? new Date(item.created_at).toLocaleString("nl-NL") : "-"}</td>
+                    <td data-label="Beweging"><StatusBadge status={item.movement_type} /></td>
+                    <td className="text-right font-semibold" data-label="Aantal">{item.quantity}</td>
+                    <td data-label="Bron">{item.source || (item.print_job_id ? `Printtaak ${item.print_job_id}` : item.order_id ? `Order ${item.order_id}` : "-")}</td>
+                    <td data-label="Toelichting">{item.note || item.reason || "-"}</td>
                   </tr>
                 ))}
               </tbody>

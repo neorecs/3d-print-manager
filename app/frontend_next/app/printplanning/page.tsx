@@ -1,5 +1,7 @@
 import { AppShell } from "@/components/AppShell";
+import { CollapsibleHelp } from "@/components/CollapsibleHelp";
 import { EmptyState } from "@/components/EmptyState";
+import { ErrorState } from "@/components/ErrorState";
 import { MetricCard } from "@/components/MetricCard";
 import { PageHeader } from "@/components/PageHeader";
 import { SectionCard } from "@/components/SectionCard";
@@ -20,7 +22,7 @@ export default async function PrintPlanningPage() {
   return (
     <AppShell>
       <PageHeader
-        title="Printplanning"
+        title="Productie"
         description="Plan printtaken, groepeer batches en verwerk printresultaten zonder Bambu Studio te vervangen."
         actions={<a className="rounded-xl border border-line px-4 py-2 text-sm font-black text-slate-200 hover:bg-white/5" href="/orders">Naar orders</a>}
       />
@@ -30,11 +32,7 @@ export default async function PrintPlanningPage() {
 }
 
 function PrintPlanningError({ message }: { message: string }) {
-  return (
-    <SectionCard title="Printplanning niet bereikbaar" description="Controleer of de FastAPI backend draait.">
-      <EmptyState title="Geen printplanningdata" description={`Printplanning kan nog niet worden geladen. Details: ${message}`} />
-    </SectionCard>
-  );
+  return <ErrorState message={message} retryHref="/printplanning" title="Productieplanning kon niet worden geladen" />;
 }
 
 function PrintPlanningContent({ data }: { data: PrintPlanningData }) {
@@ -53,13 +51,7 @@ function PrintPlanningContent({ data }: { data: PrintPlanningData }) {
 
   return (
     <div className="space-y-6">
-      <SectionCard title="Wat doe ik hier?" description="Dit scherm organiseert printwerk. Slicing en printvoorbereiding blijven in Bambu Studio.">
-        <div className="grid gap-3 md:grid-cols-3">
-          <WorkflowStep title="1. Taken plannen" text="Controleer aantallen, printtijd, filament en status per printtaak." />
-          <WorkflowStep title="2. Batches maken" text="Groepeer taken op materiaal en kleur zodat je efficiënter kunt printen." />
-          <WorkflowStep title="3. Resultaat verwerken" text="Boek gelukte prints naar order of vrije voorraad en registreer mislukte prints." />
-        </div>
-      </SectionCard>
+      <CollapsibleHelp><p>Controleer eerst aantallen, filament en printtijd. Groepeer taken daarna per materiaal en kleur. Na het printen boek je gelukte aantallen naar de order of vrije voorraad en registreer je mislukte prints. Slicing blijft in Bambu Studio.</p></CollapsibleHelp>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
         <MetricCard label="Open printtaken" value={openJobs.length} note={`${totalQuantity} stuks`} />
@@ -69,7 +61,7 @@ function PrintPlanningContent({ data }: { data: PrintPlanningData }) {
         <MetricCard label="Mislukt/deels" value={failedJobs.length} note="aandacht nodig" tone={failedJobs.length ? "danger" : "good"} />
       </div>
 
-      <SectionCard title="Printplanning beheren" description="Maak batches, wijzig taken en verwerk printresultaten.">
+      <SectionCard title="Productie beheren" description="Maak batches, wijzig taken en verwerk printresultaten.">
         <PrintPlanningManager
           orderItems={data.orderItems}
           orders={data.orders}

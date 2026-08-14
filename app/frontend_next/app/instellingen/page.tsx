@@ -27,13 +27,14 @@ export default async function SettingsPage() {
       <PageHeader
         title="Instellingen"
         description="Live-klaar maken zonder nu al betaalde Etsy- of Shopify-afspraken te sluiten."
+        actions={<div className="flex flex-wrap gap-2"><a className="rounded-md border border-line px-3 py-2 text-sm font-bold" href="/account/beveiliging">Account</a><a className="rounded-md border border-line px-3 py-2 text-sm font-bold" href="/instellingen/gebruikers">Gebruikers</a></div>}
       />
       <div className="space-y-6">
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           <MetricCard
-            label="Connector modus"
-            value={readiness.connectors_live_mode ? "Live" : "Mock"}
-            note={readiness.live_calls_blocked ? "echte platformcalls geblokkeerd" : "echte platformcalls mogelijk"}
+            label="Koppelingsstand"
+            value={readiness.connectors_live_mode ? "Live" : "Veilige teststand"}
+            note={readiness.live_calls_blocked ? "geen wijzigingen naar verkoopkanalen" : "live verbinding actief"}
             tone={readiness.live_calls_blocked ? "good" : "warning"}
           />
           <MetricCard
@@ -43,9 +44,9 @@ export default async function SettingsPage() {
             tone={readiness.platform_subscription_required_now ? "warning" : "good"}
           />
           <MetricCard
-            label="Secrets"
+            label="Versleuteling"
             value={readiness.credential_encryption_configured ? "Actief" : "Mist"}
-            note="credential encryptie"
+            note="toegangsgegevens beschermd"
             tone={readiness.credential_encryption_configured ? "good" : "danger"}
           />
           <MetricCard
@@ -58,28 +59,28 @@ export default async function SettingsPage() {
 
         <SectionCard
           title="Live-klaar zonder abonnement"
-          description="Deze controles maken de applicatie klaar voor echte data, terwijl Etsy en Shopify nog in veilige mockmodus blijven."
+          description="Deze controles maken de applicatie klaar voor echte gegevens, terwijl Etsy en Shopify nog in de veilige teststand blijven."
         >
           <div className="grid gap-3">
             <CheckRow
-              label="Live calls geblokkeerd"
+              label="Live platformcontact geblokkeerd"
               ok={readiness.live_calls_blocked}
-              detail="CONNECTORS_LIVE_MODE moet false blijven totdat je bewust echte API-acties wilt uitvoeren."
+              detail="De app kan in de teststand geen echte wijzigingen naar Etsy of Shopify sturen."
             />
             <CheckRow
-              label="Credential encryptie"
+              label="Toegangsgegevens versleuteld"
               ok={readiness.credential_encryption_configured}
-              detail="Echte tokens worden alleen veilig opgeslagen met CREDENTIAL_ENCRYPTION_KEY."
+              detail="Geheime sleutels en tokens worden alleen versleuteld opgeslagen."
             />
             <CheckRow
-              label="Backend afgeschermd"
+              label="Interne diensten afgeschermd"
               ok={readiness.internal_api_configured && readiness.session_signing_configured}
-              detail="Alle backendaanvragen vereisen een interne sleutel en een actuele gebruikerssessie."
+              detail="Alle interne aanvragen vereisen een geldige gebruikerssessie en beveiligde interne toegang."
             />
             <CheckRow
-              label="Database ingesteld"
+              label="Gegevensopslag bereikbaar"
               ok={readiness.database_reachable}
-              detail="De app voert een echte verbindingscontrole met PostgreSQL uit."
+              detail="De centrale gegevensopslag is bereikbaar en gecontroleerd."
             />
             <CheckRow
               label="Bestandsopslag"
@@ -107,9 +108,9 @@ export default async function SettingsPage() {
               detail="De hoofdinterface gebruikt ingeschakelde databaseaccounts voor toegang."
             />
             <CheckRow
-              label="HTTPS-sessie"
-              ok={readiness.secure_cookie_enabled}
-              detail="Voor externe toegang moeten HTTPS en secure cookies actief zijn."
+              label="Externe toegang"
+              ok={!readiness.connectors_live_mode || readiness.secure_cookie_enabled}
+              detail={readiness.secure_cookie_enabled ? "Beveiligde externe toegang is actief." : "Uitgesteld zolang de app alleen op het lokale netwerk wordt gebruikt."}
             />
             <CheckRow
               label="Backupplan aanwezig"
@@ -151,13 +152,13 @@ export default async function SettingsPage() {
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
             {[
               "Productcatalogus vullen",
-              "AI concepten in mockmodus testen",
+              "AI-concepten in gratis teststand maken",
               "Voorraad en filament beheren",
               "Backups en herstel oefenen",
               "Bambu printers beheren",
               "Verkooplanden en talen voorbereiden",
               "Publicatievelden klaarzetten",
-              "Connector credentials later pas toevoegen",
+              "Toegang tot verkoopkanalen later toevoegen",
             ].map((item) => (
               <div className="rounded-xl border border-line bg-panelSoft p-4 text-sm font-bold text-slate-200" key={item}>
                 {item}
