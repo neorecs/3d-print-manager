@@ -334,9 +334,12 @@ De aanbevolen workflow houdt Bambu Cloud, Bambu Handy en Bambu Studio beschikbaa
 1. Koppel op de productdetailpagina een door Bambu Studio voorbereid `.gcode.3mf` bestand.
 2. Installeer eenmalig de `Windows-koppeling` op iedere computer waarmee je Bambu Studio wilt openen.
 3. Kies `Open direct in Bambu Studio` en sta toe dat de browser de lokale 3D Print Manager-koppeling opent.
-4. De koppeling downloadt en valideert het beveiligde bestand en opent het daarna lokaal in Bambu Studio.
-5. Gebruik `Alleen downloaden` als reserveoptie.
-6. Controleer printer, plate, materiaal/kleur en AMS-toewijzing en kies `Print plate`.
-7. Verwerk na afloop het printresultaat in Printplanning.
+4. Kies eerst de productvariant en printer; de app leest de actuele AMS-sleuven en koppelt op materiaal en kleur.
+5. De koppeling downloadt en valideert het beveiligde bestand en opent het daarna lokaal in Bambu Studio.
+6. Gebruik `Alleen downloaden` als reserveoptie.
+7. Bevestig in Bambu Studio de fysieke printer, plate en AMS-toewijzing en kies `Print plate`.
+8. Verwerk na afloop het printresultaat in Printplanning.
+
+Een reeds geslicet bestand wordt nooit stilzwijgend naar een ander materiaal of incompatibel printermodel omgezet. De app blokkeert zo'n combinatie en vraagt om opnieuw slicen. De fysieke cloudprinter moet in Bambu Studio bevestigd worden, omdat Bambu Studio hiervoor geen ondersteunde externe koppeling aanbiedt.
 
 Een batchpakket bevat de productielijst, het orderoverzicht, een korte handleiding en alle unieke gekoppelde printbestanden. Direct starten via LAN/MQTT staat apart als geavanceerde modus en is niet nodig voor deze cloudworkflow.

@@ -29,6 +29,10 @@ ALLOWED_BAMBU_PRINT_SUFFIXES = (".gcode.3mf", "_gcode.3mf")
 
 
 def public_bambu_printer_dict(printer: BambuPrinter) -> dict:
+    try:
+        ams_slots = json.loads(printer.ams_slots_json or "[]")
+    except (TypeError, ValueError):
+        ams_slots = []
     return {
         "id": printer.id,
         "name": printer.name,
@@ -49,6 +53,7 @@ def public_bambu_printer_dict(printer: BambuPrinter) -> dict:
         "bed_temperature": printer.bed_temperature,
         "chamber_temperature": printer.chamber_temperature,
         "current_task": printer.current_task,
+        "ams_slots": ams_slots,
         "created_at": printer.created_at.isoformat() if printer.created_at else None,
         "updated_at": printer.updated_at.isoformat() if printer.updated_at else None,
     }
@@ -471,6 +476,53 @@ def apply_bambu_status_payload(printer: BambuPrinter, payload: object) -> None:
     printer.bed_temperature = _float_value(print_data.get("bed_temper") or print_data.get("bed_temperature"))
     printer.chamber_temperature = _float_value(print_data.get("chamber_temper") or print_data.get("chamber_temperature"))
     printer.current_task = _string_value(print_data.get("subtask_name") or print_data.get("gcode_file") or print_data.get("file"))
+    if isinstance(print_data.get("ams"), dict):
+        printer.ams_slots_json = json.dumps(_extract_ams_slots(print_data), separators=(",", ":"))
+
+
+def _extract_ams_slots(print_data: dict) -> list[dict]:
+    slots: list[dict] = []
+    ams_data = print_data.get("ams") if isinstance(print_data.get("ams"), dict) else {}
+    units = ams_data.get("ams") if isinstance(ams_data.get("ams"), list) else []
+    for unit in units:
+        if not isinstance(unit, dict):
+            continue
+        ams_id = _int_value(unit.get("id"))
+        trays = unit.get("tray") if isinstance(unit.get("tray"), list) else []
+        for tray in trays:
+            if not isinstance(tray, dict):
+                continue
+            tray_id = _int_value(tray.get("id"))
+            material = _string_value(tray.get("tray_type"))
+            if ams_id is None or tray_id is None or not material:
+                continue
+            color = _normalize_tray_color(tray.get("tray_color"))
+            slots.append(
+                {
+                    "ams_id": ams_id,
+                    "tray_id": tray_id,
+                    "slot_number": ams_id * 4 + tray_id + 1,
+                    "label": f"AMS {ams_id + 1} - sleuf {tray_id + 1}",
+                    "material": material,
+                    "color_hex": color,
+                    "remaining_percent": _int_value(tray.get("remain")),
+                    "filament_id": _string_value(tray.get("tray_info_idx")),
+                    "filament_name": _string_value(tray.get("tray_sub_brands") or tray.get("tray_id_name")),
+                }
+            )
+    return slots
+
+
+def _normalize_tray_color(value: object) -> str | None:
+    text = _string_value(value)
+    if not text:
+        return None
+    cleaned = text.lstrip("#")
+    if len(cleaned) == 8:
+        cleaned = cleaned[:6]
+    if len(cleaned) != 6 or any(char not in "0123456789abcdefABCDEF" for char in cleaned):
+        return None
+    return f"#{cleaned.upper()}"
 
 
 def _string_value(value: object) -> str | None:

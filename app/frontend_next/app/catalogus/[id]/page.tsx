@@ -75,7 +75,7 @@ function DetailContent({ data }: { data: ProductDetailData }) {
       </SectionCard>
 
       <SectionCard title="Printbestand beheren" description="Koppel een printklaar Bambu Studio .gcode.3mf bestand aan dit product. Varianten gebruiken standaard ditzelfde bestand.">
-        <ProductPrintFileManager product={data.product} printers={data.printers} />
+        <ProductPrintFileManager product={data.product} variants={data.variants} printers={data.printers} />
       </SectionCard>
 
       <div className="grid gap-5 xl:grid-cols-2">

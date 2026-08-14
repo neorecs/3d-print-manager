@@ -33,26 +33,26 @@ function constantTimeEqual(left: string, right: string) {
   return result === 0;
 }
 
-function signatureValue(productId: number, expiresAt: number, filename: string) {
-  return `${productId}:${expiresAt}:${filename}`;
+function signatureValue(productId: number, expiresAt: number, filename: string, context: string) {
+  return `${productId}:${expiresAt}:${filename}:${context}`;
 }
 
-export async function createBambuStudioFileToken(productId: number, filename: string) {
+export async function createBambuStudioFileToken(productId: number, filename: string, context = "") {
   const secret = getSecret();
   if (!secret) throw new Error("De beveiligingssleutel voor Bambu Studio-links ontbreekt.");
   const expiresAt = Math.floor(Date.now() / 1000) + TOKEN_LIFETIME_SECONDS;
-  const signature = await sign(signatureValue(productId, expiresAt, filename), secret);
+  const signature = await sign(signatureValue(productId, expiresAt, filename, context), secret);
   return `${productId}.${expiresAt}.${signature}`;
 }
 
-export async function verifyBambuStudioFileToken(token: string, filename: string) {
+export async function verifyBambuStudioFileToken(token: string, filename: string, context = "") {
   const secret = getSecret();
   const [productIdValue, expiresAtValue, signature] = token.split(".");
   const productId = Number(productIdValue);
   const expiresAt = Number(expiresAtValue);
   if (!secret || !Number.isInteger(productId) || productId <= 0 || !Number.isInteger(expiresAt) || !signature) return null;
   if (expiresAt < Math.floor(Date.now() / 1000)) return null;
-  const expected = await sign(signatureValue(productId, expiresAt, filename), secret);
+  const expected = await sign(signatureValue(productId, expiresAt, filename, context), secret);
   return constantTimeEqual(signature, expected) ? { productId, expiresAt } : null;
 }
 

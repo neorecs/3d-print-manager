@@ -29,12 +29,13 @@ Dit is de aanbevolen werkwijze zolang je Bambu Cloud en Bambu Handy wilt blijven
 1. Open `Producten` en kies het product.
 2. Ga naar `Printbestand beheren` en upload een printklaar `.gcode.3mf` bestand als dat nog ontbreekt.
 3. Kies eenmalig `Windows-koppeling installeren`, open het gedownloade installatiebestand en rond de installatie af.
-4. Kies `Open direct in Bambu Studio`.
-5. Sta toe dat je browser de 3D Print Manager-koppeling opent. Je browser kan deze keuze eventueel onthouden.
-6. De koppeling downloadt en controleert het tijdelijke bestand en opent het daarna lokaal in Bambu Studio.
-7. Controleer printer, plate, materiaal, kleur en AMS-toewijzing.
-8. Kies in Bambu Studio `Print plate`.
-9. Ga na afloop naar `Printplanning` en verwerk het printresultaat.
+4. Kies de productvariant en de gewenste printer.
+5. Kies `Open direct in Bambu Studio`. De app leest eerst de actuele AMS-sleuven en kiest materiaal en kleur.
+6. Sta toe dat je browser de 3D Print Manager-koppeling opent. Je browser kan deze keuze eventueel onthouden.
+7. De koppeling downloadt en controleert het tijdelijke bestand en opent het daarna lokaal in Bambu Studio.
+8. Controleer de fysieke printer, plate en voorgestelde AMS-toewijzing. Bambu Studio laat een extern programma de fysieke cloudprinter niet vooraf kiezen.
+9. Kies in Bambu Studio `Print plate`.
+10. Ga na afloop naar `Printplanning` en verwerk het printresultaat.
 
 De Windows-koppeling accepteert alleen beveiligde tijdelijke bestandslinks van jouw eigen 3D Print Manager. Werkt direct openen niet op de gebruikte computer, installeer de koppeling opnieuw of kies `Alleen downloaden`. Direct openen werkt niet op een telefoon, omdat Bambu Studio daar niet beschikbaar is.
 

@@ -3,7 +3,13 @@ from support import BackendTestCase
 from models import BambuPrinter
 from pathlib import Path
 
-from services.bambu_printers import _bambu_remote_print_filename, _mqtt_reason_code_success, preflight_bambu_print_start
+from services.bambu_printers import (
+    _bambu_remote_print_filename,
+    _mqtt_reason_code_success,
+    apply_bambu_status_payload,
+    preflight_bambu_print_start,
+    public_bambu_printer_dict,
+)
 
 
 class BambuPrinterPreflightTests(BackendTestCase):
@@ -83,3 +89,28 @@ class BambuPrinterPreflightTests(BackendTestCase):
         self.assertLessEqual(len(filename), 25)
         self.assertTrue(filename.startswith("pm-"))
         self.assertTrue(filename.endswith(".gcode.3mf"))
+
+    def test_status_payload_exposes_ams_material_and_color(self):
+        printer = self.make_printer("IDLE")
+        apply_bambu_status_payload(
+            printer,
+            {
+                "print": {
+                    "gcode_state": "IDLE",
+                    "ams": {
+                        "ams": [
+                            {
+                                "id": "0",
+                                "tray": [
+                                    {"id": "0", "tray_type": "PLA", "tray_color": "AA1122FF", "remain": 75}
+                                ],
+                            }
+                        ]
+                    },
+                }
+            },
+        )
+        slots = public_bambu_printer_dict(printer)["ams_slots"]
+        self.assertEqual(slots[0]["label"], "AMS 1 - sleuf 1")
+        self.assertEqual(slots[0]["material"], "PLA")
+        self.assertEqual(slots[0]["color_hex"], "#AA1122")

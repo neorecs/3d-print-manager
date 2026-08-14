@@ -41,14 +41,40 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   }
 
   try {
+    const payload = await request.json().catch(() => ({}));
+    const variantId = Number(payload.variant_id);
+    const printerId = Number(payload.printer_id);
+    if (!Number.isInteger(variantId) || variantId <= 0 || !Number.isInteger(printerId) || printerId <= 0) {
+      return NextResponse.json({ detail: "Kies eerst een productvariant en printer." }, { status: 400 });
+    }
+    const preparationUrl = new URL(`${API_BASE_URL}/products/${productId}/print-file/preparation`);
+    preparationUrl.searchParams.set("variant_id", String(variantId));
+    preparationUrl.searchParams.set("printer_id", String(printerId));
+    const preparationResponse = await fetch(preparationUrl, { cache: "no-store" });
+    const preparation = await preparationResponse.json().catch(() => null);
+    if (!preparationResponse.ok || !preparation?.recommended_slot) {
+      return NextResponse.json(
+        { detail: preparation?.detail || "Geen passende AMS-sleuf gevonden." },
+        { status: preparationResponse.status },
+      );
+    }
+    const amsId = Number(preparation.recommended_slot.ams_id);
+    const trayId = Number(preparation.recommended_slot.tray_id);
+    const context = `${variantId}:${printerId}:${amsId}:${trayId}`;
     const filename = bambuStudioFilename(product.internal_title || product.name || `product-${productId}`);
-    const token = await createBambuStudioFileToken(productId, filename);
-    const fileUrl = new URL(`/api/bambu-studio/files/${token}/${filename}`, externalOrigin(request)).toString();
+    const token = await createBambuStudioFileToken(productId, filename, context);
+    const fileUrlObject = new URL(`/api/bambu-studio/files/${token}/${filename}`, externalOrigin(request));
+    fileUrlObject.searchParams.set("variant_id", String(variantId));
+    fileUrlObject.searchParams.set("printer_id", String(printerId));
+    fileUrlObject.searchParams.set("ams_id", String(amsId));
+    fileUrlObject.searchParams.set("tray_id", String(trayId));
+    const fileUrl = fileUrlObject.toString();
     return NextResponse.json({
       file_url: fileUrl,
       launcher_url: `printmanager://open?file=${encodeURIComponent(fileUrl)}`,
       protocol_url: `bambustudio://open?file=${encodeURIComponent(fileUrl)}`,
       expires_in_seconds: 600,
+      preparation,
     });
   } catch (error) {
     return NextResponse.json(

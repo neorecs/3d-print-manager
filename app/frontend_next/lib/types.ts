@@ -164,6 +164,19 @@ export type BambuPrinter = {
   bed_temperature?: number | null;
   chamber_temperature?: number | null;
   current_task?: string | null;
+  ams_slots?: BambuAmsSlot[];
+};
+
+export type BambuAmsSlot = {
+  ams_id: number;
+  tray_id: number;
+  slot_number: number;
+  label: string;
+  material: string;
+  color_hex?: string | null;
+  remaining_percent?: number | null;
+  filament_id?: string | null;
+  filament_name?: string | null;
 };
 
 export type BambuPrintersData = {

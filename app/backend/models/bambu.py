@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import DateTime, Float, Integer, String
+from sqlalchemy import DateTime, Float, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from database import Base
@@ -29,3 +29,4 @@ class BambuPrinter(TimestampMixin, Base):
     bed_temperature: Mapped[float | None] = mapped_column(Float, nullable=True)
     chamber_temperature: Mapped[float | None] = mapped_column(Float, nullable=True)
     current_task: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    ams_slots_json: Mapped[str | None] = mapped_column(Text, nullable=True)

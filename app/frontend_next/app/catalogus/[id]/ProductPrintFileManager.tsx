@@ -3,7 +3,7 @@
 import { ChangeEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { StatusBadge } from "@/components/StatusBadge";
-import type { BambuPrinter, Product } from "@/lib/types";
+import type { BambuPrinter, Product, ProductVariant } from "@/lib/types";
 
 type PreflightCheck = {
   name: string;
@@ -19,18 +19,20 @@ type PreflightResult = {
   checks: PreflightCheck[];
 };
 
-export function ProductPrintFileManager({ product, printers }: { product: Product; printers: BambuPrinter[] }) {
+export function ProductPrintFileManager({ product, variants, printers }: { product: Product; variants: ProductVariant[]; printers: BambuPrinter[] }) {
   const router = useRouter();
   const [uploading, setUploading] = useState(false);
   const [busy, setBusy] = useState<"studio" | "preflight" | "start" | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [selectedPrinterId, setSelectedPrinterId] = useState(printers[0]?.id ? String(printers[0].id) : "");
+  const [selectedPrinterId, setSelectedPrinterId] = useState(printers.find((printer) => printer.active)?.id ? String(printers.find((printer) => printer.active)?.id) : "");
   const [plate, setPlate] = useState("Metadata/plate_1.gcode");
   const [useAms, setUseAms] = useState(false);
   const [bedLeveling, setBedLeveling] = useState(true);
   const [layerInspect, setLayerInspect] = useState(true);
   const [preflight, setPreflight] = useState<PreflightResult | null>(null);
+  const [printerItems, setPrinterItems] = useState(printers);
+  const [selectedVariantId, setSelectedVariantId] = useState(variants.find((variant) => variant.active !== false)?.id ? String(variants.find((variant) => variant.active !== false)?.id) : "");
 
   async function uploadPrintFile(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -59,17 +61,27 @@ export function ProductPrintFileManager({ product, printers }: { product: Produc
   }
 
   async function openInBambuStudio() {
-    if (!product.print_file_path) return;
+    if (!product.print_file_path || !selectedPrinterId || !selectedVariantId) return;
     setBusy("studio");
     setMessage(null);
     setError(null);
     try {
-      const response = await fetch(`/api/products/${product.id}/print-file/open-in-bambu-studio`, { method: "POST" });
+      const statusResponse = await fetch(`/api/bambu/printers/${selectedPrinterId}/refresh-status`, { method: "POST" });
+      const refreshedPrinter = await statusResponse.json().catch(() => null);
+      if (!statusResponse.ok) throw new Error(refreshedPrinter?.detail || "Printer- en AMS-status ophalen is mislukt");
+      setPrinterItems((current) => current.map((printer) => printer.id === refreshedPrinter.id ? refreshedPrinter : printer));
+
+      const response = await fetch(`/api/products/${product.id}/print-file/open-in-bambu-studio`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ variant_id: Number(selectedVariantId), printer_id: Number(selectedPrinterId) }),
+      });
       const data = await response.json().catch(() => null);
       if (!response.ok || !data?.launcher_url) {
         throw new Error(data?.detail || "De lokale Bambu-koppeling kon niet worden gestart");
       }
-      setMessage("De lokale koppeling wordt geopend. Sta dit toe als je browser daarom vraagt; Bambu Studio opent daarna automatisch.");
+      const slot = data.preparation?.recommended_slot;
+      setMessage(`${data.preparation?.printer_name || "Printer"} voorbereid${slot ? ` met ${slot.label} (${slot.material})` : ""}. Bambu Studio wordt geopend.`);
       window.location.href = data.launcher_url;
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Bambu Studio kon niet worden geopend");
@@ -79,7 +91,8 @@ export function ProductPrintFileManager({ product, printers }: { product: Produc
   }
 
   const filename = product.print_file_path?.split("/").pop() || null;
-  const selectedPrinter = printers.find((printer) => String(printer.id) === selectedPrinterId);
+  const selectedPrinter = printerItems.find((printer) => String(printer.id) === selectedPrinterId);
+  const selectedVariant = variants.find((variant) => String(variant.id) === selectedVariantId);
   const startBlockedReason = !product.print_file_path
     ? "Koppel eerst een printbestand aan dit product."
     : !selectedPrinterId
@@ -184,7 +197,7 @@ export function ProductPrintFileManager({ product, printers }: { product: Produc
             {product.print_file_path ? (
               <button
                 className="inline-flex items-center justify-center rounded-md bg-brand px-4 py-2 text-sm font-black text-slate-950 hover:bg-brand/90"
-                disabled={busy !== null}
+                disabled={busy !== null || !selectedPrinterId || !selectedVariantId}
                 onClick={openInBambuStudio}
                 type="button"
               >
@@ -215,11 +228,56 @@ export function ProductPrintFileManager({ product, printers }: { product: Produc
           <WorkflowStep number="2" title="Open het bestand" description="De koppeling haalt het beveiligde bestand op en opent het lokaal in Bambu Studio, zonder websitewaarschuwing." />
           <WorkflowStep number="3" title="Print plate" description="Start de opdracht vanuit Bambu Studio. Verwerk daarna het resultaat in Printplanning." />
         </div>
+        <div className="mt-4 grid gap-4 rounded-md border border-line bg-slate-950/35 p-4 lg:grid-cols-2">
+          <label className="space-y-2">
+            <span className="text-sm font-bold text-slate-300">Productvariant</span>
+            <select
+              className="w-full rounded-md border border-line bg-slate-950 px-3 py-2 text-sm text-ink outline-none focus:border-brand"
+              onChange={(event) => setSelectedVariantId(event.target.value)}
+              value={selectedVariantId}
+            >
+              {variants.filter((variant) => variant.active !== false).map((variant) => (
+                <option key={variant.id} value={variant.id}>
+                  {variant.variant_name || variant.sku || `Variant ${variant.id}`} - {variant.material || "materiaal ontbreekt"} / {variant.color || "kleur ontbreekt"}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="space-y-2">
+            <span className="text-sm font-bold text-slate-300">Printer</span>
+            <select
+              className="w-full rounded-md border border-line bg-slate-950 px-3 py-2 text-sm text-ink outline-none focus:border-brand"
+              onChange={(event) => setSelectedPrinterId(event.target.value)}
+              value={selectedPrinterId}
+            >
+              {printerItems.filter((printer) => printer.active).map((printer) => (
+                <option key={printer.id} value={printer.id}>{printer.name} - {printer.model || "model onbekend"}</option>
+              ))}
+            </select>
+          </label>
+          <div className="lg:col-span-2">
+            <div className="text-xs font-black uppercase tracking-wide text-slate-400">Beschikbare AMS-sleuven</div>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {selectedPrinter?.ams_slots?.length ? selectedPrinter.ams_slots.map((slot) => {
+                const materialMatch = selectedVariant?.material?.trim().toLowerCase() === slot.material.trim().toLowerCase();
+                return (
+                  <span className={`inline-flex items-center gap-2 rounded-md border px-3 py-2 text-xs font-bold ${materialMatch ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-100" : "border-line bg-slate-950 text-slate-400"}`} key={`${slot.ams_id}-${slot.tray_id}`}>
+                    <span className="h-3 w-3 rounded-full border border-white/30" style={{ backgroundColor: slot.color_hex || "#64748b" }} />
+                    {slot.label}: {slot.material}{slot.remaining_percent != null ? ` (${slot.remaining_percent}%)` : ""}
+                  </span>
+                );
+              }) : <span className="text-sm text-amber-200">De AMS-inhoud wordt automatisch opgehaald zodra je Bambu Studio opent.</span>}
+            </div>
+          </div>
+          <div className="lg:col-span-2 rounded-md border border-amber-400/25 bg-amber-400/10 px-3 py-2 text-sm text-amber-100">
+            De manager controleert het printermodel en kiest de best passende AMS-sleuf. Bevestig in Bambu Studio voor verzending nog de fysieke printer <strong>{selectedPrinter?.name || ""}</strong>; Bambu Studio accepteert deze apparaatkeuze niet vanuit een extern programma.
+          </div>
+        </div>
         <div className="mt-4 flex flex-wrap gap-3">
           {product.print_file_path ? (
             <button
               className="rounded-md bg-brand px-4 py-2 text-sm font-black text-slate-950 hover:bg-brand/90 disabled:opacity-60"
-              disabled={busy !== null}
+              disabled={busy !== null || !selectedPrinterId || !selectedVariantId}
               onClick={openInBambuStudio}
               type="button"
             >

@@ -1,11 +1,12 @@
+import json
 import tempfile
 import zipfile
 from pathlib import Path
 
-from fastapi import HTTPException
+from fastapi import BackgroundTasks, HTTPException
 
 from support import *
-from models import PrintBatch, PrintBatchItem
+from models import BambuPrinter, PrintBatch, PrintBatchItem
 from services import bambu_studio_service
 
 
@@ -16,12 +17,15 @@ class BambuStudioWorkflowTests(BackendTestCase):
         self.root = Path(self.temporary_directory.name)
         self.original_upload_root = bambu_studio_service.UPLOAD_ROOT
         self.original_export_root = bambu_studio_service.EXPORT_ROOT
+        self.original_prepared_root = bambu_studio_service.PREPARED_ROOT
         bambu_studio_service.UPLOAD_ROOT = self.root / "uploads"
         bambu_studio_service.EXPORT_ROOT = self.root / "exports"
+        bambu_studio_service.PREPARED_ROOT = self.root / "prepared"
 
     def tearDown(self) -> None:
         bambu_studio_service.UPLOAD_ROOT = self.original_upload_root
         bambu_studio_service.EXPORT_ROOT = self.original_export_root
+        bambu_studio_service.PREPARED_ROOT = self.original_prepared_root
         self.temporary_directory.cleanup()
         super().tearDown()
 
@@ -32,6 +36,24 @@ class BambuStudioWorkflowTests(BackendTestCase):
         source.write_bytes(content)
         product.print_file_path = f"/uploads/product_print_files/{product.id}/{source.name}"
         self.db.commit()
+        return source
+
+    def make_valid_print_file(self, product: Product) -> Path:
+        source = self.make_print_file(product)
+        project = {
+            "printer_model": "Bambu Lab P2S",
+            "printer_settings_id": "Bambu Lab P2S 0.4 nozzle",
+            "filament_colour": ["#00AE42"],
+        }
+        slice_info = b'''<?xml version="1.0" encoding="UTF-8"?>
+<config><plate><metadata key="printer_model_id" value="N7"/>
+<filament id="1" type="PLA" color="#00AE42"/></plate></config>'''
+        with zipfile.ZipFile(source, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+            archive.writestr("[Content_Types].xml", "<Types />")
+            archive.writestr("Metadata/project_settings.config", json.dumps(project))
+            archive.writestr("Metadata/slice_info.config", slice_info)
+            archive.writestr("Metadata/plate_1.json", json.dumps({"filament_colors": ["#00AE42"]}))
+            archive.writestr("Metadata/plate_1.gcode", "; test")
         return source
 
     def test_product_download_uses_readable_filename(self) -> None:
@@ -110,3 +132,46 @@ class BambuStudioWorkflowTests(BackendTestCase):
             bambu_studio_service.product_print_file_response(product)
 
         self.assertEqual(raised.exception.status_code, 404)
+
+    def test_preparation_matches_variant_to_printer_ams_and_rewrites_color(self) -> None:
+        product, variant = self.make_product_variant("STUDIO-AMS")
+        self.make_valid_print_file(product)
+        printer = BambuPrinter(
+            name="P2S Productie",
+            model="P2S",
+            host="10.0.0.20",
+            ams_slots_json=json.dumps(
+                [
+                    {"ams_id": 0, "tray_id": 0, "slot_number": 1, "label": "AMS 1 - sleuf 1", "material": "PLA", "color_hex": "#991C1C"},
+                    {"ams_id": 0, "tray_id": 1, "slot_number": 2, "label": "AMS 1 - sleuf 2", "material": "PETG", "color_hex": "#FF0000"},
+                ]
+            ),
+        )
+        self.db.add(printer)
+        self.db.commit()
+        self.db.refresh(printer)
+
+        preparation = bambu_studio_service.product_print_preparation(self.db, product, variant, printer)
+        self.assertEqual(preparation["recommended_slot"]["tray_id"], 0)
+
+        response = bambu_studio_service.prepared_product_print_file_response(
+            self.db, product, variant, printer, 0, 0, BackgroundTasks()
+        )
+        with zipfile.ZipFile(Path(response.path)) as archive:
+            project = json.loads(archive.read("Metadata/project_settings.config"))
+            self.assertEqual(project["filament_colour"][0], "#991C1C")
+            slice_info = archive.read("Metadata/slice_info.config").decode("utf-8")
+            self.assertIn('color="#991C1C"', slice_info)
+
+    def test_preparation_rejects_material_that_differs_from_sliced_file(self) -> None:
+        product, variant = self.make_product_variant("STUDIO-WRONG-MATERIAL")
+        self.make_valid_print_file(product)
+        variant.material = "PETG"
+        printer = BambuPrinter(name="P2S", model="P2S", host="10.0.0.20", ams_slots_json="[]")
+        self.db.add(printer)
+        self.db.commit()
+
+        with self.assertRaises(HTTPException) as raised:
+            bambu_studio_service.product_print_preparation(self.db, product, variant, printer)
+        self.assertEqual(raised.exception.status_code, 409)
+        self.assertIn("geslicet voor PLA", raised.exception.detail)

@@ -1,9 +1,13 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, BackgroundTasks
 from api.routes_shared import *
 from domain.statuses import PUBLICATION_PAUSED, PUBLICATION_PUBLISHED, PUBLICATION_SYNC_NEEDED
 from services.product_service import generate_product_translations_for_product
 from services.upload_service import delete_uploaded_media_file, upload_product_print_file
-from services.bambu_studio_service import product_print_file_response
+from services.bambu_studio_service import (
+    prepared_product_print_file_response,
+    product_print_file_response,
+    product_print_preparation,
+)
 
 router = APIRouter()
 
@@ -46,6 +50,43 @@ def upload_product_print_file_endpoint(product_id: int, file: UploadFile = File(
 def download_product_print_file(product_id: int, db: Session = Depends(get_db)):
     product = get_or_404(db, Product, product_id)
     return product_print_file_response(product)
+
+
+@router.get("/products/{product_id}/print-file/preparation")
+def prepare_product_print_file(
+    product_id: int,
+    variant_id: int,
+    printer_id: int,
+    db: Session = Depends(get_db),
+):
+    product = get_or_404(db, Product, product_id)
+    variant = get_or_404(db, ProductVariant, variant_id)
+    printer = get_or_404(db, BambuPrinter, printer_id)
+    return product_print_preparation(db, product, variant, printer)
+
+
+@router.get("/products/{product_id}/print-file/prepared-download")
+def download_prepared_product_print_file(
+    product_id: int,
+    variant_id: int,
+    printer_id: int,
+    ams_id: int,
+    tray_id: int,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+):
+    product = get_or_404(db, Product, product_id)
+    variant = get_or_404(db, ProductVariant, variant_id)
+    printer = get_or_404(db, BambuPrinter, printer_id)
+    return prepared_product_print_file_response(
+        db,
+        product,
+        variant,
+        printer,
+        ams_id,
+        tray_id,
+        background_tasks,
+    )
 
 
 @router.get("/product-variants")
