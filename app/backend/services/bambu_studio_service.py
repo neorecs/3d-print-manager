@@ -288,8 +288,16 @@ def resolve_product_print_file(file_path: str | None) -> Path:
 def download_filename(product: Product, source: Path) -> str:
     stored_name = re.sub(r"^[0-9a-f]{32}-", "", source.name, flags=re.IGNORECASE)
     product_name = slugify(product.internal_title or product.name)
-    suffix = ".gcode.3mf" if stored_name.lower().endswith(".gcode.3mf") else source.suffix
+    suffix = product_file_suffix(stored_name)
     return f"{product_name}{suffix}"
+
+
+def product_file_suffix(filename: str) -> str:
+    lowered = filename.lower()
+    for suffix in (".gcode.3mf", "_gcode.3mf", ".zip.amf"):
+        if lowered.endswith(suffix):
+            return suffix.replace("_gcode.3mf", ".gcode.3mf")
+    return Path(filename).suffix.lower()
 
 
 def build_batch_export_rows(db: Session, batch: PrintBatch) -> list[dict]:
@@ -352,7 +360,9 @@ def copy_batch_print_files(rows: list[dict], target_dir: Path) -> list[Path]:
         candidate = name
         counter = 2
         while candidate.lower() in used_names:
-            candidate = name.removesuffix(".gcode.3mf") + f"-{counter}.gcode.3mf"
+            suffix = product_file_suffix(name)
+            stem = name[: -len(suffix)] if suffix else name
+            candidate = f"{stem}-{counter}{suffix}"
             counter += 1
         destination = target_dir / candidate
         shutil.copy2(source, destination)
@@ -393,7 +403,7 @@ def build_batch_markdown(batch: PrintBatch, rows: list[dict], print_files: list[
         "## Zo start je de prints",
         "",
         "1. Open de map `printbestanden`.",
-        "2. Open het gewenste `.gcode.3mf` bestand in Bambu Studio.",
+        "2. Open het gewenste productbestand in Bambu Studio.",
         "3. Controleer printer, plate, materiaal/kleur en AMS-toewijzing.",
         "4. Kies in Bambu Studio `Print plate` om via Bambu Cloud of je lokale verbinding te starten.",
         "5. Verwerk na afloop het resultaat in 3D Print Manager.",

@@ -10,6 +10,10 @@ $installDirectory = Join-Path $env:LOCALAPPDATA "3DPrintManager\BambuLauncher"
 $installedScript = Join-Path $installDirectory "BambuLauncher.ps1"
 $settingsKey = "HKCU:\Software\3DPrintManager\BambuLauncher"
 $protocolKey = "HKCU:\Software\Classes\printmanager"
+$supportedSuffixes = @(
+    ".gcode.3mf", "_gcode.3mf", ".zip.amf", ".3mf", ".stl", ".stp", ".step",
+    ".svg", ".amf", ".obj", ".gltf", ".glb", ".fbx", ".oltp", ".gcode"
+)
 
 function Show-LauncherError([string]$Message) {
     Add-Type -AssemblyName PresentationFramework
@@ -79,28 +83,35 @@ try {
         throw "Het bestand komt van $receivedOrigin, maar de ingestelde 3D Print Manager is $trustedOrigin. Installeer de Windows-koppeling opnieuw vanaf de productpagina."
     }
     if (-not $fileUri.AbsolutePath.StartsWith("/api/bambu-studio/files/")) { throw "Het bestandspad is niet toegestaan." }
-    if (-not $fileUri.AbsolutePath.EndsWith(".gcode.3mf", [StringComparison]::OrdinalIgnoreCase)) { throw "Alleen printklare .gcode.3mf-bestanden zijn toegestaan." }
+    $sourceName = [Uri]::UnescapeDataString([IO.Path]::GetFileName($fileUri.AbsolutePath))
+    $suffix = $supportedSuffixes | Where-Object {
+        $sourceName.EndsWith($_, [StringComparison]::OrdinalIgnoreCase)
+    } | Select-Object -First 1
+    if (-not $suffix) { throw "Dit bestandstype wordt niet ondersteund door Bambu Studio." }
+    if ($suffix -eq "_gcode.3mf") { $suffix = ".gcode.3mf" }
 
     $downloadDirectory = Join-Path $env:LOCALAPPDATA "3DPrintManager\BambuFiles"
     New-Item -ItemType Directory -Force -Path $downloadDirectory | Out-Null
-    Get-ChildItem -LiteralPath $downloadDirectory -Filter "*.gcode.3mf" -File -ErrorAction SilentlyContinue |
+    Get-ChildItem -LiteralPath $downloadDirectory -File -ErrorAction SilentlyContinue |
         Where-Object { $_.LastWriteTime -lt (Get-Date).AddDays(-7) } |
         Remove-Item -Force -ErrorAction SilentlyContinue
 
-    $target = Join-Path $downloadDirectory (([Guid]::NewGuid().ToString("N")) + ".gcode.3mf")
+    $target = Join-Path $downloadDirectory (([Guid]::NewGuid().ToString("N")) + $suffix)
     Invoke-WebRequest -UseBasicParsing -Uri $fileUri.AbsoluteUri -OutFile $target -TimeoutSec 120
     if ((Get-Item $target).Length -lt 100) { throw "Het gedownloade bestand is leeg of onvolledig." }
 
-    Add-Type -AssemblyName System.IO.Compression.FileSystem
-    $archive = [IO.Compression.ZipFile]::OpenRead($target)
-    try {
-        $entryNames = @($archive.Entries | ForEach-Object { $_.FullName })
-        if ($entryNames -notcontains "[Content_Types].xml") { throw "Het bestand is geen geldig 3MF-bestand." }
-        if (-not ($entryNames | Where-Object { $_ -match '(?i)(^|/)Metadata/plate_[0-9]+\.gcode$' })) {
-            throw "Het 3MF-bestand bevat geen printklare plaat. Exporteer het opnieuw vanuit Bambu Studio."
+    if ($suffix.EndsWith(".3mf", [StringComparison]::OrdinalIgnoreCase)) {
+        Add-Type -AssemblyName System.IO.Compression.FileSystem
+        $archive = [IO.Compression.ZipFile]::OpenRead($target)
+        try {
+            $entryNames = @($archive.Entries | ForEach-Object { $_.FullName })
+            if ($entryNames -notcontains "[Content_Types].xml") { throw "Het bestand is geen geldig 3MF-bestand." }
+            if ($suffix -eq ".gcode.3mf" -and -not ($entryNames | Where-Object { $_ -match '(?i)(^|/)Metadata/plate_[0-9]+\.gcode$' })) {
+                throw "Het printklare 3MF-bestand bevat geen geslicete plaat. Exporteer het opnieuw vanuit Bambu Studio."
+            }
+        } finally {
+            $archive.Dispose()
         }
-    } finally {
-        $archive.Dispose()
     }
 
     $bambuStudio = Find-BambuStudio

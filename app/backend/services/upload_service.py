@@ -21,7 +21,23 @@ ALLOWED_ACCOUNTING_CONTENT_TYPES = {
     "image/png",
     "image/webp",
 }
-ALLOWED_PRINT_FILE_SUFFIXES = (".gcode.3mf", "_gcode.3mf")
+ALLOWED_PRODUCT_FILE_SUFFIXES = (
+    ".gcode.3mf",
+    "_gcode.3mf",
+    ".zip.amf",
+    ".3mf",
+    ".stl",
+    ".stp",
+    ".step",
+    ".svg",
+    ".amf",
+    ".obj",
+    ".gltf",
+    ".glb",
+    ".fbx",
+    ".oltp",
+    ".gcode",
+)
 
 
 def upload_accounting_document_file(
@@ -117,11 +133,14 @@ def upload_product_print_file(db: Session, product_id: int, file: UploadFile) ->
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
 
-    original_name = Path(file.filename or "print.gcode.3mf").name
-    if not original_name.lower().endswith(ALLOWED_PRINT_FILE_SUFFIXES):
+    original_name = Path(file.filename or "model.3mf").name
+    if not is_supported_product_file(original_name):
         raise HTTPException(
             status_code=400,
-            detail="Upload een door Bambu Studio voorbereid .gcode.3mf bestand. Een losse STL of gewone 3MF is niet direct printbaar.",
+            detail=(
+                "Dit bestandstype wordt niet ondersteund door Bambu Studio. "
+                "Gebruik 3MF, STL, STEP/STP, SVG, AMF, OBJ, GLTF/GLB, FBX, OLTP of G-code."
+            ),
         )
 
     target_dir = PRODUCT_PRINT_FILE_ROOT / str(product_id)
@@ -176,7 +195,11 @@ def delete_uploaded_media_file(file_path: str | None) -> None:
 
 def _safe_print_filename(filename: str) -> str:
     cleaned = "".join(char if char.isalnum() or char in "._-" else "-" for char in filename.strip())
-    return cleaned.strip(".-") or "print.gcode.3mf"
+    return cleaned.strip(".-") or "model.3mf"
+
+
+def is_supported_product_file(filename: str) -> bool:
+    return filename.lower().endswith(ALLOWED_PRODUCT_FILE_SUFFIXES)
 
 
 def _copy_upload_limited(file: UploadFile, target_path: Path, maximum_bytes: int, label: str) -> int:

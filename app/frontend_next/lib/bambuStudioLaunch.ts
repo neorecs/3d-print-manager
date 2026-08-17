@@ -1,5 +1,23 @@
 const TOKEN_LIFETIME_SECONDS = 10 * 60;
 
+export const BAMBU_STUDIO_FILE_SUFFIXES = [
+  ".gcode.3mf",
+  "_gcode.3mf",
+  ".zip.amf",
+  ".3mf",
+  ".stl",
+  ".stp",
+  ".step",
+  ".svg",
+  ".amf",
+  ".obj",
+  ".gltf",
+  ".glb",
+  ".fbx",
+  ".oltp",
+  ".gcode",
+] as const;
+
 function getSecret() {
   return process.env.AUTH_SECRET || "";
 }
@@ -56,11 +74,22 @@ export async function verifyBambuStudioFileToken(token: string, filename: string
   return constantTimeEqual(signature, expected) ? { productId, expiresAt } : null;
 }
 
-export function bambuStudioFilename(name: string) {
+export function bambuStudioFileSuffix(name: string) {
+  const lowered = name.toLowerCase();
+  return BAMBU_STUDIO_FILE_SUFFIXES.find((suffix) => lowered.endsWith(suffix)) || null;
+}
+
+export function isSlicedBambuPrintFile(name: string) {
+  const lowered = name.toLowerCase();
+  return lowered.endsWith(".gcode.3mf") || lowered.endsWith("_gcode.3mf");
+}
+
+export function bambuStudioFilename(name: string, sourceName: string) {
   const base = name
     .trim()
     .toLowerCase()
     .replace(/[^a-z0-9_-]+/g, "-")
     .replace(/^-+|-+$/g, "") || "product";
-  return `${base}.gcode.3mf`;
+  const suffix = bambuStudioFileSuffix(sourceName) || ".3mf";
+  return `${base}${suffix === "_gcode.3mf" ? ".gcode.3mf" : suffix}`;
 }

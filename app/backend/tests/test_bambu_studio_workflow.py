@@ -63,6 +63,20 @@ class BambuStudioWorkflowTests(BackendTestCase):
         self.assertIn("test-product.gcode.3mf", response.headers["content-disposition"])
         self.assertEqual(response.headers["cache-control"], "private, no-store")
 
+    def test_product_download_preserves_source_model_extension(self) -> None:
+        product, _variant = self.make_product_variant("STUDIO-STEP-DOWNLOAD")
+        directory = bambu_studio_service.UPLOAD_ROOT / "product_print_files" / str(product.id)
+        directory.mkdir(parents=True, exist_ok=True)
+        source = directory / "0123456789abcdef0123456789abcdef-test-product.step"
+        source.write_bytes(b"ISO-10303-21")
+        product.print_file_path = f"/uploads/product_print_files/{product.id}/{source.name}"
+        self.db.commit()
+
+        response = bambu_studio_service.product_print_file_response(product)
+
+        self.assertEqual(Path(response.path), source)
+        self.assertIn("test-product.step", response.headers["content-disposition"])
+
     def test_batch_export_contains_lists_guide_and_unique_print_file(self) -> None:
         product, variant = self.make_product_variant("STUDIO-BATCH")
         source = self.make_print_file(product, b"print-ready")

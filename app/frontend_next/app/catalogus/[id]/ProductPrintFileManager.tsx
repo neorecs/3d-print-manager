@@ -19,6 +19,8 @@ type PreflightResult = {
   checks: PreflightCheck[];
 };
 
+const BAMBU_STUDIO_ACCEPT = ".3mf,.gcode.3mf,.stl,.stp,.step,.svg,.amf,.obj,.gltf,.glb,.fbx,.oltp,.gcode";
+
 export function ProductPrintFileManager({ product, variants, printers }: { product: Product; variants: ProductVariant[]; printers: BambuPrinter[] }) {
   const router = useRouter();
   const [uploading, setUploading] = useState(false);
@@ -61,33 +63,42 @@ export function ProductPrintFileManager({ product, variants, printers }: { produ
   }
 
   async function openInBambuStudio() {
-    if (!product.print_file_path || !selectedPrinterId || !selectedVariantId) return;
+    if (!product.print_file_path || (isSlicedFile && (!selectedPrinterId || !selectedVariantId))) return;
     setBusy("studio");
     setMessage(null);
     setError(null);
     try {
-      const statusResponse = await fetch(`/api/bambu/printers/${selectedPrinterId}/refresh-status`, { method: "POST" });
-      const refreshedPrinter = await statusResponse.json().catch(() => null);
-      if (!statusResponse.ok) throw new Error(refreshedPrinter?.detail || "Printer- en AMS-status ophalen is mislukt");
-      setPrinterItems((current) => current.map((printer) => printer.id === refreshedPrinter.id ? refreshedPrinter : printer));
+      if (isSlicedFile) {
+        const statusResponse = await fetch(`/api/bambu/printers/${selectedPrinterId}/refresh-status`, { method: "POST" });
+        const refreshedPrinter = await statusResponse.json().catch(() => null);
+        if (!statusResponse.ok) throw new Error(refreshedPrinter?.detail || "Printer- en AMS-status ophalen is mislukt");
+        setPrinterItems((current) => current.map((printer) => printer.id === refreshedPrinter.id ? refreshedPrinter : printer));
+      }
 
       const response = await fetch(`/api/products/${product.id}/print-file/open-in-bambu-studio`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ variant_id: Number(selectedVariantId), printer_id: Number(selectedPrinterId) }),
+        body: JSON.stringify({
+          variant_id: selectedVariantId ? Number(selectedVariantId) : null,
+          printer_id: selectedPrinterId ? Number(selectedPrinterId) : null,
+        }),
       });
       const data = await response.json().catch(() => null);
       if (!response.ok || !data?.launcher_url) {
         throw new Error(data?.detail || "De lokale Bambu-koppeling kon niet worden gestart");
       }
-      const slot = data.preparation?.recommended_slot;
-      const warnings = Array.isArray(data.preparation?.warnings) ? data.preparation.warnings : [];
-      setMessage([
-        slot
-          ? `Advies: gebruik ${data.preparation?.printer_name || "de printer"} met ${slot.label} (${slot.material}). Koppel deze rol bij Print plate in Bambu Studio.`
-          : `${data.preparation?.printer_name || "Printer"} voorbereid; kies het filament handmatig bij Print plate in Bambu Studio.`,
-        ...warnings,
-      ].join(" "));
+      if (data.preparation) {
+        const slot = data.preparation.recommended_slot;
+        const warnings = Array.isArray(data.preparation.warnings) ? data.preparation.warnings : [];
+        setMessage([
+          slot
+            ? `Advies: gebruik ${data.preparation.printer_name || "de printer"} met ${slot.label} (${slot.material}). Koppel deze rol bij Print plate in Bambu Studio.`
+            : `${data.preparation.printer_name || "Printer"} voorbereid; kies het filament handmatig bij Print plate in Bambu Studio.`,
+          ...warnings,
+        ].join(" "));
+      } else {
+        setMessage("Het model wordt geopend in Bambu Studio. Kies daar de printer, het filament en de slice-instellingen.");
+      }
       window.location.href = data.launcher_url;
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Bambu Studio kon niet worden geopend");
@@ -97,6 +108,7 @@ export function ProductPrintFileManager({ product, variants, printers }: { produ
   }
 
   const filename = product.print_file_path?.split("/").pop() || null;
+  const isSlicedFile = Boolean(filename && (filename.toLowerCase().endsWith(".gcode.3mf") || filename.toLowerCase().endsWith("_gcode.3mf")));
   const selectedPrinter = printerItems.find((printer) => String(printer.id) === selectedPrinterId);
   const selectedVariant = variants.find((variant) => String(variant.id) === selectedVariantId);
   const startBlockedReason = !product.print_file_path
@@ -191,9 +203,9 @@ export function ProductPrintFileManager({ product, variants, printers }: { produ
       <div className="rounded-lg border border-line bg-slate-950/25 p-4">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <h3 className="font-bold text-ink">Standaard printbestand</h3>
+            <h3 className="font-bold text-ink">Standaard productbestand</h3>
             <p className="mt-1 text-sm leading-6 text-muted">
-              Koppel hier het printklare Bambu Studio bestand voor dit product. Varianten gebruiken ditzelfde bestand; kleur en materiaal regel je via planning, filament en printerinstellingen.
+              Koppel hier het bronmodel of Bambu Studio-project voor dit product. Varianten gebruiken hetzelfde bestand; printer, kleur, materiaal en slicing stel je daarna in Bambu Studio in.
             </p>
             <p className="mt-2 text-sm font-semibold text-slate-300">
               {filename ? `Gekoppeld: ${filename}` : "Nog geen printbestand gekoppeld."}
@@ -203,7 +215,7 @@ export function ProductPrintFileManager({ product, variants, printers }: { produ
             {product.print_file_path ? (
               <button
                 className="inline-flex items-center justify-center rounded-md bg-brand px-4 py-2 text-sm font-black text-slate-950 hover:bg-brand/90"
-                disabled={busy !== null || !selectedPrinterId || !selectedVariantId}
+                disabled={busy !== null || (isSlicedFile && (!selectedPrinterId || !selectedVariantId))}
                 onClick={openInBambuStudio}
                 type="button"
               >
@@ -212,7 +224,7 @@ export function ProductPrintFileManager({ product, variants, printers }: { produ
             ) : null}
             <label className="inline-flex cursor-pointer items-center justify-center rounded-md border border-line bg-slate-950/35 px-4 py-2 text-sm font-black text-slate-200 hover:bg-white/5">
               {uploading ? "Uploaden..." : filename ? "Bestand vervangen" : "Printbestand kiezen"}
-              <input accept=".gcode.3mf" className="sr-only" disabled={uploading} onChange={uploadPrintFile} type="file" />
+              <input accept={BAMBU_STUDIO_ACCEPT} className="sr-only" disabled={uploading} onChange={uploadPrintFile} type="file" />
             </label>
           </div>
         </div>
@@ -232,9 +244,9 @@ export function ProductPrintFileManager({ product, variants, printers }: { produ
         <div className="mt-4 grid gap-3 md:grid-cols-3">
           <WorkflowStep number="1" title="Installeer eenmalig" description="Installeer op deze Windows-computer de veilige koppeling met Bambu Studio." />
           <WorkflowStep number="2" title="Open het bestand" description="De koppeling haalt het beveiligde bestand op en opent het lokaal in Bambu Studio, zonder websitewaarschuwing." />
-          <WorkflowStep number="3" title="Print plate" description="Koppel hier het bestaande projectfilament aan de geadviseerde AMS-rol en start de opdracht. Wijzig niet het filamentprofiel van het model." />
+          <WorkflowStep number="3" title="Voorbereiden en printen" description="Kies in Bambu Studio de printer en het filament, slice het model indien nodig en start daarna de print." />
         </div>
-        <div className="mt-4 grid gap-4 rounded-md border border-line bg-slate-950/35 p-4 lg:grid-cols-2">
+        {isSlicedFile ? <div className="mt-4 grid gap-4 rounded-md border border-line bg-slate-950/35 p-4 lg:grid-cols-2">
           <label className="space-y-2">
             <span className="text-sm font-bold text-slate-300">Productvariant</span>
             <select
@@ -276,14 +288,18 @@ export function ProductPrintFileManager({ product, variants, printers }: { produ
             </div>
           </div>
           <div className="lg:col-span-2 rounded-md border border-amber-400/25 bg-amber-400/10 px-3 py-2 text-sm text-amber-100">
-            De manager controleert het printermodel en adviseert de printer en AMS-sleuf met passend materiaal en kleur. Het `.gcode.3mf` blijft intact. Koppel bij Print plate de bestaande filamentregel aan de AMS-sleuf; verander niet het filamentprofiel bovenaan, want daarmee kan de geslicete weergave verdwijnen. Bevestig voor verzending de fysieke printer <strong>{selectedPrinter?.name || ""}</strong>.
+            Dit bestand is al geslicet. De manager controleert het printermodel en adviseert een passende printer en AMS-sleuf. Het bestand blijft intact.
           </div>
-        </div>
+        </div> : (
+          <div className="mt-4 rounded-md border border-line bg-slate-950/35 p-4 text-sm leading-6 text-muted">
+            Dit is een bronmodel of gewoon Bambu Studio-project. Het opent zonder vooraf een printer te kiezen; printer, filament, kleur en slice-instellingen kies je in Bambu Studio.
+          </div>
+        )}
         <div className="mt-4 flex flex-wrap gap-3">
           {product.print_file_path ? (
             <button
               className="rounded-md bg-brand px-4 py-2 text-sm font-black text-slate-950 hover:bg-brand/90 disabled:opacity-60"
-              disabled={busy !== null || !selectedPrinterId || !selectedVariantId}
+              disabled={busy !== null || (isSlicedFile && (!selectedPrinterId || !selectedVariantId))}
               onClick={openInBambuStudio}
               type="button"
             >
@@ -311,7 +327,7 @@ export function ProductPrintFileManager({ product, variants, printers }: { produ
         <p className="mt-3 text-xs leading-5 text-slate-400">Eenmalig per Windows-computer installeren. De launcher accepteert uitsluitend tijdelijke printbestanden van jouw eigen 3D Print Manager.</p>
       </div>
 
-      <details className="rounded-lg border border-line bg-slate-950/25">
+      {isSlicedFile ? <details className="rounded-lg border border-line bg-slate-950/25">
         <summary className="cursor-pointer list-none p-4">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div>
@@ -407,7 +423,7 @@ export function ProductPrintFileManager({ product, variants, printers }: { produ
           {startBlockedReason || "Klaar voor printstart. De controle draait automatisch zodra je op Print starten klikt."}
         </div>
         </div>
-      </details>
+      </details> : null}
     </div>
   );
 }

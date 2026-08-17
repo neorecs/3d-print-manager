@@ -415,13 +415,13 @@ Status 2026-06-27:
 Aanvulling 2026-07-26 - veilige printstart vanuit de site:
 
 - Bambu Studio blijft verantwoordelijk voor slicen, printprofielen, 3MF/STL-voorbereiding en direct printen.
-- De site mag alleen bestaande, voorbereide `.gcode.3mf` projectbestanden starten.
+- De site opent gekoppelde productbestanden lokaal in Bambu Studio. Alleen de afzonderlijke, geavanceerde LAN-route accepteert een geslicet `.gcode.3mf` bestand.
 - Sitebediening en Bambu Studio-bediening bestaan naast elkaar: de site claimt geen exclusieve printercontrole.
 - De cloudvriendelijke Bambu Studio-workflow is de standaard: productbestand downloaden of een compleet batchpakket maken, in Bambu Studio controleren en daar `Print plate` kiezen.
-- Batchpakketten bevatten CSV-overzichten, een gebruikershandleiding en de unieke gekoppelde `.gcode.3mf` bestanden.
+- Batchpakketten bevatten CSV-overzichten, een gebruikershandleiding en de unieke gekoppelde Bambu Studio-productbestanden.
 - Directe LAN/MQTT-printstart blijft een optionele geavanceerde modus en wordt niet als vereiste voor livegang behandeld.
 - Praktische regel: als een printer al bezig is via Bambu Studio, blokkeert de site een nieuwe printstart; als de site een print start, ziet Bambu Studio de printer gewoon als bezet.
-- Een product heeft een gekoppeld, printklaar `.gcode.3mf` bestand. Standaard downloadt de gebruiker dit voor Bambu Studio; optioneel kan de app het via de geavanceerde LAN-route naar een geschikte printer sturen.
+- Een product heeft één gekoppeld bronmodel, Bambu Studio-project of geslicet bestand. De normale workflow opent dit lokaal in Bambu Studio; alleen een geslicet `.gcode.3mf` bestand kan via de geavanceerde LAN-route worden verstuurd.
 - Een handmatige SD-bestandmodus wordt niet gebouwd.
 - Remote Bambu-overdracht gebruikt de door LAN-modus ondersteunde tijdelijke `cache/`-map; gebruikers hoeven geen printerpad in te voeren.
 - Printstart werkt alleen via lokale LAN-aansturing met serienummer, LAN access code en MQTT-poort.
@@ -436,7 +436,7 @@ Gefaseerde uitvoering:
    - host en MQTT-poort bereikbaar;
    - serienummer ingevuld;
    - access code opgeslagen;
-   - gekoppeld `.gcode.3mf` productbestand bestaat in de permanente app-opslag;
+   - gekoppeld Bambu Studio-productbestand bestaat in de permanente app-opslag;
    - waarschuwing tonen als printerstatus onbekend of bezig.
 2. Veilige printstart:
    - gebruiker kiest printer en het gekoppelde productbestand wordt automatisch gebruikt;

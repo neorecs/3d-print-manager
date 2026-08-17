@@ -7,7 +7,7 @@ Doel: PostgreSQL backups automatisch maken en herstel aantoonbaar testen voordat
 De NAS-compose bevat twee backupservices:
 
 - `postgres_backup` voor de database;
-- `uploads_backup` voor productfoto's, administratiedocumenten en `.gcode.3mf` printbestanden.
+- `uploads_backup` voor productfoto's, administratiedocumenten en gekoppelde Bambu Studio-productbestanden.
 
 Beide services hebben een eigen klein Docker-image met het backupscript ingebouwd. Daardoor zijn ze niet afhankelijk van een hostpad naar de broncode en blijven ze ook na een Dockhand-herstart betrouwbaar starten.
 

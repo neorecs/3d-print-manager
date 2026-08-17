@@ -27,7 +27,7 @@ Belangrijk: Bambu Studio blijft voor slicing, printvoorbereiding en persoonlijke
 Dit is de aanbevolen werkwijze zolang je Bambu Cloud en Bambu Handy wilt blijven gebruiken.
 
 1. Open `Producten` en kies het product.
-2. Ga naar `Printbestand beheren` en upload een printklaar `.gcode.3mf` bestand als dat nog ontbreekt.
+2. Ga naar `Productbestand` en upload een bronmodel of project dat Bambu Studio kan openen, bijvoorbeeld `.3mf`, `.stl`, `.step` of `.obj`.
 3. Kies eenmalig `Windows-koppeling installeren`, open het gedownloade installatiebestand en rond de installatie af.
 4. Kies de productvariant en een voorkeursprinter.
 5. Kies `Open direct in Bambu Studio`. De app leest de actuele AMS-sleuven en adviseert een compatibele printer met de best passende rol. Het originele bestand wordt niet aangepast.

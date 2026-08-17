@@ -444,7 +444,7 @@ export function PrintPlanningManager({
       <section className="space-y-3">
         <div>
           <h3 className="text-lg font-bold text-ink">Printbatches</h3>
-          <p className="mt-1 text-sm text-muted">Maak een downloadbaar ZIP-pakket met productielijsten, uitleg en gekoppelde .gcode.3mf bestanden.</p>
+          <p className="mt-1 text-sm text-muted">Maak een downloadbaar ZIP-pakket met productielijsten, uitleg en de gekoppelde Bambu Studio-productbestanden.</p>
         </div>
         {printBatches.length ? (
           <div className="table-scroll">

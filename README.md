@@ -52,7 +52,7 @@ Versie 0.14 beveiliging, gegevensintegriteit en UX-hardening:
 - Verpakking, platformkosten, verzending en stroomkosten meenemen
 - Geschatte winst per order berekenen en tonen
 - Printbatches aanmaken uit geselecteerde printtaken
-- Bambu Studio-pakket per batch downloaden als ZIP met CSV, handleiding en gekoppelde `.gcode.3mf` bestanden
+- Bambu Studio-pakket per batch downloaden als ZIP met CSV, handleiding en gekoppelde productbestanden
 - Een gekoppeld productbestand rechtstreeks downloaden en openen in Bambu Studio
 - Productielijst exporteren met ordernummer, aantallen, kleur, materiaal en bestandsnaam
 - Orderoverzicht exporteren per batch
@@ -350,7 +350,7 @@ docker-compose.yml
 
 De aanbevolen workflow houdt Bambu Cloud, Bambu Handy en Bambu Studio beschikbaar:
 
-1. Koppel op de productdetailpagina een door Bambu Studio voorbereid `.gcode.3mf` bestand.
+1. Koppel op de productdetailpagina een bestand dat Bambu Studio kan openen, zoals `.3mf`, `.stl`, `.step` of `.obj`.
 2. Installeer eenmalig de `Windows-koppeling` op iedere computer waarmee je Bambu Studio wilt openen.
 3. Kies `Open direct in Bambu Studio` en sta toe dat de browser de lokale 3D Print Manager-koppeling opent.
 4. Kies eerst de productvariant en printer; de app leest de actuele AMS-sleuven en koppelt op materiaal en kleur.
