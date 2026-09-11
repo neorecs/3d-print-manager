@@ -217,6 +217,10 @@ class ProductVariantCreate(BaseModel):
     active: bool = True
 
 
+class ProductWithVariantCreate(ProductCreate):
+    first_variant: ProductVariantCreate | None = None
+
+
 class ProductMediaCreate(BaseModel):
     file_path: str
     media_type: str = "image"

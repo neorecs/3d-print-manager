@@ -29,7 +29,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
   const fileUrl = sliced
     ? new URL(`${API_BASE_URL}/products/${verified.productId}/print-file/prepared-download`)
-    : new URL(`${API_BASE_URL}/products/${verified.productId}/print-file/download`);
+    : new URL(`${API_BASE_URL}/products/${verified.productId}/print-file/source-download`);
   if (sliced) {
     fileUrl.searchParams.set("variant_id", String(variantId));
     fileUrl.searchParams.set("printer_id", String(printerId));

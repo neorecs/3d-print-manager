@@ -72,23 +72,10 @@ export function ProductCreateForm() {
           product_type: productType || null,
           status,
           active: true,
-        }),
-      });
-      const product = (await productResponse.json()) as ProductResponse;
-
-      if (!productResponse.ok || !product.id) {
-        throw new Error(product.detail || "Product kon niet worden opgeslagen");
-      }
-
-      if (includeVariant) {
-        const finalSku = sku || suggestedSku;
-        const variantResponse = await fetch("/api/product-variants", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            product_id: product.id,
-            variant_name: variantName || `${color || "Standaard"} ${material || ""}`.trim() || "Standaard",
-            sku: finalSku || `PRODUCT-${product.id}`,
+          first_variant: includeVariant ? {
+            product_id: 0,
+            variant_name: variantName || `${color || "Standaard"} ${material || ""}`.trim(),
+            sku: sku || suggestedSku,
             color: color || null,
             material: material || null,
             estimated_print_time_minutes: printMinutes ? Number(printMinutes) : null,
@@ -96,13 +83,13 @@ export function ProductCreateForm() {
             default_sale_price: salePrice ? Number(salePrice) : null,
             cost_price: costPrice ? Number(costPrice) : null,
             active: true,
-          }),
-        });
+          } : null,
+        }),
+      });
+      const product = (await productResponse.json()) as ProductResponse;
 
-        if (!variantResponse.ok) {
-          const variantError = await variantResponse.json().catch(() => null);
-          throw new Error(variantError?.detail || "Product is gemaakt, maar de variant kon niet worden opgeslagen");
-        }
+      if (!productResponse.ok || !product.id) {
+        throw new Error(product.detail || "Product kon niet worden opgeslagen");
       }
 
       router.push("/catalogus");

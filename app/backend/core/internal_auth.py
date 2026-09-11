@@ -3,6 +3,7 @@ import hashlib
 import hmac
 import json
 import time
+import re
 
 from fastapi import Request
 from fastapi.responses import JSONResponse
@@ -33,7 +34,7 @@ async def enforce_backend_access(request: Request, call_next):
     if not expected_internal_token or not hmac.compare_digest(supplied_internal_token, expected_internal_token):
         return JSONResponse({"detail": "Backendtoegang geweigerd."}, status_code=401)
 
-    if request.url.path in PUBLIC_BACKEND_PATHS or _is_signed_file_bridge(request.url.path):
+    if request.url.path in PUBLIC_BACKEND_PATHS or (request.method == "GET" and _is_signed_file_bridge(request.url.path)):
         return await call_next(request)
 
     payload = _verify_session_token(request.headers.get("x-session-token"), settings.auth_secret or "")
@@ -92,6 +93,4 @@ def _base64url_decode(value: str) -> str:
 
 
 def _is_signed_file_bridge(path: str) -> bool:
-    return path.startswith("/products/") and (
-        path.endswith("/print-file/prepared-download") or path.endswith("/print-file/download")
-    )
+    return re.fullmatch(r"/products/[1-9][0-9]*/print-file/(prepared-download|source-download)", path) is not None

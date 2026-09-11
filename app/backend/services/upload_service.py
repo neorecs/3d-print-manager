@@ -3,6 +3,7 @@ from pathlib import Path
 
 from fastapi import HTTPException, UploadFile
 from sqlalchemy.orm import Session
+from sqlalchemy import select
 
 from api.utils import to_dict
 from domain.statuses import ACCOUNTING_DOCUMENT_STORED
@@ -129,7 +130,7 @@ def upload_product_media_file(
 
 
 def upload_product_print_file(db: Session, product_id: int, file: UploadFile) -> dict:
-    product = db.get(Product, product_id)
+    product = db.scalar(select(Product).where(Product.id == product_id).with_for_update().execution_options(populate_existing=True))
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
 
@@ -150,10 +151,16 @@ def upload_product_print_file(db: Session, product_id: int, file: UploadFile) ->
     target_path = target_dir / filename
     _copy_upload_limited(file, target_path, get_settings().upload_print_file_max_bytes, "Printbestand")
 
-    delete_uploaded_product_print_file(product.print_file_path)
+    previous_file = product.print_file_path
     product.print_file_path = f"/uploads/product_print_files/{product_id}/{filename}"
-    mark_product_publications_sync_needed(db, product_id)
-    db.commit()
+    try:
+        mark_product_publications_sync_needed(db, product_id)
+        db.commit()
+    except Exception:
+        db.rollback()
+        target_path.unlink(missing_ok=True)
+        raise
+    delete_uploaded_product_print_file(previous_file)
     db.refresh(product)
     return {
         "ok": True,

@@ -103,7 +103,7 @@ function DashboardContent({ data }: { data: DashboardData }) {
         <MetricCard href="/bambu-printers" label="Actieve printers" value={onlinePrinters.length} note={`${data.printers.length} geregistreerd`} tone="good" />
         <MetricCard href="/printplanning" label="Prints bezig" value={printingPrinters.length} note={formatMinutes(estimatedPrintMinutes)} tone="warning" />
         <MetricCard href="/orders" label="Orders vandaag" value={todayOrders.length} note="nieuw binnengekomen" />
-        <MetricCard href="/orders?status=nieuw" label="Openstaande orders" value={openOrders.length} note="nog te verwerken" tone="warning" />
+        <MetricCard href="/orders" label="Openstaande orders" value={openOrders.length} note="nog te verwerken" tone="warning" />
         <MetricCard href="/voorraad" label="Voorraadwaarde" value={formatCurrency(inventoryValue)} note="indicatieve waarde" />
         <MetricCard href="/administratie" label="Omzet maand" value={formatCurrency(revenue)} note="verwacht / bekend" tone="good" />
       </div>

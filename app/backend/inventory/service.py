@@ -13,6 +13,7 @@ from domain.statuses import (
     ORDER_PARTLY_TO_PRINT,
 )
 from models import InventoryMovement, Order, OrderItem, ProductInventory, ProductVariant
+from services.order_guards import require_reprocessable_order
 
 
 def get_required(db: Session, model: type, item_id: int):
@@ -152,6 +153,7 @@ def add_inventory_movement(
 
 
 def process_order_inventory(db: Session, order: Order) -> dict:
+    order = require_reprocessable_order(db, order.id)
     items = db.scalars(
         select(OrderItem).where(OrderItem.order_id == order.id).order_by(OrderItem.id).with_for_update()
     ).all()

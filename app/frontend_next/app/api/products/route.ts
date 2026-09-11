@@ -5,7 +5,7 @@ const API_BASE_URL = getBackendBaseUrl();
 
 export async function POST(request: NextRequest) {
   const payload = await request.json();
-  const response = await backendFetch(`${API_BASE_URL}/products`, {
+  const response = await backendFetch(`${API_BASE_URL}/products/with-variant`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),

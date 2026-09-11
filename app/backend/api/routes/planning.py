@@ -4,6 +4,11 @@ from fastapi import APIRouter
 from api.routes_shared import *
 from domain.statuses import (
     ORDER_PRINTED,
+    ORDER_PARTLY_TO_PRINT,
+    ORDER_SHIPPED,
+    ORDER_CANCELLED,
+    ORDER_PACKED,
+    ORDER_POST_PROCESSING,
     PRINT_JOB_FAILED,
     PRINT_JOB_NEW,
     PRINT_JOB_PARTLY_FAILED,
@@ -67,6 +72,11 @@ def complete_print_job(item_id: int, payload: PrintJobComplete, db: Session = De
     item = db.scalar(select(PrintJob).where(PrintJob.id == item_id).with_for_update())
     if not item:
         raise HTTPException(status_code=404, detail="PrintJob not found")
+    order_id = get_order_id_for_print_job(db, item)
+    if order_id:
+        order = db.scalar(select(Order).where(Order.id == order_id).with_for_update())
+        if order and order.status in {ORDER_SHIPPED, ORDER_CANCELLED, ORDER_PACKED, ORDER_POST_PROCESSING}:
+            raise HTTPException(409, "Deze order is al verder verwerkt of afgesloten. Corrigeer eerst de orderafhandeling.")
     if payload.quantity_succeeded < 0 or payload.quantity_failed < 0:
         raise HTTPException(status_code=400, detail="Aantallen mogen niet negatief zijn")
 
@@ -79,6 +89,15 @@ def complete_print_job(item_id: int, payload: PrintJobComplete, db: Session = De
     already_processed = item.status in {PRINT_JOB_PRINTED, PRINT_JOB_PARTLY_FAILED, PRINT_JOB_FAILED, PRINT_JOB_PROCESSED}
     previous_to_inventory = item.quantity_to_inventory if already_processed else 0
     previous_failed = item.quantity_failed if already_processed else 0
+    db.scalar(select(ProductVariant).where(ProductVariant.id == item.product_variant_id).with_for_update())
+    inventory = ensure_product_inventory_for_print_job(db, item)
+    new_inventory_quantity = max(0, payload.quantity_succeeded - quantity_to_order)
+    inventory_delta = new_inventory_quantity - previous_to_inventory
+    if inventory.quantity_on_hand + inventory_delta < inventory.quantity_reserved:
+        raise HTTPException(
+            status_code=409,
+            detail="Correctie niet mogelijk: de producten zijn al gereserveerd of afgeboekt. Controleer eerst de voorraadbewegingen.",
+        )
     item.quantity_succeeded = payload.quantity_succeeded
     item.quantity_failed = payload.quantity_failed
     item.quantity_to_order = quantity_to_order
@@ -90,14 +109,11 @@ def complete_print_job(item_id: int, payload: PrintJobComplete, db: Session = De
     else:
         item.status = PRINT_JOB_PRINTED
 
-    db.scalar(select(ProductVariant).where(ProductVariant.id == item.product_variant_id).with_for_update())
-    inventory = ensure_product_inventory_for_print_job(db, item)
-    inventory_delta = item.quantity_to_inventory - previous_to_inventory
     failed_delta = item.quantity_failed - previous_failed
 
     if inventory_delta != 0:
         before = inventory_snapshot(inventory)
-        inventory.quantity_on_hand = max(0, inventory.quantity_on_hand + inventory_delta)
+        inventory.quantity_on_hand += inventory_delta
         add_inventory_movement(
             db,
             inventory,
@@ -180,16 +196,18 @@ def update_order_status_after_print(db: Session, print_job: PrintJob) -> None:
     order_items = db.scalars(select(OrderItem).where(OrderItem.order_id == order_id)).all()
     # A print can be technically completed while the order still lacks pieces.
     # Order readiness must therefore be based on quantities, not only job status.
-    if all(
-        item.quantity_to_print <= 0
-        or (
-            item.print_job_id
-            and next((job for job in jobs if job.id == item.print_job_id), None)
-            and next(job for job in jobs if job.id == item.print_job_id).quantity_to_order >= item.quantity_to_print
-        )
-        for item in order_items
-    ) and all(job.status in {PRINT_JOB_PRINTED, PRINT_JOB_PARTLY_FAILED} for job in jobs):
+    finished = {PRINT_JOB_PRINTED, PRINT_JOB_PARTLY_FAILED, PRINT_JOB_PROCESSED}
+    ready = bool(order_items) and all(
+        line.quantity_from_inventory + sum(
+            min(job.quantity_to_order, job.quantity_succeeded)
+            for job in jobs if job.order_item_id == line.id and job.status in finished
+        ) >= line.quantity_ordered
+        for line in order_items
+    )
+    if ready:
         order.status = ORDER_PRINTED
+    elif order.status == ORDER_PRINTED:
+        order.status = ORDER_PARTLY_TO_PRINT
 
 
 @router.get("/print-batches")

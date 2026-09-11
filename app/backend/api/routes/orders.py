@@ -2,6 +2,7 @@ from fastapi import APIRouter
 from api.routes_shared import *
 from domain.statuses import INVENTORY_NONE, ORDER_NEW, ORDER_PLANNED, PRINT_JOB_NEW
 from sqlalchemy.exc import IntegrityError
+from services.order_guards import require_reprocessable_order
 
 router = APIRouter()
 
@@ -327,7 +328,7 @@ def create_dummy_order(db: Session, platform_type: str) -> Order:
 
 @router.post("/orders/{item_id}/link-items")
 def link_order_items(item_id: int, db: Session = Depends(get_db)):
-    get_or_404(db, Order, item_id)
+    require_reprocessable_order(db, item_id)
     items = db.scalars(select(OrderItem).where(OrderItem.order_id == item_id)).all()
     linked = 0
     for item in items:
@@ -347,7 +348,7 @@ def process_order_inventory(item_id: int, db: Session = Depends(get_db)):
 
 @router.post("/orders/{item_id}/create-print-jobs")
 def create_print_jobs_for_order(item_id: int, db: Session = Depends(get_db)):
-    order = get_or_404(db, Order, item_id)
+    order = require_reprocessable_order(db, item_id)
     items = db.scalars(select(OrderItem).where(OrderItem.order_id == item_id)).all()
     created = []
     updated = []

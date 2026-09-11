@@ -2,6 +2,8 @@ from fastapi import APIRouter, BackgroundTasks
 from api.routes_shared import *
 from domain.statuses import PUBLICATION_PAUSED, PUBLICATION_PUBLISHED, PUBLICATION_SYNC_NEEDED
 from services.product_service import generate_product_translations_for_product
+from services.product_creation import save_product_with_variant
+from schemas.common import ProductWithVariantCreate
 from services.upload_service import delete_uploaded_media_file, upload_product_print_file
 from services.bambu_studio_service import (
     prepared_product_print_file_response,
@@ -10,6 +12,11 @@ from services.bambu_studio_service import (
 )
 
 router = APIRouter()
+
+
+@router.post("/products/with-variant")
+def create_product_with_variant(payload: "ProductWithVariantCreate", db: Session = Depends(get_db)):
+    return save_product_with_variant(db, payload)
 
 
 @router.get("/product-publications")
@@ -52,6 +59,7 @@ def upload_product_print_file_endpoint(product_id: int, file: UploadFile = File(
 
 
 @router.get("/products/{product_id}/print-file/download")
+@router.get("/products/{product_id}/print-file/source-download")
 def download_product_print_file(product_id: int, db: Session = Depends(get_db)):
     product = get_or_404(db, Product, product_id)
     return product_print_file_response(product)
