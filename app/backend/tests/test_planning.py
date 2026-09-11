@@ -5,6 +5,50 @@ from schemas.common import PrintJobBambuStudioOpen
 
 
 class PlanningTestCase(BackendTestCase):
+    def test_studio_handoff_without_printer_is_repeatable_for_source_model(self) -> None:
+        product, variant = self.make_product_variant("STUDIO-SOURCE")
+        product.print_file_path = "prints/model.stl"
+        job = PrintJob(product_id=product.id, product_variant_id=variant.id,
+                       quantity_needed=2, quantity_planned=2, status="nieuw")
+        self.db.add(job)
+        self.db.commit()
+        payload = PrintJobBambuStudioOpen(product_id=product.id, product_variant_id=variant.id)
+        for _ in range(2):
+            result = mark_print_job_bambu_studio_opened(job.id, payload, self.db)
+            self.assertEqual(result["status"], "gepland")
+            self.assertIsNone(result["printer_id"])
+            self.assertIsNotNone(result["bambu_studio_opened_at"])
+        self.assertEqual(len(self.db.scalars(select(PrintJob)).all()), 1)
+        self.assertEqual(self.db.scalars(select(InventoryMovement)).all(), [])
+
+    def test_studio_handoff_does_not_change_started_or_closed_job(self) -> None:
+        product, variant = self.make_product_variant("STUDIO-CLOSED")
+        for status in ("bezig", "verwerkt", "geannuleerd", "geprint", "deels_mislukt"):
+            with self.subTest(status=status):
+                job = PrintJob(product_id=product.id, product_variant_id=variant.id,
+                               quantity_needed=1, quantity_planned=1, status=status)
+                self.db.add(job)
+                self.db.commit()
+                with self.assertRaises(HTTPException) as raised:
+                    mark_print_job_bambu_studio_opened(job.id, PrintJobBambuStudioOpen(
+                        product_id=product.id, product_variant_id=variant.id), self.db)
+                self.assertEqual(raised.exception.status_code, 409)
+                self.assertEqual(job.status, status)
+                self.assertIsNone(job.bambu_studio_opened_at)
+
+    def test_studio_handoff_rejects_wrong_product(self) -> None:
+        product, variant = self.make_product_variant("STUDIO-WRONG")
+        job = PrintJob(product_id=product.id, product_variant_id=variant.id,
+                       quantity_needed=1, quantity_planned=1, status="nieuw")
+        self.db.add(job)
+        self.db.commit()
+        with self.assertRaises(HTTPException) as raised:
+            mark_print_job_bambu_studio_opened(job.id, PrintJobBambuStudioOpen(
+                product_id=product.id + 1, product_variant_id=variant.id), self.db)
+        self.assertEqual(raised.exception.status_code, 409)
+        self.assertEqual(job.status, "nieuw")
+        self.assertIsNone(job.bambu_studio_opened_at)
+
     def test_opening_job_in_bambu_studio_assigns_printer_and_plans_job(self) -> None:
         product, variant = self.make_product_variant("STUDIO-PLAN")
         printer = BambuPrinter(name="P2S Productie", model="P2S", host="10.0.0.20", active=True)

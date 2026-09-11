@@ -397,7 +397,8 @@ export function PrintPlanningManager({
                             product={product}
                             variants={[variant]}
                           />
-                          {job.printer_id ? <p className="mt-2 text-xs text-muted">Toegewezen aan printer {job.printer_id}{job.bambu_studio_opened_at ? `, geopend ${new Date(job.bambu_studio_opened_at).toLocaleString("nl-NL")}` : ""}.</p> : null}
+                          {job.printer_id ? <p className="mt-2 text-xs text-muted">Geplande printer: {printers.find((printer) => printer.id === job.printer_id)?.name || job.printer_id}.</p> : null}
+                          {job.bambu_studio_opened_at ? <p className="mt-2 text-xs text-muted">Aangeboden aan Bambu Studio: {new Date(job.bambu_studio_opened_at).toLocaleString("nl-NL")}.</p> : null}
                         </div>
                       ) : null}
                       <button

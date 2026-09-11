@@ -332,7 +332,7 @@ class PrintJobComplete(BaseModel):
 
 
 class PrintJobBambuStudioOpen(BaseModel):
-    printer_id: int
+    printer_id: int | None = Field(default=None, gt=0)
     product_id: int
     product_variant_id: int
 

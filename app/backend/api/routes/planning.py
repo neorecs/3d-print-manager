@@ -52,13 +52,19 @@ def update_print_job(item_id: int, payload: PrintJobCreate, db: Session = Depend
 def mark_print_job_bambu_studio_opened(
     item_id: int, payload: PrintJobBambuStudioOpen, db: Session = Depends(get_db)
 ):
-    item = get_or_404(db, PrintJob, item_id)
-    printer = get_or_404(db, BambuPrinter, payload.printer_id)
+    item = db.scalar(select(PrintJob).where(PrintJob.id == item_id).with_for_update())
+    if not item:
+        raise HTTPException(404, "Printtaak niet gevonden")
+    printer = get_or_404(db, BambuPrinter, payload.printer_id) if payload.printer_id else None
     if item.product_id != payload.product_id or item.product_variant_id != payload.product_variant_id:
         raise HTTPException(status_code=409, detail="De printtaak hoort niet bij het gekozen product en de gekozen variant")
-    if not printer.active:
+    if item.status not in {PRINT_JOB_NEW, PRINT_JOB_PLANNED}:
+        raise HTTPException(409, "De printtaak is al gestart of afgesloten")
+    if printer and not printer.active:
         raise HTTPException(status_code=409, detail="De gekozen printer is niet actief")
-    item.printer_id = printer.id
+    if printer:
+        item.printer_id = printer.id
+    # Legacy column name: this records an offered handoff, not a confirmed Studio launch.
     item.bambu_studio_opened_at = datetime.now(timezone.utc)
     if item.status == PRINT_JOB_NEW:
         item.status = PRINT_JOB_PLANNED

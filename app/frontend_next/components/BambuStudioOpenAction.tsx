@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 import type { BambuPrinter, Product, ProductVariant } from "@/lib/types";
+import { requestStudioHandoff, studioHandoffMessage } from "@/lib/bambuStudioClient";
 
 type Props = {
   product: Product;
@@ -30,39 +31,13 @@ export function BambuStudioOpenAction({ product, variants, printers, fixedVarian
   ));
 
   async function launch() {
-    if (!product.print_file_path || (isSlicedFile && (!variantId || !printerId))) return;
+    if (!product.print_file_path || busy) return;
     setBusy(true);
     setMessage(null);
     setError(null);
     try {
-      if (isSlicedFile) {
-        await Promise.allSettled(
-          activePrinters.map((printer) => fetch(`/api/bambu/printers/${printer.id}/refresh-status`, { method: "POST" })),
-        );
-      }
-      const response = await fetch(`/api/products/${product.id}/print-file/open-in-bambu-studio`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          variant_id: Number(variantId),
-          printer_id: Number(printerId),
-          print_job_id: printJobId,
-        }),
-      });
-      const data = await response.json().catch(() => null);
-      if (!response.ok || !data?.launcher_url) {
-        throw new Error(data?.detail || "Bambu Studio kon niet worden geopend.");
-      }
-      if (data.preparation) {
-        const slot = data.preparation.recommended_slot;
-        const warnings = Array.isArray(data.preparation.warnings) ? data.preparation.warnings : [];
-        const preparationText = slot
-          ? `Advies: gebruik ${data.preparation.printer_name} met ${slot.label}. Koppel deze rol bij Print plate in Bambu Studio.`
-          : `${data.preparation.printer_name || "De printer"} is gekozen. Selecteer het filament handmatig in Bambu Studio.`;
-        setMessage([preparationText, ...warnings].join(" "));
-      } else {
-        setMessage("Kies de printer, het filament en de slice-instellingen in Bambu Studio.");
-      }
+      const data = await requestStudioHandoff(product.id, fixedVariantId || Number(variantId), Number(printerId), printJobId);
+      setMessage(studioHandoffMessage(data));
       router.refresh();
       window.location.href = data.launcher_url;
     } catch (caught) {
@@ -80,7 +55,7 @@ export function BambuStudioOpenAction({ product, variants, printers, fixedVarian
     <div className={`relative ${compact ? "w-full" : "min-w-[16rem]"}`}>
       <button
         className="w-full rounded-md bg-brand px-3 py-2 text-sm font-black text-slate-950 hover:bg-brand/90 disabled:opacity-50"
-        disabled={isSlicedFile && (!activeVariants.length || !activePrinters.length)}
+        disabled={busy}
         onClick={() => setOpen((value) => !value)}
         type="button"
       >
@@ -97,6 +72,7 @@ export function BambuStudioOpenAction({ product, variants, printers, fixedVarian
             <label className="block space-y-1">
               <span className="text-xs font-bold text-slate-300">Variant</span>
               <select className="w-full rounded-md border border-line bg-slate-950 px-3 py-2 text-sm text-ink" onChange={(event) => setVariantId(event.target.value)} value={variantId}>
+                <option value="">Zonder variantadvies</option>
                 {activeVariants.map((variant) => (
                   <option key={variant.id} value={variant.id}>{variant.variant_name || variant.sku || `Variant ${variant.id}`} - {variant.material || "-"} / {variant.color || "-"}</option>
                 ))}
@@ -106,6 +82,7 @@ export function BambuStudioOpenAction({ product, variants, printers, fixedVarian
           {isSlicedFile ? <label className="block space-y-1">
             <span className="text-xs font-bold text-slate-300">Voorkeursprinter</span>
             <select className="w-full rounded-md border border-line bg-slate-950 px-3 py-2 text-sm text-ink" onChange={(event) => setPrinterId(event.target.value)} value={printerId}>
+              <option value="">Kiezen in Bambu Studio</option>
               {activePrinters.map((printer) => <option key={printer.id} value={printer.id}>{printer.name} - {printer.model || "model onbekend"}</option>)}
             </select>
           </label> : null}
@@ -113,8 +90,8 @@ export function BambuStudioOpenAction({ product, variants, printers, fixedVarian
           {message ? <div className="rounded-md border border-emerald-400/25 bg-emerald-400/10 p-2 text-xs text-emerald-200">{message}</div> : null}
           {error ? <div className="rounded-md border border-red-400/25 bg-red-400/10 p-2 text-xs text-red-200">{error}</div> : null}
           <div className="flex gap-2">
-            <button className="flex-1 rounded-md bg-brand px-3 py-2 text-sm font-black text-slate-950 disabled:opacity-50" disabled={busy || (isSlicedFile && (!variantId || !printerId))} onClick={launch} type="button">
-              {busy ? "Controleren..." : "Nu openen"}
+            <button className="flex-1 rounded-md bg-brand px-3 py-2 text-sm font-black text-slate-950 disabled:opacity-50" disabled={busy} onClick={launch} type="button">
+              {busy ? "Bestand aanbieden..." : "Nu openen"}
             </button>
             <button className="rounded-md border border-line px-3 py-2 text-sm font-bold text-slate-300" onClick={() => setOpen(false)} type="button">Sluiten</button>
           </div>

@@ -13,7 +13,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     return Response.json({ detail: "Dit bestandstype wordt niet ondersteund door Bambu Studio" }, { status: 400 });
   }
 
-  const sliced = isSlicedBambuPrintFile(filename);
+  const sliced = isSlicedBambuPrintFile(filename) && request.nextUrl.searchParams.get("mode") !== "source";
   const variantId = Number(request.nextUrl.searchParams.get("variant_id"));
   const printerId = Number(request.nextUrl.searchParams.get("printer_id"));
   const amsId = Number(request.nextUrl.searchParams.get("ams_id"));
