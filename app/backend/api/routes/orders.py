@@ -3,6 +3,7 @@ from api.routes_shared import *
 from domain.statuses import INVENTORY_NONE, ORDER_NEW, ORDER_PLANNED, PRINT_JOB_NEW
 from sqlalchemy.exc import IntegrityError
 from services.order_guards import require_reprocessable_order
+from services.order_processing import process_order
 
 router = APIRouter()
 
@@ -346,66 +347,14 @@ def process_order_inventory(item_id: int, db: Session = Depends(get_db)):
     return process_order_inventory_service(db, order)
 
 
+@router.post("/orders/{item_id}/process")
+def process_complete_order(item_id: int, db: Session = Depends(get_db)):
+    return process_order(db, item_id)
+
+
 @router.post("/orders/{item_id}/create-print-jobs")
 def create_print_jobs_for_order(item_id: int, db: Session = Depends(get_db)):
-    order = require_reprocessable_order(db, item_id)
-    items = db.scalars(select(OrderItem).where(OrderItem.order_id == item_id)).all()
-    created = []
-    updated = []
-
-    for item in items:
-        if item.quantity_to_print <= 0:
-            continue
-        if not item.product_id or not item.product_variant_id:
-            link_order_item_by_sku(db, item)
-        if not item.product_id or not item.product_variant_id:
-            continue
-
-        variant = db.get(ProductVariant, item.product_variant_id)
-        existing = db.scalar(select(PrintJob).where(PrintJob.order_item_id == item.id))
-        quantity_planned = item.quantity_to_print
-        estimated_time = None
-        estimated_filament = None
-        if variant:
-            if variant.estimated_print_time_minutes is not None:
-                estimated_time = int(variant.estimated_print_time_minutes * quantity_planned)
-            if variant.estimated_filament_grams is not None:
-                estimated_filament = int(variant.estimated_filament_grams * quantity_planned)
-
-        if existing:
-            existing.quantity_needed = item.quantity_to_print
-            existing.quantity_planned = max(existing.quantity_planned, item.quantity_to_print)
-            existing.quantity_to_order = item.quantity_to_print
-            existing.quantity_to_inventory = max(0, existing.quantity_planned - existing.quantity_to_order)
-            existing.estimated_print_time_minutes = estimated_time
-            existing.estimated_filament_grams = estimated_filament
-            item.print_job_id = existing.id
-            updated.append(to_dict(existing))
-            continue
-
-        print_job = PrintJob(
-            order_item_id=item.id,
-            product_id=item.product_id,
-            product_variant_id=item.product_variant_id,
-            color=variant.color if variant else None,
-            material=variant.material if variant else None,
-            quantity_needed=item.quantity_to_print,
-            quantity_planned=quantity_planned,
-            quantity_to_order=item.quantity_to_print,
-            quantity_to_inventory=0,
-            estimated_print_time_minutes=estimated_time,
-            estimated_filament_grams=estimated_filament,
-            status=PRINT_JOB_NEW,
-        )
-        db.add(print_job)
-        db.flush()
-        item.print_job_id = print_job.id
-        created.append(to_dict(print_job))
-
-    if created or updated:
-        order.status = ORDER_PLANNED
-    db.commit()
-    return {"status": "created", "created": created, "updated": updated}
+    return process_order(db, item_id, include_accounting=False)["print_jobs"]
 
 
 @router.post("/orders/{item_id}/create-accounting-sale")

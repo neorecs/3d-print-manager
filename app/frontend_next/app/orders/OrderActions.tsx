@@ -4,9 +4,10 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { AccountingSale } from "@/lib/types";
 
-type OrderAction = "link-items" | "process-inventory" | "create-print-jobs" | "create-accounting-sale";
+type OrderAction = "process" | "link-items" | "process-inventory" | "create-print-jobs" | "create-accounting-sale";
 
 const actionLabels: Record<OrderAction, string> = {
+  "process": "Order verwerken",
   "link-items": "Orderregels koppelen",
   "process-inventory": "Voorraad controleren",
   "create-print-jobs": "Printtaken maken",
@@ -56,20 +57,18 @@ export function OrderActions({ orderId, accountingSale }: { orderId: number; acc
   }
 
   async function processOrder() {
-    const actions: OrderAction[] = ["link-items", "process-inventory", "create-print-jobs"];
-    if (!accountingSale) actions.push("create-accounting-sale");
+    if (busyAction !== null) return;
     setBusyAction("all");
     setError(null);
-    setMessage("Orderregels worden gekoppeld...");
+    setMessage(null);
     try {
-      for (const action of actions) {
-        setMessage(`${actionLabels[action]}...`);
-        await requestAction(action);
-      }
-      setMessage("Order is verwerkt. Voorraad, printtaken en administratie zijn bijgewerkt.");
+      const data = await requestAction("process");
+      setMessage(data.message || "Order is verwerkt. Voorraad, printtaken en administratie zijn bijgewerkt.");
       router.refresh();
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "De order kon niet volledig worden verwerkt. Reeds afgeronde stappen zijn veilig bewaard.");
+      setMessage(null);
+      setError(caught instanceof Error ? caught.message : "Verwerking niet bevestigd. Controleer de order en probeer opnieuw.");
+      router.refresh();
     } finally {
       setBusyAction(null);
     }
@@ -91,7 +90,7 @@ export function OrderActions({ orderId, accountingSale }: { orderId: number; acc
       <details className="rounded-md border border-line bg-slate-950/20 p-3">
         <summary className="cursor-pointer text-sm font-bold text-slate-300">Afzonderlijke herstelacties</summary>
         <div className="mt-3 flex flex-wrap gap-2">
-          {(Object.keys(actionLabels) as OrderAction[]).map((action) => (
+          {(Object.keys(actionLabels) as OrderAction[]).filter((action) => action !== "process").map((action) => (
             <button className="rounded-md border border-line bg-slate-950/35 px-3 py-2 text-sm font-bold text-slate-300 hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-60" disabled={busyAction !== null || (action === "create-accounting-sale" && Boolean(accountingSale))} key={action} onClick={() => runAction(action)} type="button">
               {busyAction === action ? "Bezig..." : actionLabels[action]}
             </button>

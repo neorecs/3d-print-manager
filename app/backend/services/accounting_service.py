@@ -170,7 +170,8 @@ def calculate_order_gross_amount(db: Session, order: Order) -> Decimal:
     return money(sum((money(item.unit_sale_price) * int(item.quantity_ordered or 0) for item in items), Decimal("0")))
 
 
-def create_accounting_sale_from_order(db: Session, order: Order) -> dict:
+def create_accounting_sale_from_order(db: Session, order: Order, *, commit: bool = True) -> dict:
+    db.scalar(select(Order).where(Order.id == order.id).with_for_update())
     existing = db.scalar(select(AccountingSale).where(AccountingSale.order_id == order.id))
     if existing:
         data = to_dict(existing)
@@ -212,8 +213,11 @@ def create_accounting_sale_from_order(db: Session, order: Order) -> dict:
         ),
     )
     db.add(item)
-    db.commit()
-    db.refresh(item)
+    if commit:
+        db.commit()
+        db.refresh(item)
+    else:
+        db.flush()
     data = to_dict(item)
     data["created"] = True
     data["message"] = "Verkoopboeking aangemaakt vanuit order."

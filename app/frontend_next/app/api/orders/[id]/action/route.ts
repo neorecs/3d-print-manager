@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 const API_BASE_URL = getBackendBaseUrl();
 
 const actionPaths = {
+  "process": "process",
   "link-items": "link-items",
   "process-inventory": "process-inventory",
   "create-print-jobs": "create-print-jobs",

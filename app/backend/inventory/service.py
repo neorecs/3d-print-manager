@@ -28,6 +28,8 @@ def link_order_item_by_sku(db: Session, item: OrderItem) -> None:
         return
     variant = db.scalar(select(ProductVariant).where(ProductVariant.sku == item.sku))
     if variant:
+        if item.product_variant_id and item.product_variant_id != variant.id and (item.quantity_from_inventory or item.print_job_id):
+            raise HTTPException(409, "Deze orderregel heeft al voorraad of printwerk. Corrigeer eerst de bestaande koppeling.")
         item.product_variant_id = variant.id
         item.product_id = variant.product_id
 
@@ -152,7 +154,7 @@ def add_inventory_movement(
     return movement
 
 
-def process_order_inventory(db: Session, order: Order) -> dict:
+def process_order_inventory(db: Session, order: Order, *, commit: bool = True) -> dict:
     order = require_reprocessable_order(db, order.id)
     items = db.scalars(
         select(OrderItem).where(OrderItem.order_id == order.id).order_by(OrderItem.id).with_for_update()
@@ -161,6 +163,9 @@ def process_order_inventory(db: Session, order: Order) -> dict:
 
     for item in items:
         link_order_item_by_sku(db, item)
+    # All orders acquire shared stock rows in the same order.
+    items.sort(key=lambda item: (item.product_variant_id or 0, item.id))
+    for item in items:
         result = process_order_item_inventory(db, item)
         results.append(result)
 
@@ -176,7 +181,10 @@ def process_order_inventory(db: Session, order: Order) -> dict:
     else:
         order.status = ORDER_PARTLY_TO_PRINT
 
-    db.commit()
+    if commit:
+        db.commit()
+    else:
+        db.flush()
     return {"status": "processed", "order": to_dict(order), "items": results}
 
 
@@ -194,14 +202,22 @@ def process_order_item_inventory(db: Session, item: OrderItem) -> dict:
         ).with_for_update()
     )
     if not inventory:
+        if item.quantity_from_inventory:
+            raise HTTPException(409, "De voorraadregel van een bestaande reservering ontbreekt")
         item.quantity_from_inventory = 0
         item.quantity_to_print = item.quantity_ordered
         item.inventory_status = INVENTORY_NONE
         return to_dict(item)
 
-    if item.quantity_from_inventory > 0:
+    if item.quantity_from_inventory > inventory.quantity_reserved:
+        raise HTTPException(409, "De reservering komt niet overeen met de voorraad. Controleer de voorraadbewegingen.")
+
+    free_stock = max(0, inventory.quantity_on_hand - inventory.quantity_reserved)
+    reserve_quantity = min(item.quantity_ordered, free_stock + item.quantity_from_inventory)
+    delta = reserve_quantity - item.quantity_from_inventory
+    if delta < 0:
         before = inventory_snapshot(inventory)
-        released = min(inventory.quantity_reserved, item.quantity_from_inventory)
+        released = -delta
         if released > 0:
             inventory.quantity_reserved -= released
             add_inventory_movement(
@@ -216,18 +232,16 @@ def process_order_item_inventory(db: Session, item: OrderItem) -> dict:
                 source="order_inventory_recheck",
             )
 
-    free_stock = max(0, inventory.quantity_on_hand - inventory.quantity_reserved)
-    reserve_quantity = min(item.quantity_ordered, free_stock)
     quantity_to_print = item.quantity_ordered - reserve_quantity
 
-    if reserve_quantity > 0:
+    if delta > 0:
         before = inventory_snapshot(inventory)
-        inventory.quantity_reserved += reserve_quantity
+        inventory.quantity_reserved += delta
         add_inventory_movement(
             db,
             inventory,
             "gereserveerd_voor_order",
-            reserve_quantity,
+            delta,
             before=before,
             order_id=item.order_id,
             order_item_id=item.id,

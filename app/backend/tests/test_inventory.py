@@ -110,8 +110,6 @@ class InventoryTestCase(BackendTestCase):
             [(movement.movement_type, movement.quantity) for movement in movements],
             [
                 ("gereserveerd_voor_order", 4),
-                ("reservering_vrijgegeven", 4),
-                ("gereserveerd_voor_order", 4),
             ],
         )
         self.assertEqual(movements[-1].free_stock_after, 2)
