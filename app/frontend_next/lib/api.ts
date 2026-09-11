@@ -45,6 +45,7 @@ import {
   VatSummary,
 } from "./types";
 import { backendFetch, getBackendBaseUrl } from "./backend-auth";
+import { loadResult } from "./loadResult";
 export { formatCurrency, formatMinutes } from "./format";
 
 function getApiBaseUrl() {
@@ -74,7 +75,7 @@ export async function getDashboardData(): Promise<DashboardData> {
     apiGet<FilamentSpool[]>("/filament"),
     apiGet<PrintJob[]>("/print-jobs"),
     apiGet<StockRecommendation[]>("/stock-recommendations"),
-    apiGet<BambuPrinter[]>("/bambu/printers").catch(() => []),
+    apiGet<BambuPrinter[]>("/bambu/printers"),
     apiGet<ProductPublication[]>("/product-publications"),
   ]);
 
@@ -99,7 +100,7 @@ export async function getProductCatalogData(): Promise<ProductCatalogData> {
     apiGet<ProductVariant[]>("/product-variants"),
     apiGet<ProductInventory[]>("/inventory/products"),
     apiGet<Platform[]>("/platforms"),
-    apiGet<BambuPrinter[]>("/bambu/printers").catch(() => []),
+    loadResult(apiGet<BambuPrinter[]>("/bambu/printers")),
   ]);
 
   const publications = await apiGet<ProductPublication[]>("/product-publications");
@@ -109,7 +110,8 @@ export async function getProductCatalogData(): Promise<ProductCatalogData> {
     variants,
     inventory,
     platforms,
-    printers,
+    printers: printers.data ?? [],
+    printerLoadError: printers.error,
     rows: products.map((product) => ({
       product,
       variants: variants.filter((variant) => variant.product_id === product.id),
@@ -124,36 +126,37 @@ export async function getProductDetailData(productId: number): Promise<ProductDe
     apiGet<Product>(`/products/${productId}`),
     apiGet<ProductVariant[]>("/product-variants"),
     apiGet<ProductInventory[]>("/inventory/products"),
-    apiGet<ProductMedia[]>(`/products/${productId}/media`).catch(() => []),
-    apiGet<ProductTag[]>(`/products/${productId}/tags`).catch(() => []),
-    apiGet<ProductTranslation[]>(`/products/${productId}/translations`).catch(() => []),
-    apiGet<ProductPublication[]>(`/products/${productId}/publications`).catch(() => []),
+    loadResult(apiGet<ProductMedia[]>(`/products/${productId}/media`)),
+    loadResult(apiGet<ProductTag[]>(`/products/${productId}/tags`)),
+    loadResult(apiGet<ProductTranslation[]>(`/products/${productId}/translations`)),
+    loadResult(apiGet<ProductPublication[]>(`/products/${productId}/publications`)),
     apiGet<Platform[]>("/platforms"),
-    apiGet<BambuPrinter[]>("/bambu/printers").catch(() => []),
+    loadResult(apiGet<BambuPrinter[]>("/bambu/printers")),
   ]);
 
   return {
     product,
     variants: variants.filter((variant) => variant.product_id === productId),
     inventory: inventory.filter((item) => item.product_id === productId),
-    media,
-    tags,
-    translations,
-    publications,
+    media: media.data ?? [],
+    tags: tags.data ?? [],
+    translations: translations.data ?? [],
+    publications: publications.data ?? [],
+    loadErrors: Object.fromEntries(Object.entries({ media, tags, translations, publications, printers }).filter(([, result]) => result.error).map(([key, result]) => [key, result.error])),
     platforms,
-    printers,
+    printers: printers.data ?? [],
   };
 }
 
 export async function getOrdersData(): Promise<OrdersData> {
   const [orders, orderItems, platforms, products, variants, printJobs, importLogs] = await Promise.all([
     apiGet<Order[]>("/orders"),
-    apiGet<OrderItem[]>("/order-items").catch(() => []),
+    apiGet<OrderItem[]>("/order-items"),
     apiGet<Platform[]>("/platforms"),
-    apiGet<Product[]>("/products").catch(() => []),
-    apiGet<ProductVariant[]>("/product-variants").catch(() => []),
-    apiGet<PrintJob[]>("/print-jobs").catch(() => []),
-    apiGet<PlatformImportLog[]>("/orders/import-logs").catch(() => []),
+    apiGet<Product[]>("/products"),
+    apiGet<ProductVariant[]>("/product-variants"),
+    apiGet<PrintJob[]>("/print-jobs"),
+    apiGet<PlatformImportLog[]>("/orders/import-logs"),
   ]);
 
   return {
@@ -174,7 +177,7 @@ export async function getOrderDetailData(orderId: number): Promise<OrderDetailDa
     apiGet<Product[]>("/products"),
     apiGet<ProductVariant[]>("/product-variants"),
     apiGet<PrintJob[]>("/print-jobs"),
-    apiGet<AccountingSale[]>("/accounting/sales").catch(() => []),
+    apiGet<AccountingSale[]>("/accounting/sales"),
   ]);
 
   return {
@@ -195,7 +198,7 @@ export async function getPrintPlanningData(): Promise<PrintPlanningData> {
     apiGet<ProductVariant[]>("/product-variants"),
     apiGet<Order[]>("/orders"),
     apiGet<OrderItem[]>("/order-items"),
-    apiGet<BambuPrinter[]>("/bambu/printers").catch(() => []),
+    loadResult(apiGet<BambuPrinter[]>("/bambu/printers")),
   ]);
 
   return {
@@ -205,7 +208,8 @@ export async function getPrintPlanningData(): Promise<PrintPlanningData> {
     variants,
     orders,
     orderItems,
-    printers,
+    printers: printers.data ?? [],
+    printerLoadError: printers.error,
   };
 }
 
@@ -263,13 +267,13 @@ export async function getAccountingData(filters: { startDate?: string; endDate?:
 export async function getSalesChannelsData(): Promise<SalesChannelsData> {
   const [platforms, markets, products] = await Promise.all([
     apiGet<Platform[]>("/platforms"),
-    apiGet<SalesMarket[]>("/sales-markets").catch(() => []),
+    apiGet<SalesMarket[]>("/sales-markets"),
     apiGet<Product[]>("/products"),
   ]);
 
   const [statuses, publicationsNested] = await Promise.all([
-    Promise.all(platforms.map((platform) => apiGet<PlatformConnectorStatus>(`/platforms/${platform.id}/connector-status`).catch(() => null))),
-    Promise.all(products.map((product) => apiGet<ProductPublication[]>(`/products/${product.id}/publications`).catch(() => []))),
+    Promise.all(platforms.map((platform) => apiGet<PlatformConnectorStatus>(`/platforms/${platform.id}/connector-status`))),
+    Promise.all(products.map((product) => apiGet<ProductPublication[]>(`/products/${product.id}/publications`))),
   ]);
 
   return {
@@ -284,8 +288,8 @@ export async function getSalesChannelsData(): Promise<SalesChannelsData> {
 export async function getSalesChannelDetailData(platformId: number): Promise<SalesChannelDetailData> {
   const [platforms, status, credentials, products] = await Promise.all([
     apiGet<Platform[]>("/platforms"),
-    apiGet<PlatformConnectorStatus>(`/platforms/${platformId}/connector-status`).catch(() => null),
-    apiGet<PlatformCredential[]>(`/platforms/${platformId}/credentials`).catch(() => []),
+    apiGet<PlatformConnectorStatus>(`/platforms/${platformId}/connector-status`),
+    apiGet<PlatformCredential[]>(`/platforms/${platformId}/credentials`),
     apiGet<Product[]>("/products"),
   ]);
 
@@ -295,7 +299,7 @@ export async function getSalesChannelDetailData(platformId: number): Promise<Sal
   }
 
   const publicationsNested = await Promise.all(
-    products.map((product) => apiGet<ProductPublication[]>(`/products/${product.id}/publications`).catch(() => [])),
+    products.map((product) => apiGet<ProductPublication[]>(`/products/${product.id}/publications`)),
   );
 
   return {
@@ -321,53 +325,9 @@ export async function getAnalyticsData(periodDays = 30): Promise<AnalyticsData> 
 }
 
 export async function getAIProductStatus(): Promise<AIProductStatus> {
-  try {
-    return await apiGet<AIProductStatus>("/ai/product-draft/status");
-  } catch {
-    return {
-      enabled: false,
-      configured: false,
-      model: "mockmodus",
-      ready: false,
-      note: "AI-status is niet bereikbaar. De frontend gebruikt gratis mockmodus zonder OpenAI API-call.",
-      daily_limit: 0,
-      used_today: 0,
-      remaining_today: 0,
-      input_tokens_today: 0,
-      output_tokens_today: 0,
-    };
-  }
+  return apiGet<AIProductStatus>("/ai/product-draft/status");
 }
 
 export async function getSystemReadiness(): Promise<SystemReadiness> {
-  try {
-    return await apiGet<SystemReadiness>("/system/readiness");
-  } catch {
-    return {
-      connectors_live_mode: false,
-      live_calls_blocked: true,
-      credential_encryption_configured: false,
-      internal_api_configured: false,
-      session_signing_configured: false,
-      database_configured: false,
-      database_reachable: false,
-      upload_storage_writable: false,
-      upload_backup_configured: false,
-      database_backup_recent: false,
-      upload_backup_recent: false,
-      restore_test_recent: false,
-      auth_enabled: false,
-      auth_backend_login: false,
-      secure_cookie_enabled: false,
-      ai_enabled: false,
-      ai_configured: false,
-      openai_model: "onbekend",
-      platform_subscription_required_now: false,
-      safe_without_platform_subscription: true,
-      backup_plan_documented: true,
-      ready_for_real_tokens: false,
-      blockers: ["Systeemstatus kon niet worden opgehaald bij de backend."],
-      next_checks: ["Controleer of backend en database draaien."],
-    };
-  }
+  return apiGet<SystemReadiness>("/system/readiness");
 }

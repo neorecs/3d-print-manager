@@ -407,6 +407,7 @@ export type OrderDetailData = {
 };
 
 export type PrintPlanningData = {
+  printerLoadError?: string | null;
   printJobs: PrintJob[];
   printBatches: PrintBatch[];
   products: Product[];
@@ -424,6 +425,7 @@ export type ProductCatalogRow = {
 };
 
 export type ProductCatalogData = {
+  printerLoadError?: string | null;
   products: Product[];
   variants: ProductVariant[];
   inventory: ProductInventory[];
@@ -433,6 +435,7 @@ export type ProductCatalogData = {
 };
 
 export type ProductDetailData = {
+  loadErrors: Partial<Record<"media" | "tags" | "translations" | "publications" | "printers", string>>;
   product: Product;
   variants: ProductVariant[];
   inventory: ProductInventory[];

@@ -51,6 +51,7 @@ function PrintPlanningContent({ data }: { data: PrintPlanningData }) {
 
   return (
     <div className="space-y-6">
+      {data.printerLoadError ? <ErrorState title="Printeradvies kon niet worden geladen" message={data.printerLoadError} retryHref="/printplanning" /> : null}
       <CollapsibleHelp><p>Controleer eerst aantallen, filament en printtijd. Groepeer taken daarna per materiaal en kleur. Na het printen boek je gelukte aantallen naar de order of vrije voorraad en registreer je mislukte prints. Slicing blijft in Bambu Studio.</p></CollapsibleHelp>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">

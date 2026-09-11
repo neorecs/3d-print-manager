@@ -31,7 +31,9 @@ export function ProductCreateForm() {
   const router = useRouter();
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [includeVariant, setIncludeVariant] = useState(true);
+  const [includeVariant, setIncludeVariant] = useState(false);
+  const [createdId, setCreatedId] = useState<number | null>(null);
+  const [file, setFile] = useState<File | null>(null);
   const [name, setName] = useState("");
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState("");
@@ -54,16 +56,19 @@ export function ProductCreateForm() {
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (saving) return;
     setSaving(true);
     setError(null);
 
     try {
+      let productId = createdId;
+      if (!productId) {
       const productResponse = await fetch("/api/products", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name,
-          internal_title: title || name,
+          name: name.trim(),
+          internal_title: title.trim() || name.trim(),
           short_description: shortDescription || null,
           sales_description: salesDescription || null,
           seo_title: seoTitle || null,
@@ -91,8 +96,19 @@ export function ProductCreateForm() {
       if (!productResponse.ok || !product.id) {
         throw new Error(product.detail || "Product kon niet worden opgeslagen");
       }
-
-      router.push("/catalogus");
+      productId = product.id;
+      setCreatedId(productId);
+      }
+      if (file) {
+        const form = new FormData();
+        form.append("file", file);
+        const uploaded = await fetch(`/api/products/${productId}/print-file/upload`, { method: "POST", body: form });
+        if (!uploaded.ok) {
+          const detail = await uploaded.json().catch(() => null);
+          throw new Error(`Product is opgeslagen, maar het bestand niet. ${typeof detail?.detail === "string" ? detail.detail : "Probeer de upload opnieuw."}`);
+        }
+      }
+      router.push(`/catalogus/${productId}?tab=${file ? "printbestand" : "overzicht"}`);
       router.refresh();
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Opslaan is mislukt");
@@ -109,9 +125,13 @@ export function ProductCreateForm() {
         </div>
       ) : null}
 
-      <FormBlock title="Productbasis" description="Dit is de interne hoofdbron. Etsy, Shopify en andere platformen volgen later.">
+      {createdId ? <p role="status" className="text-sm text-amber-200">Product opgeslagen. <a className="underline" href={`/catalogus/${createdId}?tab=printbestand`}>Verder zonder bestand</a></p> : null}
+      <fieldset disabled={saving || createdId !== null} className="space-y-5">
+      <FormBlock title="Product" description="Nieuw concept">
+        <TextField label="Productnaam" value={name} onChange={setName} required placeholder="Bijv. Telefoonhouder" />
+        <details className="mt-4">
+        <summary className="cursor-pointer text-sm font-bold text-muted">Extra productgegevens</summary>
         <div className="grid gap-4 md:grid-cols-2">
-          <TextField label="Interne naam" value={name} onChange={setName} required placeholder="Bijv. Dumpling rood" />
           <TextField label="Producttitel" value={title} onChange={setTitle} placeholder="Titel die je later kunt gebruiken voor verkoop" />
           <TextField label="Categorie" value={category} onChange={setCategory} placeholder="Bijv. Decoratie" />
           <TextField label="Producttype" value={productType} onChange={setProductType} placeholder="Bijv. Sleutelhanger, beeldje, houder" />
@@ -128,9 +148,11 @@ export function ProductCreateForm() {
             </select>
           </label>
         </div>
+        </details>
       </FormBlock>
 
-      <FormBlock title="Tekst en SEO" description="Vul eerst kort en bruikbaar in. Later kan de AI-assistent dit uitbreiden.">
+      <details><summary className="cursor-pointer text-sm font-bold text-muted">Verkoopteksten en vindbaarheid</summary>
+      <FormBlock title="Tekst en SEO" description="Optioneel">
         <div className="grid gap-4 lg:grid-cols-2">
           <TextArea label="Korte omschrijving" value={shortDescription} onChange={setShortDescription} placeholder="Een korte uitleg voor overzicht en publicatiecontrole." />
           <TextArea label="Verkooptekst" value={salesDescription} onChange={setSalesDescription} placeholder="Waarom zou iemand dit product willen kopen?" />
@@ -138,6 +160,7 @@ export function ProductCreateForm() {
           <TextField label="SEO-omschrijving" value={seoDescription} onChange={setSeoDescription} placeholder="Korte zoekomschrijving" />
         </div>
       </FormBlock>
+      </details>
 
       <FormBlock title="Eerste variant" description="Maak meteen een eerste SKU met materiaal, kleur, printtijd en prijs.">
         <label className="flex items-center gap-3 rounded-md border border-line bg-panelSoft px-3 py-3 text-sm font-semibold">
@@ -157,6 +180,16 @@ export function ProductCreateForm() {
           </div>
         ) : null}
       </FormBlock>
+      </fieldset>
+
+      <div className="space-y-2">
+        <p className="text-sm font-bold text-slate-300">Productbestand (optioneel)</p>
+        <label className="inline-flex cursor-pointer rounded-md border border-line px-3 py-2 text-sm font-bold focus-within:ring-2 focus-within:ring-brand">
+          {file ? "Ander bestand kiezen" : "Bestand kiezen"}
+          <input aria-label="Productbestand (optioneel)" className="sr-only" type="file" accept=".3mf,.gcode.3mf,.stl,.stp,.step,.svg,.amf,.obj,.gltf,.glb,.fbx,.oltp,.gcode" disabled={saving} onChange={(event) => setFile(event.target.files?.[0] || null)} />
+        </label>
+        <p className="break-all text-sm text-muted">{file?.name || "Geen bestand gekozen"}</p>
+      </div>
 
       <div className="flex flex-wrap justify-end gap-3">
         <a className="rounded-md border border-line bg-slate-950/35 px-4 py-2 text-sm font-bold text-slate-300" href="/catalogus">
@@ -164,10 +197,10 @@ export function ProductCreateForm() {
         </a>
         <button
           className="rounded-md bg-brand px-4 py-2 text-sm font-black text-slate-950 disabled:cursor-not-allowed disabled:opacity-60"
-          disabled={saving || !name}
+          disabled={saving || !name.trim()}
           type="submit"
         >
-          {saving ? "Opslaan..." : "Product aanmaken"}
+          {saving ? "Opslaan..." : createdId ? file ? "Bestand opnieuw uploaden" : "Verder naar product" : "Product aanmaken"}
         </button>
       </div>
     </form>
@@ -176,7 +209,7 @@ export function ProductCreateForm() {
 
 function FormBlock({ title, description, children }: { title: string; description: string; children: React.ReactNode }) {
   return (
-    <section className="rounded-lg border border-line bg-panel shadow-card">
+    <section className="border-b border-line pb-4">
       <div className="border-b border-line px-4 py-4">
         <h2 className="text-base font-bold text-ink">{title}</h2>
         <p className="mt-1 text-sm leading-6 text-muted">{description}</p>

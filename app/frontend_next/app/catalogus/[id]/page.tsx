@@ -1,10 +1,12 @@
 import { AppShell } from "@/components/AppShell";
 import { EmptyState } from "@/components/EmptyState";
+import { ErrorState } from "@/components/ErrorState";
 import { MetricCard } from "@/components/MetricCard";
 import { PageHeader } from "@/components/PageHeader";
 import { SectionCard } from "@/components/SectionCard";
 import { formatMinutes, getProductDetailData } from "@/lib/api";
 import type { ProductDetailData } from "@/lib/types";
+import { salesBasicsMissing } from "@/lib/catalogView";
 import { InventoryManager } from "./InventoryManager";
 import { MediaManager } from "./MediaManager";
 import { PublicationManager } from "./PublicationManager";
@@ -51,14 +53,11 @@ export default async function ProductDetailPage({ params, searchParams }: { para
 }
 
 function DetailError({ message }: { message: string }) {
-  return (
-    <SectionCard title="Product niet gevonden" description="Controleer of het product nog bestaat.">
-      <EmptyState title="Geen productdetail" description={message} />
-    </SectionCard>
-  );
+  return <ErrorState title="Product kon niet worden geladen" message={message} retryHref="?" />;
 }
 
 function DetailContent({ data, activeTab }: { data: ProductDetailData; activeTab: string }) {
+  const missing = salesBasicsMissing(data);
   const freeStock = data.inventory.reduce(
     (total, item) => total + Math.max(Number(item.quantity_on_hand || 0) - Number(item.quantity_reserved || 0), 0),
     0,
@@ -68,25 +67,24 @@ function DetailContent({ data, activeTab }: { data: ProductDetailData; activeTab
   const publishedCount = data.publications.filter((publication) => publication.publication_status === "gepubliceerd").length;
   const syncNeeded = data.publications.filter((publication) => publication.publication_status === "synchronisatie_nodig").length;
   const completeness = [
-    { label: "Producttitel", complete: Boolean(data.product.internal_title || data.product.name), tab: "informatie" },
-    { label: "Omschrijving", complete: Boolean(data.product.short_description || data.product.long_description), tab: "informatie" },
-    { label: "Minimaal één variant", complete: data.variants.length > 0, tab: "varianten" },
-    { label: "SKU en verkoopprijs", complete: data.variants.length > 0 && data.variants.every((variant) => variant.sku && Number(variant.default_sale_price || 0) > 0), tab: "varianten" },
-    { label: "Printbestand", complete: Boolean(data.product.print_file_path), tab: "printbestand" },
-    { label: "Hoofdfoto", complete: data.media.some((item) => item.is_primary), tab: "fotos" },
-    { label: "Voorraadregel", complete: data.inventory.length > 0, tab: "voorraad" },
+    { label: "Producttitel", complete: !missing.includes("titel"), tab: "informatie" },
+    { label: "Omschrijving", complete: !missing.includes("omschrijving"), tab: "informatie" },
+    { label: "Minimaal één actieve variant", complete: !missing.includes("variant"), tab: "varianten" },
+    { label: "SKU en verkoopprijs", complete: !missing.includes("variant") && !missing.includes("SKU of prijs"), tab: "varianten" },
+    { label: "Materiaal en kleur", complete: !missing.includes("variant") && !missing.includes("materiaal of kleur"), tab: "varianten" },
+    { label: "Hoofdfoto", complete: data.loadErrors.media ? null : data.media.some((item) => item.is_primary), tab: "fotos" },
   ];
   const completed = completeness.filter((item) => item.complete).length;
 
   return (
     <div className="space-y-6">
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
-        <MetricCard label="Status" value={(data.product.status || "onbekend").replace(/_/g, " ")} />
+        <MetricCard label="Ingestelde status" value={(data.product.status || "onbekend").replace(/_/g, " ")} note="geen publicatiecontrole" />
         <MetricCard label="Varianten" value={data.variants.length} note="SKU's en printinfo" />
         <MetricCard label="Printbestand" value={data.product.print_file_path ? "Gekoppeld" : "Ontbreekt"} note="productniveau" tone={data.product.print_file_path ? "good" : "warning"} />
         <MetricCard label="Vrije voorraad" value={freeStock} note={`${reservedStock} gereserveerd`} tone="good" />
-        <MetricCard label="Foto's" value={data.media.length} note={data.media.some((item) => item.is_primary) ? "hoofdfoto gekozen" : "geen hoofdfoto"} tone={data.media.length ? "good" : "warning"} />
-        <MetricCard label="Publicaties" value={publishedCount} note={`${syncNeeded} sync nodig`} tone={syncNeeded ? "warning" : "neutral"} />
+        <MetricCard label="Foto's" value={data.loadErrors.media ? "Onbekend" : data.media.length} note={data.loadErrors.media ? "laden mislukt" : data.media.some((item) => item.is_primary) ? "hoofdfoto gekozen" : "geen hoofdfoto"} tone="neutral" />
+        <MetricCard label="Publicaties" value={data.loadErrors.publications ? "Onbekend" : publishedCount} note={data.loadErrors.publications ? "laden mislukt" : `${syncNeeded} sync nodig`} tone="neutral" />
       </div>
 
       <nav aria-label="Productonderdelen" className="flex gap-2 overflow-x-auto border-b border-line pb-2">
@@ -95,21 +93,23 @@ function DetailContent({ data, activeTab }: { data: ProductDetailData; activeTab
         ))}
       </nav>
 
-      {activeTab === "overzicht" ? <SectionCard title="Product gereedmaken" description={`${completed} van ${completeness.length} basiscontroles zijn afgerond.`}>
+      {activeTab === "overzicht" ? <SectionCard title="Verkoop voorbereiden" description={`${completed} van ${completeness.length} basisgegevens ingevuld. De definitieve publicatiecontrole gebeurt per verkoopkanaal.`}>
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
           {completeness.map((item) => <a className={`flex min-h-12 items-center gap-3 rounded-md border p-3 font-bold ${item.complete ? "border-emerald-400/25 bg-emerald-400/5" : "border-amber-400/30 bg-amber-400/5 hover:border-brand"}`} href={`?tab=${item.tab}`} key={item.label}>
             {item.complete ? <CheckCircle2 aria-hidden="true" className="h-5 w-5 text-emerald-300" /> : <Circle aria-hidden="true" className="h-5 w-5 text-amber-200" />}
-            <span>{item.label}<span className="mt-1 block text-xs font-normal text-muted">{item.complete ? "Gereed" : "Nog invullen"}</span></span>
+            <span>{item.label}<span className="mt-1 block text-xs font-normal text-muted">{item.complete === null ? "Onbekend: laden mislukt" : item.complete ? "Ingevuld" : "Nog invullen"}</span></span>
           </a>)}
         </div>
       </SectionCard> : null}
+      {activeTab === "overzicht" ? <SectionCard title="Printen voorbereiden" description="Los van verkoopprijs, foto's en publicatie."><a className="font-bold text-brand" href="?tab=printbestand">{data.product.print_file_path ? "Bestand gekoppeld: openen in Bambu Studio" : "Printbestand toevoegen"}</a></SectionCard> : null}
+      {Object.entries(data.loadErrors).map(([section, message]) => <ErrorState key={section} title={`${({ media: "Foto's", tags: "Tags", translations: "Vertalingen", publications: "Publicaties", printers: "Printeradvies" } as Record<string, string>)[section]} konden niet worden geladen`} message={message} retryHref={`?tab=${activeTab}`} />)}
       {activeTab === "informatie" ? <SectionCard title="Productinformatie" description="Wijzigingen markeren gekoppelde verkoopkanalen als synchronisatie nodig."><ProductEditForm product={data.product} /></SectionCard> : null}
       {activeTab === "printbestand" ? <SectionCard title="Productbestand" description="Koppel één bronmodel, Bambu Studio-project of geslicet bestand aan het product."><ProductPrintFileManager product={data.product} variants={data.variants} printers={data.printers} /></SectionCard> : null}
       {activeTab === "varianten" ? <SectionCard title="Varianten" description="Beheer SKU's, kleur, materiaal, printtijd, filamentverbruik, afmetingen en prijzen."><VariantManager product={data.product} variants={data.variants} />{printMinutes ? <p className="mt-3 text-sm text-muted">Totale bekende printtijd: {formatMinutes(printMinutes)}.</p> : null}</SectionCard> : null}
       {activeTab === "voorraad" ? <SectionCard title="Voorraad" description="Beheer voorraad, reserveringen, minimum en opslaglocatie per variant."><InventoryManager product={data.product} variants={data.variants} inventory={data.inventory} /></SectionCard> : null}
-      {activeTab === "fotos" ? <SectionCard title="Foto's" description="Upload productfoto's, kies een hoofdfoto, bepaal de volgorde en vul alt-tekst in."><MediaManager productId={data.product.id} media={data.media} /></SectionCard> : null}
-      {activeTab === "verkoopkanalen" ? <SectionCard title="Verkoopkanalen" description="Beheer afwijkende titel, omschrijving, categorie, tags, prijs en publicatiestatus per kanaal."><PublicationManager product={data.product} platforms={data.platforms} publications={data.publications} /></SectionCard> : null}
-      {activeTab === "vertalingen" ? <SectionCard title="Vertalingen" description="Beheer taalversies voor Duitsland, België en latere markten."><TranslationManager product={data.product} translations={data.translations} /></SectionCard> : null}
+      {activeTab === "fotos" && !data.loadErrors.media ? <SectionCard title="Foto's" description="Upload productfoto's, kies een hoofdfoto, bepaal de volgorde en vul alt-tekst in."><MediaManager productId={data.product.id} media={data.media} /></SectionCard> : null}
+      {activeTab === "verkoopkanalen" && !data.loadErrors.publications ? <SectionCard title="Verkoopkanalen" description="Beheer afwijkende titel, omschrijving, categorie, tags, prijs en publicatiestatus per kanaal."><PublicationManager product={data.product} platforms={data.platforms} publications={data.publications} /></SectionCard> : null}
+      {activeTab === "vertalingen" && !data.loadErrors.translations ? <SectionCard title="Vertalingen" description="Beheer taalversies voor Duitsland, België en latere markten."><TranslationManager product={data.product} translations={data.translations} /></SectionCard> : null}
       {activeTab === "historie" ? <SectionCard title="Historie" description="Productwijzigingen en belangrijke gebeurtenissen komen hier samen."><EmptyState title="Nog geen producthistorie" description="Voorraadbewegingen zijn al traceerbaar onder Voorraad. Een gecombineerde producttijdlijn wordt opgebouwd zodra productevents beschikbaar zijn." actionHref="/voorraad" actionLabel="Voorraadbewegingen bekijken" /></SectionCard> : null}
     </div>
   );

@@ -8,9 +8,13 @@ import { StatusBadge } from "@/components/StatusBadge";
 import { BambuStudioOpenAction } from "@/components/BambuStudioOpenAction";
 import { formatCurrency, formatMinutes, getProductCatalogData } from "@/lib/api";
 import type { ProductCatalogData, ProductCatalogRow } from "@/lib/types";
+import { catalogRows, salesBasicsMissing } from "@/lib/catalogView";
 
-export default async function CatalogPage({ searchParams }: { searchParams: Promise<{ page?: string }> }) {
-  const requestedPage = Math.max(1, Number((await searchParams).page || 1) || 1);
+export default async function CatalogPage({ searchParams }: { searchParams: Promise<{ page?: string; view?: string }> }) {
+  const query = await searchParams;
+  const pageNumber = Number(query.page);
+  const requestedPage = Number.isFinite(pageNumber) ? Math.max(1, Math.floor(pageNumber)) : 1;
+  const view = ["archief", "alle"].includes(query.view || "") ? query.view! : "actief";
   let data: ProductCatalogData | null = null;
   let error: string | null = null;
 
@@ -36,7 +40,7 @@ export default async function CatalogPage({ searchParams }: { searchParams: Prom
           </div>
         }
       />
-      {error || !data ? <CatalogError message={error || "Geen catalogusdata beschikbaar"} /> : <CatalogContent data={data} requestedPage={requestedPage} />}
+      {error || !data ? <CatalogError message={error || "Geen catalogusdata beschikbaar"} /> : <CatalogContent data={data} requestedPage={requestedPage} view={view} />}
     </AppShell>
   );
 }
@@ -45,47 +49,50 @@ function CatalogError({ message }: { message: string }) {
   return <ErrorState message={message} retryHref="/catalogus" title="Producten konden niet worden geladen" />;
 }
 
-function CatalogContent({ data, requestedPage }: { data: ProductCatalogData; requestedPage: number }) {
-  const activeProducts = data.rows.filter((row) => row.product.active !== false);
-  const lowStock = data.rows.filter((row) =>
+function CatalogContent({ data, requestedPage, view }: { data: ProductCatalogData; requestedPage: number; view: string }) {
+  const rows = catalogRows(data.rows, view);
+  const variants = rows.flatMap((row) => row.variants);
+  const lowStock = rows.filter((row) =>
     row.inventory.some((item) => item.quantity_on_hand - item.quantity_reserved <= item.minimum_stock_level),
   );
-  const published = data.rows.filter((row) => row.publications.some((publication) => publication.publication_status === "gepubliceerd"));
-  const totalMargin = data.variants.reduce((total, variant) => {
+  const published = rows.filter((row) => row.publications.some((publication) => publication.publication_status === "gepubliceerd"));
+  const totalMargin = variants.reduce((total, variant) => {
     const price = Number(variant.default_sale_price || 0);
     const cost = Number(variant.cost_price || 0);
     return total + Math.max(price - cost, 0);
   }, 0);
   const pageSize = 20;
-  const pageCount = Math.max(1, Math.ceil(data.rows.length / pageSize));
+  const pageCount = Math.max(1, Math.ceil(rows.length / pageSize));
   const page = Math.min(requestedPage, pageCount);
-  const visibleRows = data.rows.slice((page - 1) * pageSize, page * pageSize);
+  const visibleRows = rows.slice((page - 1) * pageSize, page * pageSize);
 
   return (
     <div className="space-y-6">
+      <nav aria-label="Catalogusfilter" className="flex gap-2">{[["actief", "Actief"], ["archief", "Archief"], ["alle", "Alle producten"]].map(([key, label]) => <a key={key} aria-current={view === key ? "page" : undefined} className={`rounded-md px-3 py-2 text-sm font-bold ${view === key ? "bg-brand text-slate-950" : "border border-line text-muted"}`} href={`/catalogus?view=${key}`}>{label}</a>)}</nav>
+      {data.printerLoadError ? <ErrorState title="Printeradvies kon niet worden geladen" message={data.printerLoadError} retryHref={`?view=${view}&page=${page}`} /> : null}
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
-        <MetricCard label="Producten" value={activeProducts.length} note="actieve catalogus" />
-        <MetricCard label="Varianten" value={data.variants.length} note="SKU's" />
+        <MetricCard label="Producten" value={rows.length} note={`selectie: ${view}`} />
+        <MetricCard label="Varianten" value={variants.length} note="binnen deze selectie" />
         <MetricCard label="Lage voorraad" value={lowStock.length} note="onder minimum" tone={lowStock.length ? "warning" : "good"} />
         <MetricCard label="Gepubliceerd" value={published.length} note="op kanalen" tone="good" />
         <MetricCard label="Margepotentieel" value={formatCurrency(totalMargin)} note="op variantniveau" />
       </div>
 
       <SectionCard title="Productbeheer" description="Scan productfoto, SKU, voorraad, printtijd, materiaal, prijzen, marge en verkoopkanalen in een overzicht.">
-        {data.rows.length ? (
+        {rows.length ? (
           <div className="grid gap-4 xl:grid-cols-2">
             {visibleRows.map((row) => (
               <ProductCard key={row.product.id} row={row} printers={data.printers} platforms={data.platforms} />
             ))}
           </div>
         ) : (
-          <EmptyState title="Nog geen producten" description="Maak je eerste product aan of gebruik de AI Product Assistent voor een concept." actionHref="/catalogus/nieuw" actionLabel="Eerste product maken" />
+          <EmptyState title="Geen producten in deze selectie" description="Kies een andere selectie of maak een product aan." actionHref="/catalogus/nieuw" actionLabel="Product maken" />
         )}
         {pageCount > 1 ? (
           <div className="mt-5 flex items-center justify-between border-t border-line pt-4 text-sm font-bold">
-            <a className={`rounded-md border border-line px-3 py-2 ${page === 1 ? "pointer-events-none opacity-40" : "hover:border-brand"}`} href={`/catalogus?page=${page - 1}`}>Vorige</a>
+            <a className={`rounded-md border border-line px-3 py-2 ${page === 1 ? "pointer-events-none opacity-40" : "hover:border-brand"}`} href={`/catalogus?view=${view}&page=${page - 1}`}>Vorige</a>
             <span className="text-muted">Pagina {page} van {pageCount}</span>
-            <a className={`rounded-md border border-line px-3 py-2 ${page === pageCount ? "pointer-events-none opacity-40" : "hover:border-brand"}`} href={`/catalogus?page=${page + 1}`}>Volgende</a>
+            <a className={`rounded-md border border-line px-3 py-2 ${page === pageCount ? "pointer-events-none opacity-40" : "hover:border-brand"}`} href={`/catalogus?view=${view}&page=${page + 1}`}>Volgende</a>
           </div>
         ) : null}
       </SectionCard>
@@ -94,6 +101,7 @@ function CatalogContent({ data, requestedPage }: { data: ProductCatalogData; req
 }
 
 function ProductCard({ row, printers, platforms }: { row: ProductCatalogRow; printers: ProductCatalogData["printers"]; platforms: ProductCatalogData["platforms"] }) {
+  const missing = salesBasicsMissing(row);
   const primaryVariant = row.variants[0];
   const freeStock = row.inventory.reduce(
     (total, item) => total + Math.max(Number(item.quantity_on_hand || 0) - Number(item.quantity_reserved || 0), 0),
@@ -118,7 +126,7 @@ function ProductCard({ row, printers, platforms }: { row: ProductCatalogRow; pri
             <a className="text-xl font-black text-ink hover:text-brand" href={`/catalogus/${row.product.id}`}>
               {row.product.internal_title || row.product.name}
             </a>
-            <StatusBadge status={row.product.status} />
+            <span className="text-xs text-muted">Ingestelde status: {(row.product.status || "concept").replace(/_/g, " ")}</span>
           </div>
           <p className="mt-2 line-clamp-2 text-sm leading-6 text-muted">
             {row.product.short_description || row.product.sales_description || "Nog geen verkoopomschrijving ingevuld."}
@@ -141,6 +149,7 @@ function ProductCard({ row, printers, platforms }: { row: ProductCatalogRow; pri
         <Small label="Printbestand" value={row.product.print_file_path ? "Gekoppeld" : "Ontbreekt"} />
         <Small label="Kanalen" value={channels} />
       </div>
+      <a className="mt-3 block text-sm text-amber-200" href={`/catalogus/${row.product.id}?tab=verkoopkanalen`}>Publicatiecontrole: {missing.length ? `nog aanvullen: ${missing.join(", ")}` : "basis ingevuld; controleer foto's en kanaaleisen"}</a>
 
       <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-4">
         <div className="text-sm text-muted">{row.variants.length} variant(en), {row.publications.length} publicatie(s)</div>
