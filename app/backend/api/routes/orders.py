@@ -263,6 +263,7 @@ def upsert_imported_order(db: Session, platform: Platform, payload: dict) -> dic
     order.order_date = parse_optional_datetime(payload.get("order_date"))
     order.total_amount = payload.get("total_amount")
     order.currency = payload.get("currency") or "EUR"
+    order.payment_status = payload.get("payment_status") or "onbekend"
 
     for item_payload in payload.get("items", []):
         external_item_id = item_payload.get("external_order_item_id")

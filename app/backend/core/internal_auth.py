@@ -92,4 +92,6 @@ def _base64url_decode(value: str) -> str:
 
 
 def _is_signed_file_bridge(path: str) -> bool:
-    return path.startswith("/products/") and path.endswith("/print-file/prepared-download")
+    return path.startswith("/products/") and (
+        path.endswith("/print-file/prepared-download") or path.endswith("/print-file/download")
+    )

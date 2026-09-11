@@ -32,16 +32,16 @@ const tonePanels = {
 
 export function StatusSummary({ items }: { items: StatusSummaryItem[] }) {
   return (
-    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+    <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-1">
       {items.map((item) => {
         const tone = item.tone || "slate";
         const content = (
           <>
             <div className="flex min-w-0 items-center justify-between gap-3">
-              <span className="min-w-0 text-balance break-words text-sm font-bold text-slate-200">{item.label}</span>
+              <span className="min-w-0 text-sm font-bold text-slate-200">{item.label}</span>
               <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${toneClasses[tone]}`} />
             </div>
-            <div className="mt-2 min-w-0 break-words text-2xl font-black text-ink">{item.value}</div>
+            <div className="text-2xl font-black text-ink">{item.value}</div>
           </>
         );
         const className = `block rounded-xl border px-3 py-3 transition hover:border-brand/50 hover:bg-white/5 focus:outline-none focus:ring-2 focus:ring-brand/50 ${tonePanels[tone]}`;

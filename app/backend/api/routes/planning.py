@@ -175,7 +175,20 @@ def update_order_status_after_print(db: Session, print_job: PrintJob) -> None:
         .join(OrderItem, PrintJob.order_item_id == OrderItem.id)
         .where(OrderItem.order_id == order_id)
     ).all()
-    if jobs and all(job.status in {PRINT_JOB_PRINTED, PRINT_JOB_PARTLY_FAILED} for job in jobs):
+    if not jobs:
+        return
+    order_items = db.scalars(select(OrderItem).where(OrderItem.order_id == order_id)).all()
+    # A print can be technically completed while the order still lacks pieces.
+    # Order readiness must therefore be based on quantities, not only job status.
+    if all(
+        item.quantity_to_print <= 0
+        or (
+            item.print_job_id
+            and next((job for job in jobs if job.id == item.print_job_id), None)
+            and next(job for job in jobs if job.id == item.print_job_id).quantity_to_order >= item.quantity_to_print
+        )
+        for item in order_items
+    ) and all(job.status in {PRINT_JOB_PRINTED, PRINT_JOB_PARTLY_FAILED} for job in jobs):
         order.status = ORDER_PRINTED
 
 

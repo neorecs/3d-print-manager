@@ -65,10 +65,10 @@ function jobDraft(job: PrintJob): JobDraft {
 }
 
 function completeDraft(job: PrintJob): CompleteDraft {
-  return {
-    quantity_succeeded: valueToString(job.quantity_succeeded || job.quantity_planned || job.quantity_needed),
-    quantity_failed: valueToString(job.quantity_failed || 0),
-    quantity_to_order: valueToString(job.quantity_to_order || Math.min(job.quantity_planned || job.quantity_needed || 0, job.quantity_needed || 0)),
+    return {
+      quantity_succeeded: valueToString(job.quantity_succeeded ?? job.quantity_planned ?? job.quantity_needed),
+      quantity_failed: valueToString(job.quantity_failed ?? 0),
+      quantity_to_order: valueToString(job.quantity_to_order ?? Math.min(job.quantity_planned ?? job.quantity_needed ?? 0, job.quantity_needed ?? 0)),
   };
 }
 

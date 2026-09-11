@@ -23,6 +23,7 @@ class Order(TimestampMixin, Base):
     total_amount: Mapped[float | None] = mapped_column(Numeric(10, 2))
     currency: Mapped[str] = mapped_column(String(3), default="EUR", nullable=False)
     status: Mapped[str] = mapped_column(String(80), default="nieuw", nullable=False)
+    payment_status: Mapped[str] = mapped_column(String(40), default="onbekend", nullable=False)
 
 
 class OrderItem(TimestampMixin, Base):

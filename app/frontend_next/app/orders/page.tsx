@@ -40,14 +40,14 @@ function OrdersError({ message }: { message: string }) {
 
 function OrdersContent({ data, selectedStatus, requestedPage }: { data: OrdersData; selectedStatus: string; requestedPage: number }) {
   const openOrders = data.orders.filter((order) => !["verzonden", "geannuleerd"].includes(order.status || ""));
-  const paidOrders = data.orders.filter((order) => Number(order.total_amount || 0) > 0);
+  const paidOrders = data.orders.filter((order) => order.payment_status === "betaald");
   const production = data.orders.filter((order) => ["deels_te_printen", "volledig_te_printen", "ingepland"].includes(order.status || ""));
   const shipped = data.orders.filter((order) => order.status === "verzonden");
   const cancelled = data.orders.filter((order) => order.status === "geannuleerd");
   const revenue = data.orders.reduce((total, order) => total + Number(order.total_amount || 0), 0);
   const matchesFilter = (order: Order) => {
     if (selectedStatus === "alle") return true;
-    if (selectedStatus === "betaald") return Number(order.total_amount || 0) > 0;
+    if (selectedStatus === "betaald") return order.payment_status === "betaald";
     if (selectedStatus === "in-productie") return ["deels_te_printen", "volledig_te_printen", "ingepland"].includes(order.status || "");
     if (selectedStatus === "klaar") return order.status === "ingepakt";
     return order.status === selectedStatus;
@@ -158,7 +158,7 @@ function OrderCard({ order, items, platform, printJobs }: { order: Order; items:
   const ordered = items.reduce((total, item) => total + Number(item.quantity_ordered || 0), 0);
   const toPrint = items.reduce((total, item) => total + Number(item.quantity_to_print || 0), 0);
   const linkedJob = printJobs.find((job) => items.some((item) => item.id === job.order_item_id));
-  const paid = Number(order.total_amount || 0) > 0;
+  const paid = order.payment_status || "onbekend";
   const deliveryDate = order.order_date ? addDays(order.order_date, toPrint > 0 ? 5 : 2) : "-";
   const productSummary = items.map((item) => item.sku || `Regel ${item.id}`).slice(0, 2).join(", ") || "Geen regels";
 
@@ -176,8 +176,8 @@ function OrderCard({ order, items, platform, printJobs }: { order: Order; items:
         <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
           <Small label="Aantal" value={ordered} />
           <Small label="Te printen" value={toPrint} />
-          <Small label="Betaald" value={paid ? "Ja" : "Nee"} />
-          <Small label="Leverdatum" value={deliveryDate} />
+          <Small label="Betaling" value={paid === "betaald" ? "Betaald" : paid === "onbekend" ? "Onbekend" : paid} />
+          <Small label="Leverdatum (schatting)" value={deliveryDate} />
         </div>
       </div>
       <div className="mt-4 grid gap-3 border-t border-line pt-4 md:grid-cols-4">

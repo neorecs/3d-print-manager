@@ -103,7 +103,7 @@ function DashboardContent({ data }: { data: DashboardData }) {
         <MetricCard href="/bambu-printers" label="Actieve printers" value={onlinePrinters.length} note={`${data.printers.length} geregistreerd`} tone="good" />
         <MetricCard href="/printplanning" label="Prints bezig" value={printingPrinters.length} note={formatMinutes(estimatedPrintMinutes)} tone="warning" />
         <MetricCard href="/orders" label="Orders vandaag" value={todayOrders.length} note="nieuw binnengekomen" />
-        <MetricCard href="/orders" label="Openstaande orders" value={openOrders.length} note="nog te verwerken" tone="warning" />
+        <MetricCard href="/orders?status=nieuw" label="Openstaande orders" value={openOrders.length} note="nog te verwerken" tone="warning" />
         <MetricCard href="/voorraad" label="Voorraadwaarde" value={formatCurrency(inventoryValue)} note="indicatieve waarde" />
         <MetricCard href="/administratie" label="Omzet maand" value={formatCurrency(revenue)} note="verwacht / bekend" tone="good" />
       </div>
@@ -123,11 +123,11 @@ function DashboardContent({ data }: { data: DashboardData }) {
         <SectionCard title="Orderstatus" description="Werkvoorraad van verkoop naar productie.">
           <StatusSummary
             items={[
-              { label: "Nieuw", value: data.orders.filter((o) => o.status === "nieuw").length, tone: "amber", href: "/orders" },
+              { label: "Nieuw", value: data.orders.filter((o) => o.status === "nieuw").length, tone: "amber", href: "/orders?status=nieuw" },
               { label: "In productie", value: data.orders.filter((o) => (o.status || "").includes("print")).length, tone: "blue", href: "/orders" },
-              { label: "Klaar", value: data.orders.filter((o) => o.status === "ingepakt").length, tone: "green", href: "/orders" },
-              { label: "Verzonden", value: data.orders.filter((o) => o.status === "verzonden").length, tone: "green", href: "/orders" },
-              { label: "Geannuleerd", value: data.orders.filter((o) => o.status === "geannuleerd").length, tone: "red", href: "/orders" },
+              { label: "Klaar", value: data.orders.filter((o) => o.status === "ingepakt").length, tone: "green", href: "/orders?status=klaar" },
+              { label: "Verzonden", value: data.orders.filter((o) => o.status === "verzonden").length, tone: "green", href: "/orders?status=verzonden" },
+              { label: "Geannuleerd", value: data.orders.filter((o) => o.status === "geannuleerd").length, tone: "red", href: "/orders?status=geannuleerd" },
             ]}
           />
         </SectionCard>

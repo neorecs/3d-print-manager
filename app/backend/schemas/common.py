@@ -275,6 +275,7 @@ class OrderCreate(BaseModel):
     total_amount: float | None = None
     currency: str = "EUR"
     status: str = "nieuw"
+    payment_status: str = "onbekend"
 
 
 class OrderItemCreate(BaseModel):

@@ -97,6 +97,7 @@ export type Order = {
   total_amount?: number | null;
   currency?: string | null;
   status?: string | null;
+  payment_status?: string | null;
 };
 
 export type OrderItem = {
