@@ -37,7 +37,7 @@ services:
       AUTH_SECRET: test-auth-secret-at-least-32-characters-long
       BACKEND_INTERNAL_TOKEN: test-internal-token-at-least-32-characters
       CONNECTORS_LIVE_MODE: "false"
-    command: ["sh", "-c", "alembic upgrade head && python tests/recovery_seed.py"]
+    command: ["sh", "-c", "alembic upgrade head && PYTHONPATH=/app python tests/recovery_seed.py"]
     depends_on:
       recovery_source_db:
         condition: service_healthy
