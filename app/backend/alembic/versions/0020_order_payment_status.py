@@ -15,7 +15,10 @@ depends_on = None
 
 
 def upgrade() -> None:
-    op.add_column("orders", sa.Column("payment_status", sa.String(length=40), nullable=False, server_default="onbekend"))
+    inspector = sa.inspect(op.get_bind())
+    columns = {column["name"] for column in inspector.get_columns("orders")}
+    if "payment_status" not in columns:
+        op.add_column("orders", sa.Column("payment_status", sa.String(length=40), nullable=False, server_default="onbekend"))
 
 
 def downgrade() -> None:

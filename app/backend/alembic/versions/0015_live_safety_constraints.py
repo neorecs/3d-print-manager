@@ -19,6 +19,10 @@ def _unique_names(inspector, table_name: str) -> set[str]:
     return {item["name"] for item in inspector.get_unique_constraints(table_name) if item.get("name")}
 
 
+def _check_names(inspector, table_name: str) -> set[str]:
+    return {item["name"] for item in inspector.get_check_constraints(table_name) if item.get("name")}
+
+
 def upgrade() -> None:
     bind = op.get_bind()
     inspector = sa.inspect(bind)
@@ -52,9 +56,15 @@ def upgrade() -> None:
     ).first()
     if invalid_inventory:
         raise RuntimeError("Kan voorraadconstraints niet toevoegen: corrigeer eerst ongeldige voorraadregel(s).")
-    op.create_check_constraint("ck_product_inventory_on_hand_nonnegative", "product_inventory", "quantity_on_hand >= 0")
-    op.create_check_constraint("ck_product_inventory_reserved_nonnegative", "product_inventory", "quantity_reserved >= 0")
-    op.create_check_constraint("ck_product_inventory_reserved_lte_on_hand", "product_inventory", "quantity_reserved <= quantity_on_hand")
+    check_constraints = {
+        "ck_product_inventory_on_hand_nonnegative": "quantity_on_hand >= 0",
+        "ck_product_inventory_reserved_nonnegative": "quantity_reserved >= 0",
+        "ck_product_inventory_reserved_lte_on_hand": "quantity_reserved <= quantity_on_hand",
+    }
+    existing_checks = _check_names(inspector, "product_inventory")
+    for name, condition in check_constraints.items():
+        if name not in existing_checks:
+            op.create_check_constraint(name, "product_inventory", condition)
 
 
 def downgrade() -> None:

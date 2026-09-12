@@ -16,6 +16,9 @@ depends_on = None
 
 
 def upgrade() -> None:
+    inspector = sa.inspect(op.get_bind())
+    if "ai_usage_logs" in inspector.get_table_names():
+        return
     op.create_table(
         "ai_usage_logs",
         sa.Column("id", sa.Integer(), primary_key=True),

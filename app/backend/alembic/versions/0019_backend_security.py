@@ -15,7 +15,10 @@ depends_on = None
 
 
 def upgrade() -> None:
-    op.add_column("users", sa.Column("session_version", sa.Integer(), nullable=False, server_default="1"))
+    inspector = sa.inspect(op.get_bind())
+    columns = {column["name"] for column in inspector.get_columns("users")}
+    if "session_version" not in columns:
+        op.add_column("users", sa.Column("session_version", sa.Integer(), nullable=False, server_default="1"))
 
 
 def downgrade() -> None:

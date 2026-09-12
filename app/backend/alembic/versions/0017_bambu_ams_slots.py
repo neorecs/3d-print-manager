@@ -15,7 +15,10 @@ depends_on = None
 
 
 def upgrade() -> None:
-    op.add_column("bambu_printers", sa.Column("ams_slots_json", sa.Text(), nullable=True))
+    inspector = sa.inspect(op.get_bind())
+    columns = {column["name"] for column in inspector.get_columns("bambu_printers")}
+    if "ams_slots_json" not in columns:
+        op.add_column("bambu_printers", sa.Column("ams_slots_json", sa.Text(), nullable=True))
 
 
 def downgrade() -> None:
