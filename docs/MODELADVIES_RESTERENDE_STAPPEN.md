@@ -4,14 +4,14 @@ Dit document legt vast welk model het best past bij de resterende punten uit `AN
 
 Het advies volgt de positionering in de [officiele OpenAI-modeldocumentatie](https://developers.openai.com/api/docs/models): een sterk professioneel werkmodel voor de uitvoering en het meest capabele model alleen voor de zwaarste controles. Modelnamen en beschikbaarheid kunnen later veranderen; actualiseer dit document dan opnieuw.
 
-Actuele stand op 12 september 2026: 16 van 25 auditpunten zijn afgerond. Punt 14 is voltooid; punt 15 is de aanbevolen volgende stap.
+Actuele stand op 12 september 2026: 17 van 25 auditpunten zijn afgerond. Punt 15 is met GPT-5.6 Sol voltooid en geverifieerd in GitHub Actions-run `34688300442`. De GPT-6 Astra-review wordt gecombineerd met de definitieve livegangaudit. Punt 12 is de aanbevolen volgende stap.
 
 | Punt | Onderwerp | Aanbevolen model | Reden |
 | --- | --- | --- | --- |
 | 12 | Datavolume en prestaties | GPT-5.6 Sol | Gericht meten, API-query's verbeteren en regressietests schrijven |
 | 13 | Verkoop en administratieketen | GPT-5.6 Sol + GPT-6 Astra-review | Sol voor implementatie; Astra voor de laatste controle van platform- en financiële risico's |
 | 14 | Integratie- en browsertests | GPT-5.6 Sol | Uitgevoerd met Sol op 12 september 2026; PostgreSQL- en browserketen zijn groen in GitHub Actions-run `34686176416` |
-| 15 | Lokale configuratie en herstel | GPT-5.6 Sol + GPT-6 Astra-review | Sol voor inrichting; Astra voor een laatste herstel- en livegangcontrole |
+| 15 | Lokale configuratie en herstel | GPT-5.6 Sol + GPT-6 Astra-review | Uitgevoerd met Sol op 12 september 2026; gezamenlijke restore is groen, Astra-review volgt bij de definitieve livegangcontrole |
 | 16 | Documentatie en placeholders | GPT-5.6 Luna | Beperkt risico en vooral tekstuele, goed controleerbare wijzigingen |
 | 19 | Context behouden bij doorklikken | GPT-5.6 Sol | Frontendstatus en navigatie moeten betrouwbaar samen blijven werken |
 | 20 | Gemeten versus geschatte gegevens | GPT-5.6 Sol | Vereist controle van databetekenis in backend en UI |
