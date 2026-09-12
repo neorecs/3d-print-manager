@@ -4,6 +4,8 @@ Dit document legt vast welk model het best past bij de resterende punten uit `AN
 
 Het advies volgt de positionering in de [officiele OpenAI-modeldocumentatie](https://developers.openai.com/api/docs/models): een sterk professioneel werkmodel voor de uitvoering en het meest capabele model alleen voor de zwaarste controles. Modelnamen en beschikbaarheid kunnen later veranderen; actualiseer dit document dan opnieuw.
 
+Actuele stand op 12 september 2026: 16 van 25 auditpunten zijn afgerond. Punt 14 is voltooid; punt 15 is de aanbevolen volgende stap.
+
 | Punt | Onderwerp | Aanbevolen model | Reden |
 | --- | --- | --- | --- |
 | 12 | Datavolume en prestaties | GPT-5.6 Sol | Gericht meten, API-query's verbeteren en regressietests schrijven |
