@@ -35,4 +35,4 @@ services:
       CREDENTIAL_ENCRYPTION_KEY: 4pmcM6TeV2L8D4WWuQV3XGjxM2aJ3qS4Ph3CEmE-hzA=
       AUTH_SECRET: "test-auth-secret-at-least-32-characters-long"
       BACKEND_INTERNAL_TOKEN: "test-internal-token-at-least-32-characters"
-    command: ["sh", "-c", "alembic upgrade head && python -m unittest discover -s tests -p 'test_postgres_integration.py' -v"]
+    command: ["python", "tests/run_postgres_integration.py"]
