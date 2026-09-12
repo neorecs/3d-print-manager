@@ -1,5 +1,7 @@
 # Projectplan V2 - 3D Print Manager naar professionele SaaS-app
 
+> **Documentstatus:** historisch implementatieplan. Dit document verklaart ontwerpkeuzes en uitgevoerde stappen, maar is geen actuele livegangchecklist. Gebruik [ACCEPTATIECHECKLIST.md](ACCEPTATIECHECKLIST.md) als leidende voortgangsbron en [V1_LIVEGANG_RUNBOOK.md](V1_LIVEGANG_RUNBOOK.md) voor het go/no-go-proces.
+
 ## Doel
 
 De 3D Print Manager moet doorgroeien van een werkend Streamlit-prototype naar een professioneel intern SaaS-dashboard voor een kleine 3D-print onderneming.
@@ -35,7 +37,7 @@ Streamlit is bruikbaar voor snelle prototypes en eenvoudige dashboards, maar dit
 
 Voor deze doelen is React/Next.js beter geschikt.
 
-## Huidige status
+## Statussnapshot tijdens de V2-migratie
 
 Aanwezig:
 

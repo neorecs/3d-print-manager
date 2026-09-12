@@ -326,6 +326,8 @@ docker-compose.yml
 
 ## Belangrijke uitgangspunten
 
+De actuele v1.0-voortgang staat in [`docs/ACCEPTATIECHECKLIST.md`](docs/ACCEPTATIECHECKLIST.md). Historische projectplannen en audits zijn geen vervanging voor die leidende checklist. Gebruik [`docs/V1_LIVEGANG_RUNBOOK.md`](docs/V1_LIVEGANG_RUNBOOK.md) voor een concreet intern of platform-go/no-go-besluit.
+
 - De backend staat los van de frontend.
 - Streamlit is tijdelijk prototype/fallback.
 - Next.js wordt de officiële frontend voor productiewaardige workflows.

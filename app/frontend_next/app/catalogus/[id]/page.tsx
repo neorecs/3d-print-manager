@@ -1,5 +1,4 @@
 import { AppShell } from "@/components/AppShell";
-import { EmptyState } from "@/components/EmptyState";
 import { ErrorState } from "@/components/ErrorState";
 import { MetricCard } from "@/components/MetricCard";
 import { PageHeader } from "@/components/PageHeader";
@@ -19,7 +18,7 @@ import { CheckCircle2, Circle } from "lucide-react";
 const tabs = [
   ["overzicht", "Overzicht"], ["informatie", "Productinformatie"], ["printbestand", "Printbestand"],
   ["varianten", "Varianten"], ["voorraad", "Voorraad"], ["fotos", "Foto's"],
-  ["verkoopkanalen", "Verkoopkanalen"], ["vertalingen", "Vertalingen"], ["historie", "Historie"],
+  ["verkoopkanalen", "Verkoopkanalen"], ["vertalingen", "Vertalingen"],
 ] as const;
 
 export default async function ProductDetailPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ tab?: string }> }) {
@@ -110,7 +109,6 @@ function DetailContent({ data, activeTab }: { data: ProductDetailData; activeTab
       {activeTab === "fotos" && !data.loadErrors.media ? <SectionCard title="Foto's" description="Upload productfoto's, kies een hoofdfoto, bepaal de volgorde en vul alt-tekst in."><MediaManager productId={data.product.id} media={data.media} /></SectionCard> : null}
       {activeTab === "verkoopkanalen" && !data.loadErrors.publications ? <SectionCard title="Verkoopkanalen" description="Beheer afwijkende titel, omschrijving, categorie, tags, prijs en publicatiestatus per kanaal."><PublicationManager product={data.product} platforms={data.platforms} publications={data.publications} /></SectionCard> : null}
       {activeTab === "vertalingen" && !data.loadErrors.translations ? <SectionCard title="Vertalingen" description="Beheer taalversies voor Duitsland, België en latere markten."><TranslationManager product={data.product} translations={data.translations} /></SectionCard> : null}
-      {activeTab === "historie" ? <SectionCard title="Historie" description="Productwijzigingen en belangrijke gebeurtenissen komen hier samen."><EmptyState title="Nog geen producthistorie" description="Voorraadbewegingen zijn al traceerbaar onder Voorraad. Een gecombineerde producttijdlijn wordt opgebouwd zodra productevents beschikbaar zijn." actionHref="/voorraad" actionLabel="Voorraadbewegingen bekijken" /></SectionCard> : null}
     </div>
   );
 }

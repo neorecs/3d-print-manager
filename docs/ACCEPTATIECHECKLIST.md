@@ -1,67 +1,55 @@
-# Acceptatiechecklist versie 1.0
+# Leidende acceptatiechecklist versie 1.0
 
-Statussen:
+Bijgewerkt: 12 september 2026.
 
-- `klaar`: werkt in het huidige prototype.
-- `deels klaar`: basis is aanwezig, maar nog niet volledig of nog mock/prototype.
-- `open`: nog niet gebouwd.
+Dit is de enige leidende bron voor de actuele v1.0-status. Projectplannen en audits leggen ontwerp en historie vast, maar bepalen niet of een onderdeel operationeel is geaccepteerd.
 
-| Nr | Acceptatiecriterium | Status | Opmerking |
-| --- | --- | --- | --- |
-| 1 | Ik producten kan aanmaken. | klaar | Producten kunnen via API en Streamlit worden aangemaakt. |
-| 2 | Ik productinformatie centraal kan beheren. | deels klaar | Basisvelden, SEO, verkooptekst en status zijn aanwezig; workflow kan nog verfijnd worden. |
-| 3 | Ik productfoto's kan toevoegen. | klaar | Foto-upload naar lokale backend-opslag en mediarecords zijn aanwezig. |
-| 4 | Ik een hoofdfoto kan kiezen. | klaar | `is_primary` is aanwezig en beheerbaar. |
-| 5 | Ik productvarianten met kleur, materiaal, printtijd en filamentverbruik kan vastleggen. | klaar | Varianten ondersteunen kleur, materiaal, printtijd en filamentgrammen. |
-| 6 | Ik per platform afwijkende titel, omschrijving, tags, categorie en prijs kan beheren. | klaar | Productpublicaties hebben platform-specifieke velden. |
-| 7 | Ik producten naar Etsy kan publiceren of synchroniseren. | deels klaar | Conceptlisting, velden, voorraad/varianten en lokale foto-upload zijn in code en gesimuleerd getest; echte Etsy OAuth/scopes en taxonomy moeten nog live worden geaccepteerd. |
-| 8 | Ik producten naar Shopify kan publiceren of synchroniseren. | deels klaar | Live GraphQL productCreate/productUpdate, bulkvarianten en variantlink-opslag zijn aanwezig; echte live-test blijft nodig. |
-| 9 | Ik filamentrollen kan beheren. | klaar | Filamentrollen, resterend gewicht en prijs per gram zijn aanwezig. |
-| 10 | Ik productvoorraad kan beheren. | klaar | Productvoorraad, vrije voorraad en voorraadbewegingen zijn aanwezig. |
-| 11 | Ik orders uit Etsy en Shopify kan importeren. | deels klaar | Beide imports verwerken paginering/platformstatus en veilige annulering/herimport in tests. Echte tokens/scopes moeten nog live getest worden. |
-| 12 | Orderregels automatisch gekoppeld kunnen worden aan interne producten. | klaar | SKU-koppeling naar interne varianten is aanwezig. |
-| 13 | De applicatie automatisch controleert of een order uit voorraad geleverd kan worden. | klaar | Ordervoorraadcontrole is gebouwd en getest. |
-| 14 | Alleen het tekort automatisch naar printplanning gaat. | klaar | `quantity_to_print` wordt alleen voor tekort gezet; test aanwezig. |
-| 15 | Ik meer kan printen dan nodig is voor een order. | klaar | `quantity_planned` kan hoger zijn dan orderbehoefte. |
-| 16 | Extra gelukte prints automatisch aan vrije voorraad toegevoegd kunnen worden. | klaar | Printresultaat boekt overschot naar productvoorraad; test aanwezig. |
-| 17 | Mislukte prints geregistreerd kunnen worden. | klaar | Mislukte aantallen worden als `afgekeurd` voorraadbeweging geregistreerd. |
-| 18 | Elke voorraadwijziging traceerbaar is. | deels klaar | Belangrijke voorraadwijzigingen maken movements; verdere auditvelden/user tracking en platform-sync-logdetail kunnen nog sterker. |
-| 19 | De applicatie kosten en winst per order kan berekenen. | klaar | Orderwinstberekening met kosteninstellingen is aanwezig. |
-| 20 | De applicatie printtaken kan groeperen op kleur en materiaal. | deels klaar | Printbatches bevatten kleur/materiaal; automatische batchoptimalisatie kan nog beter. |
-| 21 | De applicatie een productielijst voor Bambu Studio kan exporteren. | klaar | CSV en Markdown export per batch is aanwezig. |
-| 22 | De applicatie verkooptrends kan tonen. | klaar | Trendanalyse over 30/60/90 dagen is aanwezig. |
-| 23 | De applicatie advies kan geven welke producten extra geprint moeten worden. | klaar | Voorraadadvies wordt berekend uit verkoop, vrije voorraad en veiligheidsvoorraad. |
-| 24 | Ik een voorraadadvies kan accepteren, aanpassen of negeren. | klaar | Aanpassen, accepteren en negeren zijn aanwezig. |
-| 25 | Een geaccepteerd voorraadadvies kan worden omgezet naar printtaken. | klaar | Conversie naar printtaak is aanwezig. |
-| 26 | De applicatie kan tonen welke producten opnieuw gesynchroniseerd moeten worden met verkoopplatformen. | klaar | Productwijzigingen zetten publicaties op `synchronisatie_nodig`. |
-| 27 | De basis werkt via een Streamlit-dashboard. | klaar | Streamlit bestaat nog als prototype/fallback; Next.js is inmiddels de hoofdinterface. |
-| 28 | De backend is los genoeg om later een betere frontend te bouwen. | klaar | Backend en Next.js frontend zijn gescheiden; verdere service-splitsing kan later, maar de architectuur is bruikbaar. |
+## Betekenis van de kolommen
 
-Extra projectplanregel: platform-specifieke fotoselectie en fotovolgorde is aanwezig via `product_publication_media`.
+- **Gebouwd**: de functionaliteit bestaat in de huidige code.
+- **Automatisch getest**: relevante backend-, frontend- of ketentests bestaan en zijn groen.
+- **NAS getest**: het gedrag is op de NAS zichtbaar of handmatig beproefd. `Niet vastgelegd` betekent niet dat het niet werkt, maar dat bewijs ontbreekt.
+- **Operationeel geaccepteerd**: de volledige praktijkworkflow is door de gebruiker bevestigd. Externe platformflows tellen pas na een proef met echte credentials.
 
-## Samenvatting
+| Nr | Acceptatiecriterium | Gebouwd | Automatisch getest | NAS getest | Operationeel geaccepteerd | Bewijs of resterende controle |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1 | Producten aanmaken | Ja | Ja | Ja | Ja | Next.js-catalogus en product-API |
+| 2 | Productinformatie centraal beheren | Ja | Ja | Ja | Deels | Dagelijkse invoerflow wordt nog verder vereenvoudigd |
+| 3 | Productfoto's toevoegen | Ja | Ja | Niet vastgelegd | Proef nodig | Upload, opslag en mediarecord zijn getest |
+| 4 | Hoofdfoto kiezen | Ja | Ja | Niet vastgelegd | Proef nodig | Eén hoofdfoto wordt afgedwongen |
+| 5 | Varianten met kleur, materiaal, printtijd en filament beheren | Ja | Ja | Ja | Deels | Praktijkcontrole met meer producten blijft nuttig |
+| 6 | Afwijkende platformtitel, omschrijving, tags, categorie en prijs beheren | Ja | Ja | Ja | Deels | Echte platformpayload nog niet geaccepteerd |
+| 7 | Publiceren en synchroniseren naar Etsy | Ja | Gesimuleerd | Nee | Nee | Echte OAuth, scopes, taxonomy en conceptlisting testen |
+| 8 | Publiceren en synchroniseren naar Shopify | Ja | Gesimuleerd | Nee | Nee | Echte credentials, scopes, varianten en voorraad-sync testen |
+| 9 | Filamentrollen beheren | Ja | Ja | Ja | Deels | Dagelijkse UX wordt nog verbeterd |
+| 10 | Productvoorraad beheren | Ja | Ja | Ja | Deels | Correctie- en reserveringsflow breder beproeven |
+| 11 | Orders uit Etsy en Shopify importeren | Ja | Gesimuleerd | Nee | Nee | Per platform een gecontroleerde live-import uitvoeren |
+| 12 | Orderregels via SKU aan interne producten koppelen | Ja | Ja | Niet vastgelegd | Proef nodig | Import- en ordertests dekken de koppeling |
+| 13 | Voorraad automatisch voor een order controleren | Ja | Ja | Niet vastgelegd | Proef nodig | PostgreSQL-concurrency en herverwerking zijn getest |
+| 14 | Alleen het voorraadtekort naar printplanning sturen | Ja | Ja | Niet vastgelegd | Proef nodig | Planningtests dekken volledig, gedeeltelijk en geen voorraad |
+| 15 | Meer plannen dan de order nodig heeft | Ja | Ja | Niet vastgelegd | Proef nodig | `quantity_planned` ondersteunt overproductie |
+| 16 | Extra gelukte prints naar vrije voorraad boeken | Ja | Ja | Niet vastgelegd | Proef nodig | Printresultaattests dekken voorraadboeking |
+| 17 | Mislukte prints registreren | Ja | Ja | Niet vastgelegd | Proef nodig | Afgekeurde aantallen krijgen een voorraadbeweging |
+| 18 | Iedere voorraadwijziging traceerbaar maken | Deels | Ja | Niet vastgelegd | Nee | Bewegingslog bestaat; actor/auditdetail is nog niet overal gelijk |
+| 19 | Kosten en winst per order berekenen | Ja | Ja | Niet vastgelegd | Proef nodig | Fiscale juistheid moet apart worden beoordeeld |
+| 20 | Printtaken groeperen op kleur en materiaal | Ja | Ja | Niet vastgelegd | Proef nodig | Batches groeperen; optimalisatie is geen v1.0-blokkade |
+| 21 | Productielijst voor Bambu Studio exporteren | Ja | Ja | Ja | Deels | Studio-openworkflow is bevestigd; volledige batchdag nog beproeven |
+| 22 | Verkooptrends tonen | Ja | Ja | Niet vastgelegd | Proef nodig | Alleen werkelijk aangesloten grafieken gelden als gebouwd |
+| 23 | Voorraadadvies berekenen | Ja | Ja | Niet vastgelegd | Proef nodig | Actuele voorraadcontrole en uitleg worden nog aangescherpt |
+| 24 | Advies accepteren, aanpassen of negeren | Ja | Ja | Niet vastgelegd | Proef nodig | Afgehandelde adviezen moeten duidelijker uit de werkvoorraad |
+| 25 | Geaccepteerd advies omzetten naar printtaak | Ja | Ja | Niet vastgelegd | Proef nodig | Herhaalactie en actuele voorraad opnieuw controleren |
+| 26 | Tonen welke platformpublicaties synchronisatie nodig hebben | Ja | Ja | Ja | Deels | Echte synchronisatie blijft platformafhankelijk |
+| 27 | Basis werkt via een Streamlit-dashboard | Ja | Deels | Ja | Ja | Streamlit blijft fallback; Next.js is de officiele hoofdinterface |
+| 28 | Backend en frontend los van elkaar houden | Ja | Ja | Ja | Ja | FastAPI en Next.js zijn afzonderlijke services |
 
-- Klaar: 21
-- Deels klaar: 7
-- Open: 0
+Platformspecifieke fotoselectie en fotovolgorde bestaan via `product_publication_media`.
 
-Belangrijk: meerdere `deels klaar` punten zijn functioneel als prototype, maar tellen nog niet als echte v1.0 omdat Etsy/Shopify liveflows met echte credentials en scopes nog gecontroleerd getest moeten worden.
+## V1.0-besluit
 
-## Belangrijkste open werk richting echte v1.0
+- **Intern gebruik:** mogelijk, mits productiekeys zijn ingesteld en de actuele backup/herstelcontrole groen is.
+- **Etsy live:** nog niet geaccepteerd; eerst één gecontroleerde OAuth-, conceptpublicatie- en orderimportproef.
+- **Shopify live:** nog niet geaccepteerd; eerst één gecontroleerde publicatie-, varianten-, voorraad- en orderimportproef.
+- **Administratie:** bruikbaar als beheer- en exporthulpmiddel, nog geen vervanging voor fiscale controle.
+- **Externe toegang:** HTTPS en certificaat blijven uitgesteld tot een eigen domein wordt gebruikt.
 
-1. Echte Etsy connector gecontroleerd testen: OAuth/tokenverversing, taxonomy-/verwerkingsprofielen, foto-upload, conceptwijziging en orderimport/annulering.
-2. Shopify live testen met echte credentials: productpublicatie, bulkvarianten, orderimport en voorraad-sync.
-3. Vaste productiekey instellen buiten Docker Compose fallback voordat echte tokens worden opgeslagen.
-4. Verdere service-splitsing voor planning, analytics, costs en exports.
-5. Meer testdekking voor API-endpoints, exports, kostenberekening en connectorfouten.
-
-## Livegangstatus 2026-06-29
-
-- Next.js is de hoofdinterface.
-- Dashboardkaarten klikken door naar de juiste werkmodules.
-- NAS Next.js compose heeft backend- en frontend-healthchecks.
-- NAS Next.js compose heeft een `postgres_backup` service voor dagelijkse PostgreSQL dumps.
-- Backup checksum en restore-test zijn uitgevoerd op 2026-06-29.
-- V1.0 livegang-runbook is toegevoegd in `docs/V1_LIVEGANG_RUNBOOK.md`.
-- Connectoren blijven standaard veilig in mockmodus.
-- Nog niet live-klaar voor echte platformorders: Etsy/Shopify OAuth en live platformtest ontbreken nog.
+Gebruik voor de concrete go/no-go-volgorde `docs/V1_LIVEGANG_RUNBOOK.md`. Bewijs van een test moet daar of in deze checklist met datum worden vastgelegd voordat `Operationeel geaccepteerd` op `Ja` wordt gezet.

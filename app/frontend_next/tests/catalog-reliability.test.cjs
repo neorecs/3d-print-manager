@@ -111,3 +111,9 @@ test("manually selected ready status never overrides missing sale data", () => {
   assert.ok(missing.includes("SKU of prijs"));
   assert.ok(missing.includes("materiaal of kleur"));
 });
+
+test("product detail does not advertise an unimplemented history timeline", () => {
+  const source = fs.readFileSync(path.join(__dirname, "..", "app", "catalogus", "[id]", "page.tsx"), "utf8");
+  assert.doesNotMatch(source, /\["historie",\s*"Historie"\]/);
+  assert.doesNotMatch(source, /producttijdlijn/);
+});
