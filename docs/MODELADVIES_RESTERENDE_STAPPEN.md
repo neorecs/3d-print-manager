@@ -4,12 +4,12 @@ Dit document legt vast welk model het best past bij de resterende punten uit `AN
 
 Het advies volgt de positionering in de [officiele OpenAI-modeldocumentatie](https://developers.openai.com/api/docs/models): een sterk professioneel werkmodel voor de uitvoering en het meest capabele model alleen voor de zwaarste controles. Modelnamen en beschikbaarheid kunnen later veranderen; actualiseer dit document dan opnieuw.
 
-Actuele stand op 12 september 2026: 18 van 25 auditpunten zijn afgerond. Punt 12 is met GPT-5.6 Sol voltooid en geverifieerd in GitHub Actions-run `34699454229`. Punt 13 is de aanbevolen volgende stap: uitvoering met Sol, daarna een gerichte Astra-review van platform- en financiele risico's.
+Actuele stand op 12 september 2026: 19 van 25 auditpunten zijn in code afgerond. Punt 13 is met GPT-5.6 Sol voltooid en geverifieerd in GitHub Actions-run `34700837763`. De echte Etsy-proef en fiscale go/no-go blijven gereserveerd voor een gerichte GPT-6 Astra-review. Punt 16 is de aanbevolen volgende implementatiestap met GPT-5.6 Luna.
 
 | Punt | Onderwerp | Aanbevolen model | Reden |
 | --- | --- | --- | --- |
 | 12 | Datavolume en prestaties | GPT-5.6 Sol | Uitgevoerd met Sol op 12 september 2026; server-side paginering, aggregaties en volumetests zijn groen in run `34699454229` |
-| 13 | Verkoop en administratieketen | GPT-5.6 Sol + GPT-6 Astra-review | Sol voor implementatie; Astra voor de laatste controle van platform- en financiële risico's |
+| 13 | Verkoop en administratieketen | GPT-5.6 Sol + GPT-6 Astra-review | Sol-implementatie gereed in run `34700837763`; Astra blijft nodig voor echte platform- en financiele go/no-go |
 | 14 | Integratie- en browsertests | GPT-5.6 Sol | Uitgevoerd met Sol op 12 september 2026; PostgreSQL- en browserketen zijn groen in GitHub Actions-run `34686176416` |
 | 15 | Lokale configuratie en herstel | GPT-5.6 Sol + GPT-6 Astra-review | Uitgevoerd met Sol op 12 september 2026; gezamenlijke restore is groen, Astra-review volgt bij de definitieve livegangcontrole |
 | 16 | Documentatie en placeholders | GPT-5.6 Luna | Beperkt risico en vooral tekstuele, goed controleerbare wijzigingen |

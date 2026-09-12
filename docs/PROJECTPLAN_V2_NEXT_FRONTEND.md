@@ -637,12 +637,12 @@ Status 2026-06-27:
 - Shopify productpublicatie/sync is uitgebreid met bulkvariant-create/update en slaat externe variant-ID's en inventory-item-ID's op via `product_variant_platform_links`.
 - Shopify voorraad-sync naar inventory quantities is toegevoegd op verkoopkanaalniveau. Live-modus vereist `location_id`, `write_inventory` scope en opgeslagen Shopify inventory-item-ID's.
 - Shopify orderimport-UI heeft nu instelbare vanaf-datum, importlimiet en paginaformaat.
-- Etsy connectorbasis is toegevoegd met mockimport, eerste live receipt-import en draft-listing/sync basis. Echte OAuth/scopes, taxonomykeuzes en fotoupload moeten nog gecontroleerd worden.
+- Etsy publicatie is uitgebreid met actuele conceptvelden, actieve varianten, vrije voorraad, lokale productfoto-upload en behoud van externe IDs voor sync. Receipt-import verwerkt betaal-, verzend- en annuleringsstatus; herimport geeft reserveringen niet dubbel vrij.
 - Catalogus toont nu interne product-ID's duidelijker in het productoverzicht.
 - Productvertalingen zijn toegevoegd met `product_translations`, een productdetailpaneel en automatische AI/mockgeneratie voor Duits, Frans en Engels. Bij AI-concepten kan de gebruiker direct na opslaan vertalingen laten maken; Nederlands blijft de brontekst.
 - Verkoopmarkten zijn toegevoegd met `sales_markets`, standaardrecords voor NL/BE/DE en een Next.js beheerblok onder Verkoopkanalen. Dit is de basis om publicatiechecks later per land en taal af te dwingen.
 - Publicatiecontrole gebruikt nu actieve doellanden: Duitsland vereist een Duitse productvertaling, Nederlandse markten gebruiken de brontekst en Belgische extra Franse tekst wordt als waarschuwing getoond.
-- Nog verfijnen: echte live-test met Shopify/Etsy credentials, voorraad-sync-logdetail, Etsy OAuth token refresh, Etsy foto-upload, uitgebreidere foutdetails per orderregel en platformregel.
+- Nog extern accepteren: echte live-test met Shopify/Etsy credentials, Etsy OAuth token refresh en concrete taxonomy-/verwerkingsprofielen. Platform- en fiscale go/no-go blijven aparte controles; de gesimuleerde Etsy-keten is groen in GitHub Actions-run `34700837763`.
 
 ## Niet doen in V2
 

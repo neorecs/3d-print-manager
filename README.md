@@ -194,16 +194,21 @@ Voor latere live-koppelingen kunnen credentials via environment variables of via
 
 ```env
 ETSY_API_KEY=
+ETSY_SHARED_SECRET=
 ETSY_ACCESS_TOKEN=
 ETSY_SHOP_ID=
+ETSY_TAXONOMY_ID=
+ETSY_READINESS_STATE_ID=
+ETSY_VARIATION_PROPERTY_ID=
 SHOPIFY_ACCESS_TOKEN=
 SHOPIFY_SHOP_DOMAIN=
+SHOPIFY_LOCATION_ID=
 SHOPIFY_API_VERSION=2026-04
 ```
 
 Credentials die via de applicatie worden opgeslagen, worden versleuteld met `CREDENTIAL_ENCRYPTION_KEY`. De lokale initializer maakt hiervoor een unieke sleutel; Docker Compose heeft geen fallback-key.
 
-Shopify live publicatie/synchronisatie gebruikt de Admin GraphQL API `2026-04`. De eerste live scope ondersteunt product aanmaken en productdetails/media synchroniseren. Bulkvarianten, voorraad-sync en echte orderimport volgen nog.
+Shopify live publicatie/synchronisatie gebruikt de Admin GraphQL API `2026-04` en ondersteunt productdetails, externe media, bulkvarianten, orderimport met platformstatus en voorraad-sync. Etsy ondersteunt conceptlisting, listingvelden, inventory/varianten, lokale productfoto-upload en receipt-import. Beide ketens zijn met gesimuleerde platformresponses getest; echte credentials en bewuste live-acceptatie blijven verplicht voordat `CONNECTORS_LIVE_MODE=true` wordt gebruikt.
 
 ## Tests
 

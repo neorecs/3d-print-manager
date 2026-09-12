@@ -14,11 +14,11 @@ Statussen:
 | 4 | Ik een hoofdfoto kan kiezen. | klaar | `is_primary` is aanwezig en beheerbaar. |
 | 5 | Ik productvarianten met kleur, materiaal, printtijd en filamentverbruik kan vastleggen. | klaar | Varianten ondersteunen kleur, materiaal, printtijd en filamentgrammen. |
 | 6 | Ik per platform afwijkende titel, omschrijving, tags, categorie en prijs kan beheren. | klaar | Productpublicaties hebben platform-specifieke velden. |
-| 7 | Ik producten naar Etsy kan publiceren of synchroniseren. | deels klaar | Mockconnector werkt; eerste live draft-listing/sync basis is aanwezig maar moet met echte Etsy OAuth/scopes en taxonomy getest worden. |
+| 7 | Ik producten naar Etsy kan publiceren of synchroniseren. | deels klaar | Conceptlisting, velden, voorraad/varianten en lokale foto-upload zijn in code en gesimuleerd getest; echte Etsy OAuth/scopes en taxonomy moeten nog live worden geaccepteerd. |
 | 8 | Ik producten naar Shopify kan publiceren of synchroniseren. | deels klaar | Live GraphQL productCreate/productUpdate, bulkvarianten en variantlink-opslag zijn aanwezig; echte live-test blijft nodig. |
 | 9 | Ik filamentrollen kan beheren. | klaar | Filamentrollen, resterend gewicht en prijs per gram zijn aanwezig. |
 | 10 | Ik productvoorraad kan beheren. | klaar | Productvoorraad, vrije voorraad en voorraadbewegingen zijn aanwezig. |
-| 11 | Ik orders uit Etsy en Shopify kan importeren. | deels klaar | Shopify live-capable import met paginering is aanwezig; Etsy heeft eerste connectorbasis en mockimport. Echte tokens/scopes moeten live getest worden. |
+| 11 | Ik orders uit Etsy en Shopify kan importeren. | deels klaar | Beide imports verwerken paginering/platformstatus en veilige annulering/herimport in tests. Echte tokens/scopes moeten nog live getest worden. |
 | 12 | Orderregels automatisch gekoppeld kunnen worden aan interne producten. | klaar | SKU-koppeling naar interne varianten is aanwezig. |
 | 13 | De applicatie automatisch controleert of een order uit voorraad geleverd kan worden. | klaar | Ordervoorraadcontrole is gebouwd en getest. |
 | 14 | Alleen het tekort automatisch naar printplanning gaat. | klaar | `quantity_to_print` wordt alleen voor tekort gezet; test aanwezig. |
@@ -49,7 +49,7 @@ Belangrijk: meerdere `deels klaar` punten zijn functioneel als prototype, maar t
 
 ## Belangrijkste open werk richting echte v1.0
 
-1. Echte Etsy connector live testen en aanvullen: OAuth/tokenverversing, taxonomyvelden, productfoto-upload en orderimportdetails.
+1. Echte Etsy connector gecontroleerd testen: OAuth/tokenverversing, taxonomy-/verwerkingsprofielen, foto-upload, conceptwijziging en orderimport/annulering.
 2. Shopify live testen met echte credentials: productpublicatie, bulkvarianten, orderimport en voorraad-sync.
 3. Vaste productiekey instellen buiten Docker Compose fallback voordat echte tokens worden opgeslagen.
 4. Verdere service-splitsing voor planning, analytics, costs en exports.
