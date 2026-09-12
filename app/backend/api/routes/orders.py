@@ -4,6 +4,7 @@ from domain.statuses import INVENTORY_NONE, ORDER_NEW, ORDER_PLANNED, PRINT_JOB_
 from sqlalchemy.exc import IntegrityError
 from services.order_guards import require_reprocessable_order
 from services.order_processing import process_order
+from services.order_import_service import upsert_imported_order as upsert_imported_order_service
 
 router = APIRouter()
 
@@ -99,24 +100,48 @@ def import_etsy_orders(
     updated = []
     skipped = []
     errors = []
+    warnings = []
     for platform in platforms:
+        log = PlatformImportLog(
+            platform_id=platform.id,
+            import_type="orders",
+            status="bezig",
+            started_at=datetime.now(timezone.utc),
+            since=since_dt,
+        )
+        db.add(log)
+        db.flush()
+        platform_created = 0
+        platform_updated = 0
+        platform_skipped = 0
+        platform_errors = []
+        platform_warnings = []
         connector = get_platform_connector(db, platform)
-        status = connector.status()
-        if connector.live_mode and status.missing_credentials:
-            errors.append({"platform_id": platform.id, "platform": platform.name, "message": f"Ontbrekende Etsy credentials: {', '.join(status.missing_credentials)}"})
-            continue
         result = connector.import_orders(limit=limit, since=since_dt.isoformat() if since_dt else None)
         if not result.get("success"):
-            errors.append({"platform_id": platform.id, "platform": platform.name, "message": result.get("message", "Etsy import mislukt")})
+            error = {"platform_id": platform.id, "platform": platform.name, "message": result.get("message", "Etsy import mislukt")}
+            errors.append(error)
+            platform_errors.append(error["message"])
+            finish_import_log(log, "fout", 0, 0, 0, platform_errors)
             continue
         for payload in result.get("orders", []):
             imported = upsert_imported_order(db, platform, payload)
+            item_warnings = imported.get("warnings") or []
+            warnings.extend(item_warnings)
+            platform_warnings.extend(item_warnings)
             if imported["action"] == "created":
                 created.append(imported["order"])
+                platform_created += 1
             elif imported["action"] == "updated":
                 updated.append(imported["order"])
+                platform_updated += 1
             else:
                 skipped.append(imported["order"])
+                platform_skipped += 1
+        platform_message = result.get("message") or ""
+        if platform_warnings:
+            platform_message = f"{platform_message} Controle nodig: {'; '.join(platform_warnings)}"
+        finish_import_log(log, "klaar", platform_created, platform_updated, platform_skipped, [], platform_message)
 
     try:
         db.commit()
@@ -129,6 +154,7 @@ def import_etsy_orders(
         "updated": len(updated),
         "skipped": len(skipped),
         "errors": errors,
+        "warnings": warnings,
         "orders": created + updated + skipped,
     }
 
@@ -150,6 +176,7 @@ def import_shopify_orders(
     updated = []
     skipped = []
     errors = []
+    warnings = []
 
     for platform in platforms:
         log = PlatformImportLog(
@@ -165,6 +192,7 @@ def import_shopify_orders(
         platform_updated = 0
         platform_skipped = 0
         platform_errors = []
+        platform_warnings = []
         connector = get_platform_connector(db, platform)
         status = connector.status()
         if connector.live_mode and status.missing_credentials:
@@ -182,6 +210,9 @@ def import_shopify_orders(
             continue
         for payload in result.get("orders", []):
             imported = upsert_imported_order(db, platform, payload)
+            item_warnings = imported.get("warnings") or []
+            warnings.extend(item_warnings)
+            platform_warnings.extend(item_warnings)
             if imported["action"] == "created":
                 created.append(imported["order"])
                 platform_created += 1
@@ -192,6 +223,8 @@ def import_shopify_orders(
                 skipped.append(imported["order"])
                 platform_skipped += 1
         platform_message = result.get("message") or ""
+        if platform_warnings:
+            platform_message = f"{platform_message} Controle nodig: {'; '.join(platform_warnings)}"
         if result.get("has_next_page"):
             platform_message = f"{platform_message} Importlimiet bereikt; er zijn mogelijk nog meer Shopify orders."
         finish_import_log(log, "klaar", platform_created, platform_updated, platform_skipped, platform_errors, platform_message)
@@ -207,6 +240,7 @@ def import_shopify_orders(
         "updated": len(updated),
         "skipped": len(skipped),
         "errors": errors,
+        "warnings": warnings,
         "orders": created + updated + skipped,
     }
 
@@ -242,46 +276,7 @@ def finish_import_log(
 
 
 def upsert_imported_order(db: Session, platform: Platform, payload: dict) -> dict:
-    external_order_id = payload.get("external_order_id")
-    if not external_order_id:
-        return {"action": "skipped", "order": {"reason": "Order zonder external_order_id overgeslagen"}}
-
-    order = db.scalar(select(Order).where(Order.platform_id == platform.id, Order.external_order_id == external_order_id))
-    action = "updated" if order else "created"
-    if not order:
-        order_number = str(payload.get("order_number") or external_order_id).replace("#", "").strip()
-        prefix = (platform.type or platform.name or "platform").upper()
-        order = Order(
-            internal_order_number=f"{prefix}-{platform.id}-{order_number}",
-            platform_id=platform.id,
-            external_order_id=external_order_id,
-            status=ORDER_NEW,
-        )
-        db.add(order)
-        db.flush()
-
-    order.customer_name = payload.get("customer_name")
-    order.customer_email = payload.get("customer_email")
-    order.order_date = parse_optional_datetime(payload.get("order_date"))
-    order.total_amount = payload.get("total_amount")
-    order.currency = payload.get("currency") or "EUR"
-    order.payment_status = payload.get("payment_status") or "onbekend"
-
-    for item_payload in payload.get("items", []):
-        external_item_id = item_payload.get("external_order_item_id")
-        if not external_item_id:
-            continue
-        item = db.scalar(select(OrderItem).where(OrderItem.order_id == order.id, OrderItem.external_order_item_id == external_item_id))
-        if not item:
-            item = OrderItem(order_id=order.id, external_order_item_id=external_item_id, quantity_ordered=0)
-            db.add(item)
-        item.sku = item_payload.get("sku")
-        item.quantity_ordered = int(item_payload.get("quantity_ordered") or 0)
-        item.unit_sale_price = item_payload.get("unit_sale_price")
-        item.inventory_status = item.inventory_status or INVENTORY_NONE
-        link_order_item_by_sku(db, item)
-
-    return {"action": action, "order": to_dict(order)}
+    return upsert_imported_order_service(db, platform, payload)
 
 
 def parse_optional_datetime(value: str | None):

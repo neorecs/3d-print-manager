@@ -71,12 +71,19 @@ class PlatformConnector:
         }
 
     def _mock_result(self, action: str, payload: dict) -> ConnectorResult:
-        sku = payload.get("variants", [{}])[0].get("sku", "product")
+        variants = payload.get("variants") or [{}]
+        sku = variants[0].get("sku", "product")
         safe_sku = str(sku).lower().replace(" ", "-")
+        external_variant_ids = {
+            str(variant["sku"]): f"mock-{self.platform_type}-variant-{variant['sku']}"
+            for variant in variants
+            if variant.get("sku")
+        }
         return ConnectorResult(
             success=True,
             message=f"{self.platform_type} {action} uitgevoerd in mockmodus.",
             external_product_id=f"mock-{self.platform_type}-product-{payload['product_id']}",
             external_listing_id=f"mock-{self.platform_type}-listing-{safe_sku}",
+            external_variant_ids=external_variant_ids,
             raw_response={"mode": "mock", "action": action},
         )

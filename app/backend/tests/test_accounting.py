@@ -57,3 +57,15 @@ class AccountingTestCase(BackendTestCase):
         self.assertEqual(Decimal(sale.net_amount), Decimal("100.00"))
         self.assertEqual(Decimal(sale.vat_amount), Decimal("21.00"))
         self.assertEqual(accounting_vat_summary_data(self.db)["vat_due"], 21.0)
+
+    def test_order_booking_note_uses_actual_configured_vat_rate(self) -> None:
+        platform = self.make_platform()
+        order = Order(internal_order_number="ACC-009", platform_id=platform.id, external_order_id="ACC-EXT-009", total_amount=Decimal("109.00"), currency="EUR")
+        self.db.add_all([order, AccountingFiscalSetting(setting_name="default_vat_rate", value="9")])
+        self.db.commit()
+
+        create_accounting_sale_from_order(self.db, order)
+
+        sale = self.db.scalar(select(AccountingSale).where(AccountingSale.order_id == order.id))
+        self.assertEqual(Decimal(sale.vat_rate), Decimal("9.00"))
+        self.assertIn("9%", sale.note)

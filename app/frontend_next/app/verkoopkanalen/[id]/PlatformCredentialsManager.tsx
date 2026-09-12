@@ -11,12 +11,27 @@ type Props = {
   credentials: PlatformCredential[];
 };
 
+const credentialHelp: Record<string, string> = {
+  api_key: "Etsy App API Key keystring.",
+  shared_secret: "Etsy shared secret dat bij de API-key hoort.",
+  access_token: "OAuth access token van Etsy of Admin API-token van Shopify.",
+  shop_id: "Numerieke Etsy shop-ID.",
+  taxonomy_id: "Etsy categorie-ID voor dit verkoopkanaal.",
+  readiness_state_id: "Etsy verwerkingsprofiel-ID voor fysieke producten.",
+  variation_property_id: "Etsy taxonomy property-ID voor producten met meerdere uitvoeringen.",
+  shop_domain: "Shopify-domein, bijvoorbeeld jouw-winkel.myshopify.com.",
+  location_id: "Shopify location-ID voor voorraadsynchronisatie.",
+};
+
 export function PlatformCredentialsManager({ platform, status, credentials }: Props) {
   const router = useRouter();
   const suggestedKeys = useMemo(() => {
-    const keys = [...(status?.missing_credentials || []), ...(status?.required_credentials || []), ...credentials.map((item) => item.key_name)];
+    const platformKeys = platform.type.toLowerCase() === "etsy"
+      ? ["taxonomy_id", "readiness_state_id", "variation_property_id"]
+      : platform.type.toLowerCase() === "shopify" ? ["location_id"] : [];
+    const keys = [...(status?.missing_credentials || []), ...(status?.required_credentials || []), ...platformKeys, ...credentials.map((item) => item.key_name)];
     return Array.from(new Set(keys)).filter(Boolean);
-  }, [credentials, status]);
+  }, [credentials, platform.type, status]);
   const [keyName, setKeyName] = useState(suggestedKeys[0] || "");
   const [secretValue, setSecretValue] = useState("");
   const [busyKey, setBusyKey] = useState<string | null>(null);
@@ -100,7 +115,7 @@ export function PlatformCredentialsManager({ platform, status, credentials }: Pr
           </button>
         </div>
         <p className="mt-3 text-sm text-muted">
-          Gebruik alleen echte Etsy/Shopify tokens wanneer je zeker weet dat dit kanaal live gekoppeld mag worden.
+          {credentialHelp[keyName] || "Gebruik alleen een door het verkoopplatform verstrekte waarde."} Gebruik echte tokens pas wanneer dit kanaal live gekoppeld mag worden.
         </p>
       </form>
 

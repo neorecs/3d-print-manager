@@ -25,7 +25,8 @@ export function ShopifyImportButton() {
       if (!response.ok) throw new Error(data?.detail || `${platform} import is mislukt`);
       const parts = [`${data.created || 0} nieuw`, `${data.updated || 0} bijgewerkt`, `${data.skipped || 0} overgeslagen`];
       const errorText = data.errors?.length ? ` Fouten: ${data.errors.map((item: { message: string }) => item.message).join("; ")}` : "";
-      setMessage(`${platform === "shopify" ? "Shopify" : "Etsy"} import klaar: ${parts.join(", ")}.${errorText}`);
+      const warningText = data.warnings?.length ? ` Controle nodig: ${data.warnings.join("; ")}` : "";
+      setMessage(`${platform === "shopify" ? "Shopify" : "Etsy"} import klaar: ${parts.join(", ")}.${errorText}${warningText}`);
       router.refresh();
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Orderimport is mislukt");

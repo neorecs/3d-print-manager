@@ -153,6 +153,9 @@ class ShopifyConnectorTestCase(BackendTestCase):
                                     "name": "#1001",
                                     "email": "customer@example.com",
                                     "createdAt": "2026-06-27T10:00:00Z",
+                                    "cancelledAt": None,
+                                    "displayFinancialStatus": "PAID",
+                                    "displayFulfillmentStatus": "UNFULFILLED",
                                     "totalPriceSet": {"shopMoney": {"amount": "19.90", "currencyCode": "EUR"}},
                                     "customer": {"displayName": "Shopify klant", "email": "fallback@example.com"},
                                     "lineItems": {
@@ -187,8 +190,23 @@ class ShopifyConnectorTestCase(BackendTestCase):
         self.assertEqual(order["order_number"], "#1001")
         self.assertEqual(order["customer_name"], "Shopify klant")
         self.assertEqual(order["total_amount"], 19.9)
+        self.assertEqual(order["payment_status"], "betaald")
         self.assertEqual(order["items"][0]["sku"], "DUMPLING-ROOD-PLA")
         self.assertEqual(order["items"][0]["unit_sale_price"], 9.95)
+
+    def test_shopify_cancelled_order_maps_external_status(self) -> None:
+        connector = ShopifyConnector({}, live_mode=False)
+
+        order = connector._order_from_node({
+            "id": "gid://shopify/Order/2",
+            "cancelledAt": "2026-06-28T10:00:00Z",
+            "displayFinancialStatus": "REFUNDED",
+            "displayFulfillmentStatus": "UNFULFILLED",
+            "lineItems": {"edges": []},
+        })
+
+        self.assertEqual(order["external_status"], "cancelled")
+        self.assertEqual(order["payment_status"], "geannuleerd")
 
     def test_shopify_import_orders_paginates_until_limit_or_last_page(self) -> None:
         connector = ShopifyConnector({"access_token": "token", "shop_domain": "example-shop"}, live_mode=True)

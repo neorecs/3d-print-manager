@@ -11,6 +11,7 @@ from domain.statuses import PUBLICATION_ERROR, PUBLICATION_PUBLISHED, PUBLICATIO
 from models import (
     Platform,
     Product,
+    ProductInventory,
     ProductMedia,
     ProductPlatformPublication,
     ProductPublicationMedia,
@@ -74,6 +75,11 @@ def sync_publication(db: Session, publication: ProductPlatformPublication) -> di
 
 
 def apply_connector_result(db: Session, publication: ProductPlatformPublication, result) -> None:
+    # A connector may have created a remote draft before a later step failed.
+    # Retaining its ID makes the next attempt a sync instead of a duplicate create.
+    publication.external_product_id = result.external_product_id or publication.external_product_id
+    publication.external_listing_id = result.external_listing_id or publication.external_listing_id
+    store_variant_platform_links(db, publication, result)
     if not result.success:
         publication.publication_status = PUBLICATION_ERROR
         publication.last_error = result.message
@@ -82,17 +88,27 @@ def apply_connector_result(db: Session, publication: ProductPlatformPublication,
 
     publication.publication_status = PUBLICATION_PUBLISHED
     publication.last_error = None
-    publication.external_product_id = result.external_product_id or publication.external_product_id
-    publication.external_listing_id = result.external_listing_id or publication.external_listing_id
     publication.last_synced_at = datetime.now(timezone.utc).isoformat()
-    store_variant_platform_links(db, publication, result)
     db.commit()
 
 
 def build_publication_payload(db: Session, publication: ProductPlatformPublication) -> dict:
     product = get_required(db, Product, publication.product_id)
     media = get_publication_media_for_payload(db, publication)
-    variants = db.scalars(select(ProductVariant).where(ProductVariant.product_id == product.id)).all()
+    variants = db.scalars(
+        select(ProductVariant).where(
+            ProductVariant.product_id == product.id,
+            ProductVariant.active.is_(True),
+        )
+    ).all()
+    inventory_by_variant = {
+        item.product_variant_id: item
+        for item in db.scalars(
+            select(ProductInventory).where(
+                ProductInventory.product_variant_id.in_([variant.id for variant in variants] or [0])
+            )
+        ).all()
+    }
     links = {
         link.product_variant_id: link
         for link in db.scalars(
@@ -105,6 +121,8 @@ def build_publication_payload(db: Session, publication: ProductPlatformPublicati
     return {
         "publication_id": publication.id,
         "product_id": product.id,
+        "external_product_id": publication.external_product_id,
+        "external_listing_id": publication.external_listing_id,
         "title": publication.platform_title or product.internal_title or product.name,
         "description": publication.platform_description
         or product.sales_description
@@ -115,12 +133,20 @@ def build_publication_payload(db: Session, publication: ProductPlatformPublicati
         "price": publication.platform_price_override,
         "shipping_profile_id": publication.platform_shipping_profile_id,
         "media": [to_dict(item) for item in media],
-        "variants": [variant_payload(item, links.get(item.id)) for item in variants],
+        "variants": [
+            variant_payload(item, links.get(item.id), inventory_by_variant.get(item.id))
+            for item in variants
+        ],
     }
 
 
-def variant_payload(variant: ProductVariant, link: ProductVariantPlatformLink | None = None) -> dict:
+def variant_payload(
+    variant: ProductVariant,
+    link: ProductVariantPlatformLink | None = None,
+    inventory: ProductInventory | None = None,
+) -> dict:
     data = to_dict(variant)
+    data["quantity_available"] = max(0, inventory.free_stock) if inventory else 0
     if link:
         data["external_variant_id"] = link.external_variant_id
         data["external_sku"] = link.external_sku
@@ -182,7 +208,12 @@ def validate_publication_record(db: Session, publication: ProductPlatformPublica
     product = get_required(db, Product, publication.product_id)
     platform = get_required(db, Platform, publication.platform_id)
     media = get_publication_media_for_payload(db, publication)
-    variants = db.scalars(select(ProductVariant).where(ProductVariant.product_id == product.id)).all()
+    variants = db.scalars(
+        select(ProductVariant).where(
+            ProductVariant.product_id == product.id,
+            ProductVariant.active.is_(True),
+        )
+    ).all()
 
     errors = []
     warnings = []
@@ -236,7 +267,7 @@ def validate_publication_record(db: Session, publication: ProductPlatformPublica
         if long_tags:
             errors.append(f"{platform.name}: Etsy-tags mogen maximaal 20 tekens zijn: {', '.join(long_tags)}.")
         if not publication.platform_shipping_profile_id:
-            warnings.append(f"{platform.name}: Etsy verzendprofiel ontbreekt.")
+            errors.append(f"{platform.name}: Etsy verzendprofiel ontbreekt.")
     elif platform_type == "shopify":
         if not product.product_type:
             warnings.append(f"{platform.name}: Shopify producttype ontbreekt.")

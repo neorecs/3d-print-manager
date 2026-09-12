@@ -432,6 +432,9 @@ class ShopifyConnector(PlatformConnector):
     def _order_from_node(self, node: dict) -> dict:
         customer = node.get("customer") or {}
         line_edges = node.get("lineItems", {}).get("edges") or []
+        financial_status = str(node.get("displayFinancialStatus") or "").upper()
+        fulfillment_status = str(node.get("displayFulfillmentStatus") or "").upper()
+        cancelled = bool(node.get("cancelledAt"))
         return {
             "external_order_id": node.get("id"),
             "order_number": node.get("name") or node.get("id"),
@@ -440,8 +443,21 @@ class ShopifyConnector(PlatformConnector):
             "order_date": node.get("createdAt"),
             "total_amount": self._money_amount(node.get("totalPriceSet")),
             "currency": self._money_currency(node.get("totalPriceSet")),
+            "external_status": "cancelled" if cancelled else fulfillment_status.lower(),
+            "payment_status": self._payment_status(financial_status, cancelled),
             "items": [self._order_item_from_node(edge.get("node") or {}) for edge in line_edges],
         }
+
+    def _payment_status(self, financial_status: str, cancelled: bool = False) -> str:
+        if cancelled:
+            return "geannuleerd"
+        if financial_status in {"PAID", "PARTIALLY_REFUNDED"}:
+            return "betaald"
+        if financial_status in {"REFUNDED", "VOIDED"}:
+            return "terugbetaald"
+        if financial_status in {"PENDING", "AUTHORIZED", "PARTIALLY_PAID"}:
+            return "in_behandeling"
+        return "niet_betaald" if financial_status else "onbekend"
 
     def _order_item_from_node(self, node: dict) -> dict:
         variant = node.get("variant") or {}
@@ -563,6 +579,9 @@ class ShopifyConnector(PlatformConnector):
                 name
                 email
                 createdAt
+                cancelledAt
+                displayFinancialStatus
+                displayFulfillmentStatus
                 totalPriceSet {
                   shopMoney {
                     amount

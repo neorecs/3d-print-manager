@@ -1,4 +1,5 @@
 from support import *
+from publishing.service import build_publication_payload
 
 
 class PublishingTestCase(BackendTestCase):
@@ -36,6 +37,21 @@ class PublishingTestCase(BackendTestCase):
         self.assertEqual(published["publication_status"], "gepubliceerd")
         self.assertTrue(published["external_product_id"].startswith("mock-etsy-product-"))
         self.assertIsNotNone(published["last_synced_at"])
+
+    def test_publication_payload_contains_free_stock_and_ignores_inactive_variants(self) -> None:
+        platform = self.make_platform("etsy")
+        product, variant = self.make_product_variant("PUB-STOCK")
+        inactive = ProductVariant(product_id=product.id, variant_name="Oud", sku="PUB-INACTIVE", color="zwart", material="PLA", default_sale_price=9.95, active=False)
+        inventory = ProductInventory(product_id=product.id, product_variant_id=variant.id, quantity_on_hand=8, quantity_reserved=3)
+        publication = ProductPlatformPublication(product_id=product.id, platform_id=platform.id, platform_title="Titel", platform_description="Tekst", platform_category="Decoratie", platform_shipping_profile_id="123")
+        self.db.add_all([inactive, inventory, publication])
+        self.db.commit()
+
+        payload = build_publication_payload(self.db, publication)
+
+        self.assertEqual(len(payload["variants"]), 1)
+        self.assertEqual(payload["variants"][0]["sku"], "PUB-STOCK")
+        self.assertEqual(payload["variants"][0]["quantity_available"], 5)
 
     def test_publication_validation_requires_active_market_translations(self) -> None:
         platform = self.make_platform("shopify")

@@ -1,7 +1,7 @@
 import csv
 import io
 from datetime import date
-from decimal import Decimal, ROUND_HALF_UP
+from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 
 from fastapi import HTTPException, Response
 from sqlalchemy import select
@@ -186,7 +186,12 @@ def create_accounting_sale_from_order(db: Session, order: Order, *, commit: bool
         raise HTTPException(status_code=400, detail="Order heeft geen positief bedrag om te boeken")
 
     vat_setting = db.scalar(select(AccountingFiscalSetting).where(AccountingFiscalSetting.setting_name == "default_vat_rate"))
-    vat_rate = Decimal(vat_setting.value) if vat_setting else Decimal("21")
+    try:
+        vat_rate = Decimal(vat_setting.value) if vat_setting else Decimal("21")
+    except (InvalidOperation, TypeError, ValueError) as exc:
+        raise HTTPException(status_code=409, detail="Standaard btw-percentage is ongeldig; controleer de fiscale instellingen") from exc
+    if vat_rate < 0 or vat_rate > 100:
+        raise HTTPException(status_code=409, detail="Standaard btw-percentage moet tussen 0 en 100 liggen")
     net_amount = money(gross_amount / (Decimal("1") + vat_rate / Decimal("100")))
     vat_amount = money(gross_amount - net_amount)
     invoice_number = order.internal_order_number
@@ -208,7 +213,7 @@ def create_accounting_sale_from_order(db: Session, order: Order, *, commit: bool
         status=ACCOUNTING_CONCEPT,
         source="order_import",
         note=(
-            "Automatisch gemaakt vanuit order. Btw voorlopig berekend met standaardtarief 21%; "
+            f"Automatisch gemaakt vanuit order. Btw voorlopig berekend met ingesteld standaardtarief {vat_rate}%; "
             "controleer platform, land en btw-regime voordat je dit gebruikt voor aangifte."
         ),
     )

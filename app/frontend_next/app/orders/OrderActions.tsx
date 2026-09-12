@@ -98,7 +98,7 @@ export function OrderActions({ orderId, accountingSale }: { orderId: number; acc
         </div>
       </details>
       <p className="text-xs leading-5 text-muted">
-        Administratie: de automatische boeking gebruikt voorlopig 21% btw inclusief orderbedrag. Controleer dit later per platform, land en btw-regime.
+        Administratie: de automatische boeking gebruikt het ingestelde standaard-btw-percentage en behandelt het orderbedrag als inclusief btw. Controleer dit per platform, land en btw-regime.
       </p>
     </div>
   );
