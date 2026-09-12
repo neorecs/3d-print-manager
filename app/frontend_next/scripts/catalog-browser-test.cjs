@@ -10,11 +10,16 @@ async function listen(server) {
 }
 
 async function main() {
-  let creates = 0, uploads = 0, mediaFails = false;
+  let creates = 0, uploads = 0, mediaFails = false, orderProcesses = 0, completedPayload = null;
   const products = [
-    { id: 1, name: "Telefoonhouder", active: true, status: "klaar_voor_publicatie", print_file_path: "model.stl" },
+    { id: 1, name: "Telefoonhouder", internal_title: "Telefoonhouder", active: true, status: "klaar_voor_publicatie", print_file_path: "model.stl" },
     { id: 2, name: "Archiefproduct", active: false, status: "gearchiveerd" },
   ];
+  const variants = [{ id: 1, product_id: 1, variant_name: "Rood PLA", sku: "HOUDER-ROOD", color: "rood", material: "PLA", active: true }];
+  const orders = [{ id: 1, internal_order_number: "WEB-TEST-1", external_order_id: "WEB-TEST-1", platform_id: 1, customer_name: "Testklant", total_amount: 25.9, currency: "EUR", status: "nieuw", payment_status: "betaald" }];
+  const orderItems = [{ id: 1, order_id: 1, product_id: 1, product_variant_id: 1, sku: "HOUDER-ROOD", quantity_ordered: 2, quantity_from_inventory: 0, quantity_to_print: 0, inventory_status: "niet_op_voorraad", unit_sale_price: 12.95 }];
+  const printJobs = [];
+  const accountingSales = [];
   const fixture = http.createServer(async (req, res) => {
     const url = new URL(req.url, "http://fixture");
     const chunks = [];
@@ -31,6 +36,28 @@ async function main() {
       uploads++;
       return uploads === 1 ? reply({ detail: "Testupload mislukt" }, 503) : reply({ ok: true });
     }
+    if (url.pathname === "/orders/1/process" && req.method === "POST") {
+      orderProcesses++;
+      orders[0].status = "ingepland";
+      orderItems[0].quantity_to_print = 2;
+      if (!printJobs.length) printJobs.push({ id: 1, order_item_id: 1, product_id: 1, product_variant_id: 1, color: "rood", material: "PLA", quantity_needed: 2, quantity_planned: 2, quantity_succeeded: null, quantity_failed: null, quantity_to_order: 2, quantity_to_inventory: 0, estimated_print_time_minutes: 60, estimated_filament_grams: 40, status: "nieuw" });
+      if (!accountingSales.length) accountingSales.push({ id: 1, order_id: 1, invoice_number: "WEB-TEST-1", gross_amount: 25.9, net_amount: 21.4, vat_amount: 4.5, status: "concept" });
+      return reply({ status: "processed", message: "Order verwerkt: voorraad en printplanning zijn bijgewerkt. Verkoopboeking is vastgelegd." });
+    }
+    if (url.pathname === "/print-jobs/1/complete" && req.method === "POST") {
+      completedPayload = JSON.parse(Buffer.concat(chunks));
+      Object.assign(printJobs[0], completedPayload, { status: completedPayload.quantity_failed ? "deels_mislukt" : "geprint" });
+      return reply({ status: "completed" });
+    }
+    if (url.pathname === "/orders/1") return reply({ ...orders[0], items: orderItems });
+    if (url.pathname === "/orders") return reply(orders);
+    if (url.pathname === "/order-items") return reply(orderItems);
+    if (url.pathname === "/orders/import-logs") return reply([]);
+    if (url.pathname === "/platforms") return reply([{ id: 1, name: "Testkanaal", type: "etsy", active: true }]);
+    if (url.pathname === "/product-variants") return reply(variants);
+    if (url.pathname === "/print-jobs") return reply(printJobs);
+    if (url.pathname === "/print-batches") return reply([]);
+    if (url.pathname === "/accounting/sales") return reply(accountingSales);
     if (url.pathname === "/products") return reply(products);
     if (/^\/products\/\d+$/.test(url.pathname)) return reply(products.find((p) => p.id === Number(url.pathname.split("/").pop())));
     if (url.pathname.endsWith("/media") && mediaFails) return reply({ detail: "Test foto storing" }, 503);
@@ -87,8 +114,20 @@ async function main() {
     await page.getByRole("link", { name: "Printbestand", exact: true }).click();
     await page.getByRole("button", { name: "Open in Bambu Studio", exact: true }).waitFor();
     assert.equal(await page.getByRole("button", { name: "Open in Bambu Studio", exact: true }).isEnabled(), true);
+    await page.goto(`${base}/orders/1`);
+    await page.getByRole("button", { name: "Order verwerken", exact: true }).click();
+    await page.getByText("Order verwerkt: voorraad en printplanning zijn bijgewerkt. Verkoopboeking is vastgelegd.", { exact: true }).waitFor();
+    assert.equal(orderProcesses, 1);
+    await page.goto(`${base}/printplanning`);
+    await page.getByText("Printtaak #1", { exact: true }).click();
+    await page.getByLabel("Gelukt", { exact: true }).fill("1");
+    await page.getByLabel("Mislukt", { exact: true }).fill("1");
+    await page.getByLabel("Naar order", { exact: true }).fill("1");
+    await page.getByRole("button", { name: "Resultaat verwerken", exact: true }).click();
+    await page.getByText("Printresultaat verwerkt. Extra gelukte prints zijn naar vrije voorraad geboekt.", { exact: true }).waitFor();
+    assert.deepEqual(completedPayload, { quantity_succeeded: 1, quantity_failed: 1, quantity_to_order: 1 });
     assert.deepEqual(errors, []);
-    console.log("Browser checks passed: desktop/mobile, archive filter, compact form, upload retry without duplicate, failed media section, Studio remains available.");
+    console.log("Browser checks passed: product creation/recovery, Studio handoff, atomic order processing and print-result registration.");
     console.log(`Screenshots: ${screenshots}`);
   } finally {
     await browser?.close();

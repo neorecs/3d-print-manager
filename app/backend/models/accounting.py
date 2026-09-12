@@ -1,4 +1,4 @@
-from sqlalchemy import Date, ForeignKey, Integer, Numeric, String, Text
+from sqlalchemy import Date, ForeignKey, Integer, Numeric, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 from database import Base
@@ -7,6 +7,7 @@ from models.mixins import TimestampMixin
 
 class AccountingSale(TimestampMixin, Base):
     __tablename__ = "accounting_sales"
+    __table_args__ = (UniqueConstraint("order_id", name="uq_accounting_sales_order"),)
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     order_id: Mapped[int | None] = mapped_column(ForeignKey("orders.id"), nullable=True)

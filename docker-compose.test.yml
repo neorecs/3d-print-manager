@@ -1,4 +1,18 @@
 services:
+  postgres_test:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: print_manager_test
+      POSTGRES_USER: print_manager_test
+      POSTGRES_PASSWORD: test-only-password
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U print_manager_test -d print_manager_test"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+    tmpfs:
+      - /var/lib/postgresql/data
+
   backend_tests:
     build: ./app/backend
     environment:
@@ -8,3 +22,17 @@ services:
       AUTH_SECRET: "test-auth-secret-at-least-32-characters-long"
       BACKEND_INTERNAL_TOKEN: "test-internal-token-at-least-32-characters"
     command: ["python", "-m", "unittest", "discover", "-s", "tests", "-v"]
+
+  postgres_integration:
+    build: ./app/backend
+    depends_on:
+      postgres_test:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: "postgresql+psycopg://print_manager_test:test-only-password@postgres_test:5432/print_manager_test"
+      TEST_POSTGRES_URL: "postgresql+psycopg://print_manager_test:test-only-password@postgres_test:5432/print_manager_test"
+      CONNECTORS_LIVE_MODE: "false"
+      CREDENTIAL_ENCRYPTION_KEY: 4pmcM6TeV2L8D4WWuQV3XGjxM2aJ3qS4Ph3CEmE-hzA=
+      AUTH_SECRET: "test-auth-secret-at-least-32-characters-long"
+      BACKEND_INTERNAL_TOKEN: "test-internal-token-at-least-32-characters"
+    command: ["sh", "-c", "alembic upgrade head && python -m unittest discover -s tests -p 'test_postgres_integration.py' -v"]

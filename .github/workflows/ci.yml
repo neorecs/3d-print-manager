@@ -11,6 +11,14 @@ jobs:
       - uses: actions/checkout@v4
       - run: docker compose -f docker-compose.test.yml run --rm backend_tests
 
+  postgres-order-integration:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker compose -f docker-compose.test.yml run --rm postgres_integration
+      - if: always()
+        run: docker compose -f docker-compose.test.yml down --volumes
+
   frontend-build-and-smoke:
     runs-on: ubuntu-latest
     defaults:
@@ -28,6 +36,12 @@ jobs:
           AUTH_ENABLED: "true"
           AUTH_BACKEND_LOGIN: "true"
           AUTH_SECRET: "ci-auth-secret-at-least-32-characters-long"
+          BACKEND_INTERNAL_TOKEN: "ci-internal-token-at-least-32-characters"
+      - run: npm install --no-save --no-package-lock playwright@1.51.1
+      - run: npx playwright install --with-deps chromium
+      - run: node scripts/catalog-browser-test.cjs
+        env:
+          AUTH_ENABLED: "false"
           BACKEND_INTERNAL_TOKEN: "ci-internal-token-at-least-32-characters"
       - run: npm start &
         env:

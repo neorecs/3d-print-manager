@@ -1,6 +1,6 @@
 from datetime import date, datetime
 
-from sqlalchemy import Date, DateTime, ForeignKey, Integer, String
+from sqlalchemy import Date, DateTime, ForeignKey, Integer, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 from database import Base
@@ -9,6 +9,7 @@ from models.mixins import TimestampMixin
 
 class PrintJob(TimestampMixin, Base):
     __tablename__ = "print_jobs"
+    __table_args__ = (UniqueConstraint("order_item_id", name="uq_print_jobs_order_item"),)
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     order_item_id: Mapped[int | None] = mapped_column(ForeignKey("order_items.id"))
