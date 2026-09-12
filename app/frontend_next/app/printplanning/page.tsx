@@ -9,7 +9,9 @@ import { formatMinutes, getPrintPlanningData } from "@/lib/api";
 import type { PrintPlanningData } from "@/lib/types";
 import { PrintPlanningManager } from "./PrintPlanningManager";
 
-export default async function PrintPlanningPage() {
+export default async function PrintPlanningPage({ searchParams }: { searchParams: Promise<{ job?: string }> }) {
+  const params = await searchParams;
+  const focusedJobId = Number(params.job) || undefined;
   let data: PrintPlanningData | null = null;
   let error: string | null = null;
 
@@ -26,7 +28,7 @@ export default async function PrintPlanningPage() {
         description="Plan printtaken, groepeer batches en verwerk printresultaten zonder Bambu Studio te vervangen."
         actions={<a className="rounded-xl border border-line px-4 py-2 text-sm font-black text-slate-200 hover:bg-white/5" href="/orders">Naar orders</a>}
       />
-      {error || !data ? <PrintPlanningError message={error || "Geen printplanningdata beschikbaar"} /> : <PrintPlanningContent data={data} />}
+      {error || !data ? <PrintPlanningError message={error || "Geen printplanningdata beschikbaar"} /> : <PrintPlanningContent data={data} focusedJobId={focusedJobId} />}
     </AppShell>
   );
 }
@@ -35,7 +37,7 @@ function PrintPlanningError({ message }: { message: string }) {
   return <ErrorState message={message} retryHref="/printplanning" title="Productieplanning kon niet worden geladen" />;
 }
 
-function PrintPlanningContent({ data }: { data: PrintPlanningData }) {
+function PrintPlanningContent({ data, focusedJobId }: { data: PrintPlanningData; focusedJobId?: number }) {
   const openJobs = data.printJobs.filter((job) => !["verwerkt", "geannuleerd"].includes(job.status || ""));
   const activeJobs = data.printJobs.filter((job) => ["gepland", "bezig"].includes(job.status || ""));
   const failedJobs = data.printJobs.filter((job) => ["deels_mislukt", "mislukt"].includes(job.status || ""));
@@ -71,6 +73,7 @@ function PrintPlanningContent({ data }: { data: PrintPlanningData }) {
           products={data.products}
           variants={data.variants}
           printers={data.printers}
+          focusedJobId={focusedJobId}
         />
       </SectionCard>
     </div>

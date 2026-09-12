@@ -5,12 +5,15 @@ import { PageHeader } from "@/components/PageHeader";
 import { SectionCard } from "@/components/SectionCard";
 import { StatusBadge } from "@/components/StatusBadge";
 import { formatCurrency, formatMinutes, getOrderDetailData } from "@/lib/api";
+import { printJobHref, safeOrdersReturnHref } from "@/lib/navigation";
 import type { OrderDetailData, OrderItem, PrintJob, Product, ProductVariant } from "@/lib/types";
 import { OrderActions } from "../OrderActions";
 
-export default async function OrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function OrderDetailPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ returnTo?: string }> }) {
   const { id } = await params;
+  const { returnTo } = await searchParams;
   const orderId = Number(id);
+  const ordersHref = safeOrdersReturnHref(returnTo);
   let data: OrderDetailData | null = null;
   let error: string | null = null;
 
@@ -25,7 +28,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
       <PageHeader
         title={data?.order.internal_order_number || "Orderdetail"}
         description="Controleer orderregels, voorraadreserveringen en printtaken voor deze order."
-        actions={<a className="rounded-md border border-line bg-slate-950/35 px-4 py-2 text-sm font-bold text-slate-300" href="/orders">Terug naar orders</a>}
+        actions={<a className="rounded-md border border-line bg-slate-950/35 px-4 py-2 text-sm font-bold text-slate-300" href={ordersHref}>Terug naar orders</a>}
       />
       {error || !data ? <OrderError message={error || "Geen orderdata beschikbaar"} /> : <OrderContent data={data} />}
     </AppShell>
@@ -163,7 +166,7 @@ function OrderItemRow({ item, product, variant }: { item: OrderItem; product?: P
   return (
     <tr>
       <td className="font-semibold">{item.sku || "-"}</td>
-      <td>{product?.internal_title || product?.name || (item.product_id ? `Product ${item.product_id}` : "Niet gekoppeld")}</td>
+      <td>{item.product_id ? <a className="font-semibold hover:text-brand" href={`/catalogus/${item.product_id}`}>{product?.internal_title || product?.name || `Product ${item.product_id}`}</a> : "Niet gekoppeld"}</td>
       <td>{variant?.variant_name || variant?.sku || (item.product_variant_id ? `Variant ${item.product_variant_id}` : "Niet gekoppeld")}</td>
       <td><StatusBadge status={item.inventory_status} /></td>
       <td className="text-right font-semibold">{item.quantity_ordered}</td>
@@ -192,6 +195,7 @@ function PrintJobRow({ job, variant }: { job: PrintJob; variant?: ProductVariant
         <SmallStat label="Gelukt" value={job.quantity_succeeded || 0} />
         <SmallStat label="Mislukt" value={job.quantity_failed || 0} />
       </div>
+      <a className="mt-4 inline-flex rounded-md border border-line px-3 py-2 text-sm font-bold text-slate-200 hover:border-brand" href={printJobHref(job.id)}>Open deze taak in Productie</a>
     </div>
   );
 }

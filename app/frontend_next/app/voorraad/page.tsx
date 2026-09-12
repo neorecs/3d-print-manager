@@ -7,6 +7,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { SectionCard } from "@/components/SectionCard";
 import { StatusBadge } from "@/components/StatusBadge";
 import { getInventoryData } from "@/lib/api";
+import { orderDetailHref, printJobHref, productInventoryHref } from "@/lib/navigation";
 import type { InventoryData, ProductInventory } from "@/lib/types";
 
 export default async function InventoryPage() {
@@ -77,7 +78,7 @@ function InventoryContent({ data }: { data: InventoryData }) {
                   const low = free(item) <= Number(item.minimum_stock_level || 0);
                   return (
                     <tr key={item.id}>
-                      <td className="font-semibold" data-label="Product"><a className="hover:text-brand" href={`/catalogus/${item.product_id}`}>{product?.internal_title || product?.name || `Product ${item.product_id}`}</a></td>
+                      <td className="font-semibold" data-label="Product"><a className="hover:text-brand" href={productInventoryHref(item.product_id)}>{product?.internal_title || product?.name || `Product ${item.product_id}`}</a></td>
                       <td data-label="Variant">{variant?.variant_name || variant?.sku || `Variant ${item.product_variant_id}`}</td>
                       <td data-label="Kleur">{item.color || variant?.color || "-"}</td>
                       <td data-label="Materiaal">{item.material || variant?.material || "-"}</td>
@@ -116,7 +117,7 @@ function InventoryContent({ data }: { data: InventoryData }) {
                     <td data-label="Moment">{item.created_at ? new Date(item.created_at).toLocaleString("nl-NL") : "-"}</td>
                     <td data-label="Beweging"><StatusBadge status={item.movement_type} /></td>
                     <td className="text-right font-semibold" data-label="Aantal">{item.quantity}</td>
-                    <td data-label="Bron">{item.source || (item.print_job_id ? `Printtaak ${item.print_job_id}` : item.order_id ? `Order ${item.order_id}` : "-")}</td>
+                    <td data-label="Bron"><MovementSource item={item} /></td>
                     <td data-label="Toelichting">{item.note || item.reason || "-"}</td>
                   </tr>
                 ))}
@@ -133,6 +134,12 @@ function InventoryContent({ data }: { data: InventoryData }) {
 
 function free(item: ProductInventory) {
   return Number(item.quantity_on_hand || 0) - Number(item.quantity_reserved || 0);
+}
+
+function MovementSource({ item }: { item: InventoryData["movements"][number] }) {
+  if (item.print_job_id) return <a className="font-semibold hover:text-brand" href={printJobHref(item.print_job_id)}>{item.source || `Printtaak ${item.print_job_id}`}</a>;
+  if (item.order_id) return <a className="font-semibold hover:text-brand" href={orderDetailHref(item.order_id)}>{item.source || `Order ${item.order_id}`}</a>;
+  return item.source || "-";
 }
 
 function Step({ title, text }: { title: string; text: string }) {

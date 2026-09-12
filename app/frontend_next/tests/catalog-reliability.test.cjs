@@ -9,7 +9,7 @@ function load(file, imports = {}) {
   const source = fs.readFileSync(path.join(__dirname, "..", file), "utf8");
   const code = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText;
   const module = { exports: {} };
-  vm.runInNewContext(code, { module, exports: module.exports, URLSearchParams, Error, require: (name) => {
+  vm.runInNewContext(code, { module, exports: module.exports, URL, URLSearchParams, Error, require: (name) => {
     if (name in imports) return imports[name];
     throw new Error(`Unexpected import ${name}`);
   } });
@@ -17,6 +17,7 @@ function load(file, imports = {}) {
 }
 const results = load("lib/loadResult.ts");
 const catalog = load("lib/catalogView.ts");
+const navigation = load("lib/navigation.ts");
 function api(failures = []) {
   return load("lib/api.ts", {
     "./format": {}, "./loadResult": results,
@@ -116,4 +117,14 @@ test("product detail does not advertise an unimplemented history timeline", () =
   const source = fs.readFileSync(path.join(__dirname, "..", "app", "catalogus", "[id]", "page.tsx"), "utf8");
   assert.doesNotMatch(source, /\["historie",\s*"Historie"\]/);
   assert.doesNotMatch(source, /producttijdlijn/);
+});
+
+test("navigation keeps list filters and focuses related work", () => {
+  const list = navigation.ordersListHref("nieuw", 3);
+  assert.equal(list, "/orders?status=nieuw&page=3");
+  assert.equal(navigation.orderDetailHref(42, list), "/orders/42?returnTo=%2Forders%3Fstatus%3Dnieuw%26page%3D3");
+  assert.equal(navigation.safeOrdersReturnHref("/orders?status=nieuw&page=3"), list);
+  assert.equal(navigation.safeOrdersReturnHref("https://example.com/orders"), "/orders");
+  assert.equal(navigation.printJobHref(7), "/printplanning?job=7#printtaak-7");
+  assert.equal(navigation.productInventoryHref(9), "/catalogus/9?tab=voorraad");
 });

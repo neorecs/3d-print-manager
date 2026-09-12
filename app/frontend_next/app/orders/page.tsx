@@ -6,6 +6,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { SectionCard } from "@/components/SectionCard";
 import { StatusBadge } from "@/components/StatusBadge";
 import { formatCurrency, getOrdersData } from "@/lib/api";
+import { orderDetailHref, ordersListHref } from "@/lib/navigation";
 import type { Order, OrderItem, OrdersData, Platform, PrintJob } from "@/lib/types";
 import { ShopifyImportButton } from "./ShopifyImportButton";
 import Link from "next/link";
@@ -45,6 +46,7 @@ function OrdersContent({ data, selectedStatus }: { data: OrdersData; selectedSta
     ["alle", "Alle"], ["nieuw", "Nieuw"], ["betaald", "Betaald"], ["in-productie", "In productie"],
     ["klaar", "Klaar"], ["verzonden", "Verzonden"], ["geannuleerd", "Geannuleerd"],
   ];
+  const currentListHref = ordersListHref(selectedStatus, page);
 
   return (
     <div className="space-y-6">
@@ -66,7 +68,7 @@ function OrdersContent({ data, selectedStatus }: { data: OrdersData; selectedSta
           {filters.map(([value, label]) => (
             <Link
               className={`rounded-full border px-3 py-2 text-sm font-black ${selectedStatus === value ? "border-brand bg-brand text-slate-950" : "border-line bg-panelSoft text-slate-200 hover:border-brand/60"}`}
-              href={value === "alle" ? "/orders" : `/orders?status=${value}`}
+              href={ordersListHref(value)}
               key={value}
             >
               {label}
@@ -85,6 +87,7 @@ function OrdersContent({ data, selectedStatus }: { data: OrdersData; selectedSta
                 order={order}
                 platform={data.platforms.find((item) => item.id === order.platform_id)}
                 printJobs={data.printJobs}
+                returnTo={currentListHref}
               />
             ))}
           </div>
@@ -93,9 +96,9 @@ function OrdersContent({ data, selectedStatus }: { data: OrdersData; selectedSta
         )}
         {pageCount > 1 ? (
           <div className="mt-5 flex items-center justify-between border-t border-line pt-4 text-sm font-bold">
-            <Link className={`rounded-md border border-line px-3 py-2 ${page === 1 ? "pointer-events-none opacity-40" : "hover:border-brand"}`} href={`/orders?status=${selectedStatus}&page=${page - 1}`}>Vorige</Link>
+            <Link className={`rounded-md border border-line px-3 py-2 ${page === 1 ? "pointer-events-none opacity-40" : "hover:border-brand"}`} href={ordersListHref(selectedStatus, page - 1)}>Vorige</Link>
             <span className="text-muted">Pagina {page} van {pageCount}</span>
-            <Link className={`rounded-md border border-line px-3 py-2 ${page === pageCount ? "pointer-events-none opacity-40" : "hover:border-brand"}`} href={`/orders?status=${selectedStatus}&page=${page + 1}`}>Volgende</Link>
+            <Link className={`rounded-md border border-line px-3 py-2 ${page === pageCount ? "pointer-events-none opacity-40" : "hover:border-brand"}`} href={ordersListHref(selectedStatus, page + 1)}>Volgende</Link>
           </div>
         ) : null}
       </SectionCard>
@@ -138,7 +141,7 @@ function OrdersContent({ data, selectedStatus }: { data: OrdersData; selectedSta
   );
 }
 
-function OrderCard({ order, items, platform, printJobs }: { order: Order; items: OrderItem[]; platform?: Platform; printJobs: PrintJob[] }) {
+function OrderCard({ order, items, platform, printJobs, returnTo }: { order: Order; items: OrderItem[]; platform?: Platform; printJobs: PrintJob[]; returnTo: string }) {
   const ordered = items.reduce((total, item) => total + Number(item.quantity_ordered || 0), 0);
   const toPrint = items.reduce((total, item) => total + Number(item.quantity_to_print || 0), 0);
   const linkedJob = printJobs.find((job) => items.some((item) => item.id === job.order_item_id));
@@ -151,7 +154,7 @@ function OrderCard({ order, items, platform, printJobs }: { order: Order; items:
       <div className="grid gap-4 xl:grid-cols-[1.1fr_.9fr]">
         <div>
           <div className="flex flex-wrap items-center gap-2">
-            <a className="text-xl font-black text-ink hover:text-brand" href={`/orders/${order.id}`}>{order.internal_order_number}</a>
+            <a className="text-xl font-black text-ink hover:text-brand" href={orderDetailHref(order.id, returnTo)}>{order.internal_order_number}</a>
             <StatusBadge status={order.status} />
           </div>
           <p className="mt-2 text-sm text-muted">{order.customer_name || "Geen klantnaam"} - {platform ? platform.name : `Platform ${order.platform_id}`}</p>

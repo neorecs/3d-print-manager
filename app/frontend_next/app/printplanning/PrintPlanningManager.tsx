@@ -107,6 +107,7 @@ export function PrintPlanningManager({
   orders,
   orderItems,
   printers,
+  focusedJobId,
 }: {
   printJobs: PrintJob[];
   printBatches: PrintBatch[];
@@ -115,6 +116,7 @@ export function PrintPlanningManager({
   orders: Order[];
   orderItems: OrderItem[];
   printers: BambuPrinter[];
+  focusedJobId?: number;
 }) {
   const router = useRouter();
   const productById = useMemo(() => new Map(products.map((product) => [product.id, product])), [products]);
@@ -351,7 +353,12 @@ export function PrintPlanningManager({
               const order = orderItem ? orderById.get(orderItem.order_id) : null;
 
               return (
-                <details className="rounded-lg border border-line bg-panelSoft p-4 shadow-card" key={job.id}>
+                <details
+                  className={`scroll-mt-24 rounded-lg border bg-panelSoft p-4 shadow-card ${focusedJobId === job.id ? "border-brand ring-2 ring-brand/20" : "border-line"}`}
+                  open={focusedJobId === job.id ? true : undefined}
+                  id={`printtaak-${job.id}`}
+                  key={job.id}
+                >
                   <summary className="cursor-pointer list-none">
                     <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                       <div>

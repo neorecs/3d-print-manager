@@ -7,6 +7,7 @@ import { ActivityItem, BarList, MiniBars, SoftPanel, StatusSummary } from "@/com
 import { SectionCard } from "@/components/SectionCard";
 import { StatusBadge } from "@/components/StatusBadge";
 import { formatCurrency, formatMinutes, getDashboardData } from "@/lib/api";
+import { printJobHref, productInventoryHref } from "@/lib/navigation";
 import type { DashboardData } from "@/lib/types";
 
 export default async function DashboardPage() {
@@ -46,7 +47,7 @@ function DashboardContent({ data }: { data: DashboardData }) {
     label: item.label,
     value: Math.max(item.minimum_stock - item.free_stock, 1),
     note: `${item.free_stock} vrij`,
-    href: "/voorraad",
+    href: productInventoryHref(item.product_id),
   }));
   const printerState = (printer: DashboardData["printers"][number]) => (printer.printer_state || "offline").toLowerCase();
   const onlinePrinters = data.printers.filter((printer) => printer.active && !["offline", "unknown", "onbekend"].includes(printerState(printer)));
@@ -142,7 +143,7 @@ function DashboardContent({ data }: { data: DashboardData }) {
         <SectionCard title="Geplande prints" description="Open printtaken voor de komende productie.">
           <div className="space-y-3">
             {data.openPrintJobs.map((job) => (
-              <ActivityItem href="/printplanning" key={job.id} title={`Printtaak #${job.id}`} text={`${job.quantity_planned || job.quantity_needed} stuks in ${job.material || "-"} / ${job.color || "-"}`} meta={job.status || "nieuw"} />
+              <ActivityItem href={printJobHref(job.id)} key={job.id} title={`Printtaak #${job.id}`} text={`${job.quantity_planned || job.quantity_needed} stuks in ${job.material || "-"} / ${job.color || "-"}`} meta={job.status || "nieuw"} />
             ))}
             {!data.openPrintJobs.length ? <EmptyState title="Geen planning" description="Open printtaken verschijnen hier." /> : null}
           </div>

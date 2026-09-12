@@ -59,6 +59,23 @@ async function main() {
         .map((product) => ({ product, variants: variants.filter((item) => item.product_id === product.id), inventory: [], publications: [] }));
       return reply({ rows, metrics: { products: rows.length, variants: rows.flatMap((row) => row.variants).length, low_stock: 0, published: 0, margin_potential: 0 }, page: 1, page_size: 20, page_count: 1, total: rows.length, view });
     }
+    if (url.pathname === "/orders/overview") {
+      const status = url.searchParams.get("status") || "alle";
+      const filtered = orders.filter((order) => status === "alle" || order.status === status);
+      return reply({
+        orders: filtered,
+        order_items: orderItems.filter((item) => filtered.some((order) => order.id === item.order_id)),
+        platforms: [{ id: 1, name: "Testkanaal", type: "etsy", active: true }],
+        print_jobs: printJobs,
+        import_logs: [],
+        metrics: { total: orders.length, new: orders.filter((order) => order.status === "nieuw").length, paid: 1, production: 0, packed: 0, shipped: 0, cancelled: 0, revenue: 25.9 },
+        page: 1,
+        page_size: 25,
+        page_count: 1,
+        total: filtered.length,
+        status,
+      });
+    }
     if (url.pathname === "/orders") return reply(orders);
     if (url.pathname === "/order-items") return reply(orderItems);
     if (url.pathname === "/orders/import-logs") return reply([]);
@@ -123,12 +140,18 @@ async function main() {
     await page.getByRole("link", { name: "Printbestand", exact: true }).click();
     await page.getByRole("button", { name: "Open in Bambu Studio", exact: true }).waitFor();
     assert.equal(await page.getByRole("button", { name: "Open in Bambu Studio", exact: true }).isEnabled(), true);
-    await page.goto(`${base}/orders/1`);
+    await page.goto(`${base}/orders?status=nieuw`);
+    await page.getByRole("link", { name: "WEB-TEST-1", exact: true }).click();
+    await page.waitForURL(/\/orders\/1\?returnTo=/);
+    await page.getByRole("link", { name: "Terug naar orders", exact: true }).click();
+    await page.waitForURL(`${base}/orders?status=nieuw`);
+    await page.getByRole("link", { name: "WEB-TEST-1", exact: true }).click();
     await page.getByRole("button", { name: "Order verwerken", exact: true }).click();
     await page.getByText("Order verwerkt: voorraad en printplanning zijn bijgewerkt. Verkoopboeking is vastgelegd.", { exact: true }).waitFor();
     assert.equal(orderProcesses, 1);
-    await page.goto(`${base}/printplanning`);
-    await page.getByText("Printtaak #1", { exact: true }).click();
+    await page.getByRole("link", { name: "Open deze taak in Productie", exact: true }).click();
+    await page.waitForURL((url) => url.pathname === "/printplanning" && url.searchParams.get("job") === "1" && url.hash === "#printtaak-1");
+    assert.equal(await page.locator("#printtaak-1").evaluate((element) => element.open), true);
     await page.getByLabel("Gelukt", { exact: true }).fill("1");
     await page.getByLabel("Mislukt", { exact: true }).fill("1");
     await page.getByLabel("Naar order", { exact: true }).fill("1");
