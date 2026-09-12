@@ -103,8 +103,11 @@ def download_prepared_product_print_file(
 
 
 @router.get("/product-variants")
-def list_product_variants(db: Session = Depends(get_db)):
-    return list_rows(db.scalars(select(ProductVariant).order_by(ProductVariant.id)).all())
+def list_product_variants(product_id: int | None = Query(None, ge=1), db: Session = Depends(get_db)):
+    query = select(ProductVariant)
+    if product_id is not None:
+        query = query.where(ProductVariant.product_id == product_id)
+    return list_rows(db.scalars(query.order_by(ProductVariant.id)).all())
 
 
 @router.post("/product-variants")

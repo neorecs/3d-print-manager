@@ -39,6 +39,7 @@ import {
   SalesChannelDetailData,
   SalesChannelsData,
   SalesMarket,
+  SearchData,
   StockRecommendation,
   SystemReadiness,
   VatPeriod,
@@ -65,67 +66,45 @@ async function apiGet<T>(path: string): Promise<T> {
 }
 
 export async function getDashboardData(): Promise<DashboardData> {
-  const [products, platforms, orders, orderItems, variants, inventory, filament, printJobs, recommendations, printers, publications] = await Promise.all([
-    apiGet<Product[]>("/products"),
-    apiGet<Platform[]>("/platforms"),
-    apiGet<Order[]>("/orders"),
-    apiGet<OrderItem[]>("/order-items"),
-    apiGet<ProductVariant[]>("/product-variants"),
-    apiGet<ProductInventory[]>("/inventory/products"),
-    apiGet<FilamentSpool[]>("/filament"),
-    apiGet<PrintJob[]>("/print-jobs"),
-    apiGet<StockRecommendation[]>("/stock-recommendations"),
-    apiGet<BambuPrinter[]>("/bambu/printers"),
-    apiGet<ProductPublication[]>("/product-publications"),
-  ]);
-
+  const data = await apiGet<{
+    metrics: DashboardData["metrics"];
+    monthly_revenue: number[];
+    printers: BambuPrinter[];
+    top_products: DashboardData["topProducts"];
+    low_inventory: DashboardData["lowInventory"];
+    open_print_jobs: PrintJob[];
+  }>("/dashboard/overview");
   return {
-    products,
-    platforms,
-    orders,
-    orderItems,
-    variants,
-    inventory,
-    filament,
-    printJobs,
-    recommendations,
-    publications,
-    printers,
+    metrics: data.metrics,
+    monthlyRevenue: data.monthly_revenue,
+    printers: data.printers,
+    topProducts: data.top_products,
+    lowInventory: data.low_inventory,
+    openPrintJobs: data.open_print_jobs,
   };
 }
 
-export async function getProductCatalogData(): Promise<ProductCatalogData> {
-  const [products, variants, inventory, platforms, printers] = await Promise.all([
-    apiGet<Product[]>("/products"),
-    apiGet<ProductVariant[]>("/product-variants"),
-    apiGet<ProductInventory[]>("/inventory/products"),
+export async function getProductCatalogData(page = 1, view = "actief"): Promise<ProductCatalogData> {
+  const [overview, platforms, printers] = await Promise.all([
+    apiGet<Omit<ProductCatalogData, "platforms" | "printers" | "printerLoadError" | "pageSize" | "pageCount"> & { page_size: number; page_count: number }>(`/products/overview?page=${page}&page_size=20&view=${encodeURIComponent(view)}`),
     apiGet<Platform[]>("/platforms"),
     loadResult(apiGet<BambuPrinter[]>("/bambu/printers")),
   ]);
-
-  const publications = await apiGet<ProductPublication[]>("/product-publications");
-
   return {
-    products,
-    variants,
-    inventory,
+    ...overview,
+    pageSize: overview.page_size,
+    pageCount: overview.page_count,
     platforms,
     printers: printers.data ?? [],
     printerLoadError: printers.error,
-    rows: products.map((product) => ({
-      product,
-      variants: variants.filter((variant) => variant.product_id === product.id),
-      inventory: inventory.filter((item) => item.product_id === product.id),
-      publications: publications.filter((publication) => publication.product_id === product.id),
-    })),
   };
 }
 
 export async function getProductDetailData(productId: number): Promise<ProductDetailData> {
   const [product, variants, inventory, media, tags, translations, publications, platforms, printers] = await Promise.all([
     apiGet<Product>(`/products/${productId}`),
-    apiGet<ProductVariant[]>("/product-variants"),
-    apiGet<ProductInventory[]>("/inventory/products"),
+    apiGet<ProductVariant[]>(`/product-variants?product_id=${productId}`),
+    apiGet<ProductInventory[]>(`/inventory/products?product_id=${productId}`),
     loadResult(apiGet<ProductMedia[]>(`/products/${productId}/media`)),
     loadResult(apiGet<ProductTag[]>(`/products/${productId}/tags`)),
     loadResult(apiGet<ProductTranslation[]>(`/products/${productId}/translations`)),
@@ -136,8 +115,8 @@ export async function getProductDetailData(productId: number): Promise<ProductDe
 
   return {
     product,
-    variants: variants.filter((variant) => variant.product_id === productId),
-    inventory: inventory.filter((item) => item.product_id === productId),
+    variants,
+    inventory,
     media: media.data ?? [],
     tags: tags.data ?? [],
     translations: translations.data ?? [],
@@ -148,26 +127,29 @@ export async function getProductDetailData(productId: number): Promise<ProductDe
   };
 }
 
-export async function getOrdersData(): Promise<OrdersData> {
-  const [orders, orderItems, platforms, products, variants, printJobs, importLogs] = await Promise.all([
-    apiGet<Order[]>("/orders"),
-    apiGet<OrderItem[]>("/order-items"),
-    apiGet<Platform[]>("/platforms"),
-    apiGet<Product[]>("/products"),
-    apiGet<ProductVariant[]>("/product-variants"),
-    apiGet<PrintJob[]>("/print-jobs"),
-    apiGet<PlatformImportLog[]>("/orders/import-logs"),
-  ]);
-
+export async function getOrdersData(page = 1, status = "alle"): Promise<OrdersData> {
+  const data = await apiGet<{
+    orders: Order[]; order_items: OrderItem[]; platforms: Platform[]; print_jobs: PrintJob[];
+    import_logs: PlatformImportLog[]; metrics: OrdersData["metrics"];
+    page: number; page_size: number; page_count: number; total: number; status: string;
+  }>(`/orders/overview?page=${page}&page_size=25&status=${encodeURIComponent(status)}`);
   return {
-    orders,
-    orderItems,
-    platforms,
-    products,
-    variants,
-    printJobs,
-    importLogs,
+    orders: data.orders,
+    orderItems: data.order_items,
+    platforms: data.platforms,
+    printJobs: data.print_jobs,
+    importLogs: data.import_logs,
+    metrics: data.metrics,
+    page: data.page,
+    pageSize: data.page_size,
+    pageCount: data.page_count,
+    total: data.total,
+    status: data.status,
   };
+}
+
+export async function getSearchData(query: string): Promise<SearchData> {
+  return apiGet<SearchData>(`/search?q=${encodeURIComponent(query)}&limit=20`);
 }
 
 export async function getOrderDetailData(orderId: number): Promise<OrderDetailData> {

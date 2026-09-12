@@ -36,49 +36,16 @@ function DashboardError({ message }: { message: string }) {
 }
 
 function DashboardContent({ data }: { data: DashboardData }) {
-  const openOrders = data.orders.filter((order) => !["verzonden", "geannuleerd", "afgerond"].includes(order.status || ""));
-  const todayOrders = data.orders.filter((order) => {
-    if (!order.order_date) return false;
-    return new Date(order.order_date).toDateString() === new Date().toDateString();
-  });
-  const openPrintJobs = data.printJobs.filter((job) => !["verwerkt", "geannuleerd"].includes(job.status || ""));
-  const lowInventory = data.inventory.filter((item) => item.quantity_on_hand - item.quantity_reserved <= item.minimum_stock_level);
-  const lowFilament = data.filament.filter((item) => item.active && item.remaining_weight_grams <= item.minimum_remaining_grams);
-  const syncNeeded = data.publications.filter((publication) => publication.publication_status === "synchronisatie_nodig");
-  const now = new Date();
-  const monthOrders = data.orders.filter((order) => {
-    if (!order.order_date) return false;
-    const orderDate = new Date(order.order_date);
-    return orderDate.getFullYear() === now.getFullYear() && orderDate.getMonth() === now.getMonth();
-  });
-  const revenue = monthOrders.reduce((total, order) => total + Number(order.total_amount || 0), 0);
-  const variantById = new Map(data.variants.map((variant) => [variant.id, variant]));
-  const inventoryValue = data.inventory.reduce(
-    (total, item) => total + Math.max(item.quantity_on_hand - item.quantity_reserved, 0) * Number(variantById.get(item.product_variant_id)?.cost_price || 0),
-    0,
-  );
-  const estimatedPrintMinutes = openPrintJobs.reduce(
-    (total, job) => total + Number(job.estimated_print_time_minutes || 0),
-    0,
-  );
-  const soldByProduct = new Map<number, number>();
-  data.orderItems.forEach((item) => {
-    if (item.product_id) soldByProduct.set(item.product_id, (soldByProduct.get(item.product_id) || 0) + Number(item.quantity_ordered || 0));
-  });
-  const productBars = data.products
-    .map((product) => ({
-      label: product.internal_title || product.name,
-      value: soldByProduct.get(product.id) || 0,
-      note: `${soldByProduct.get(product.id) || 0} verkocht`,
-      href: `/catalogus/${product.id}`,
-    }))
-    .filter((item) => item.value > 0)
-    .sort((a, b) => b.value - a.value)
-    .slice(0, 5);
-  const inventoryBars = lowInventory.slice(0, 5).map((item) => ({
-    label: `Variant ${item.product_variant_id}`,
-    value: Math.max(item.minimum_stock_level - (item.quantity_on_hand - item.quantity_reserved), 1),
-    note: `${item.quantity_on_hand - item.quantity_reserved} vrij`,
+  const productBars = data.topProducts.map((item) => ({
+    label: item.label,
+    value: item.sold,
+    note: `${item.sold} verkocht`,
+    href: `/catalogus/${item.product_id}`,
+  }));
+  const inventoryBars = data.lowInventory.map((item) => ({
+    label: item.label,
+    value: Math.max(item.minimum_stock - item.free_stock, 1),
+    note: `${item.free_stock} vrij`,
     href: "/voorraad",
   }));
   const printerState = (printer: DashboardData["printers"][number]) => (printer.printer_state || "offline").toLowerCase();
@@ -87,25 +54,15 @@ function DashboardContent({ data }: { data: DashboardData }) {
   const pausedPrinters = data.printers.filter((printer) => printerState(printer).includes("pause"));
   const errorPrinters = data.printers.filter((printer) => ["failed", "error", "fout"].some((state) => printerState(printer).includes(state)));
   const offlinePrinters = data.printers.filter((printer) => !printer.active || ["offline", "unknown", "onbekend"].includes(printerState(printer)));
-  const monthlyRevenue = Array.from({ length: 12 }, (_, month) =>
-    data.orders
-      .filter((order) => {
-        if (!order.order_date) return false;
-        const orderDate = new Date(order.order_date);
-        return orderDate.getFullYear() === now.getFullYear() && orderDate.getMonth() === month;
-      })
-      .reduce((total, order) => total + Number(order.total_amount || 0), 0),
-  );
-
   return (
     <div className="space-y-6">
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
         <MetricCard href="/bambu-printers" label="Actieve printers" value={onlinePrinters.length} note={`${data.printers.length} geregistreerd`} tone="good" />
-        <MetricCard href="/printplanning" label="Prints bezig" value={printingPrinters.length} note={formatMinutes(estimatedPrintMinutes)} tone="warning" />
-        <MetricCard href="/orders" label="Orders vandaag" value={todayOrders.length} note="nieuw binnengekomen" />
-        <MetricCard href="/orders" label="Openstaande orders" value={openOrders.length} note="nog te verwerken" tone="warning" />
-        <MetricCard href="/voorraad" label="Voorraadwaarde" value={formatCurrency(inventoryValue)} note="indicatieve waarde" />
-        <MetricCard href="/administratie" label="Omzet maand" value={formatCurrency(revenue)} note="verwacht / bekend" tone="good" />
+        <MetricCard href="/printplanning" label="Prints bezig" value={printingPrinters.length} note={formatMinutes(data.metrics.open_print_minutes)} tone="warning" />
+        <MetricCard href="/orders" label="Orders vandaag" value={data.metrics.orders_today} note="nieuw binnengekomen" />
+        <MetricCard href="/orders" label="Openstaande orders" value={data.metrics.open_orders} note="nog te verwerken" tone="warning" />
+        <MetricCard href="/voorraad" label="Voorraadwaarde" value={formatCurrency(data.metrics.inventory_value)} note="indicatieve waarde" />
+        <MetricCard href="/administratie" label="Omzet maand" value={formatCurrency(data.metrics.monthly_revenue)} note="verwacht / bekend" tone="good" />
       </div>
 
       <div className="grid gap-5 xl:grid-cols-3">
@@ -123,22 +80,22 @@ function DashboardContent({ data }: { data: DashboardData }) {
         <SectionCard title="Orderstatus" description="Werkvoorraad van verkoop naar productie.">
           <StatusSummary
             items={[
-              { label: "Nieuw", value: data.orders.filter((o) => o.status === "nieuw").length, tone: "amber", href: "/orders?status=nieuw" },
-              { label: "In productie", value: data.orders.filter((o) => (o.status || "").includes("print")).length, tone: "blue", href: "/orders" },
-              { label: "Klaar", value: data.orders.filter((o) => o.status === "ingepakt").length, tone: "green", href: "/orders?status=klaar" },
-              { label: "Verzonden", value: data.orders.filter((o) => o.status === "verzonden").length, tone: "green", href: "/orders?status=verzonden" },
-              { label: "Geannuleerd", value: data.orders.filter((o) => o.status === "geannuleerd").length, tone: "red", href: "/orders?status=geannuleerd" },
+              { label: "Nieuw", value: data.metrics.order_new, tone: "amber", href: "/orders?status=nieuw" },
+              { label: "In productie", value: data.metrics.order_production, tone: "blue", href: "/orders?status=in-productie" },
+              { label: "Klaar", value: data.metrics.order_packed, tone: "green", href: "/orders?status=klaar" },
+              { label: "Verzonden", value: data.metrics.order_shipped, tone: "green", href: "/orders?status=verzonden" },
+              { label: "Geannuleerd", value: data.metrics.order_cancelled, tone: "red", href: "/orders?status=geannuleerd" },
             ]}
           />
         </SectionCard>
         <SectionCard title="Filamentstatus" description="Materiaalrisico voor de komende prints.">
           <StatusSummary
             items={[
-              { label: "Rollen op voorraad", value: data.filament.length, tone: "green", href: "/filament" },
-              { label: "Bijna leeg", value: lowFilament.length, tone: lowFilament.length ? "amber" : "green", href: "/filament" },
-              { label: "Onder minimum", value: lowFilament.length, tone: lowFilament.length ? "red" : "green", href: "/filament" },
-              { label: "Gepland verbruik", value: `${(openPrintJobs.reduce((total, job) => total + Number(job.estimated_filament_grams || 0), 0) / 1000).toFixed(1)} kg`, tone: "blue", href: "/analyse" },
-              { label: "Kleuren actief", value: new Set(data.filament.map((item) => item.color)).size, tone: "slate", href: "/filament" },
+              { label: "Rollen op voorraad", value: data.metrics.filament_rolls, tone: "green", href: "/filament" },
+              { label: "Bijna leeg", value: data.metrics.low_filament, tone: data.metrics.low_filament ? "amber" : "green", href: "/filament" },
+              { label: "Onder minimum", value: data.metrics.low_filament, tone: data.metrics.low_filament ? "red" : "green", href: "/filament" },
+              { label: "Gepland verbruik", value: `${(data.metrics.planned_filament_grams / 1000).toFixed(1)} kg`, tone: "blue", href: "/analyse" },
+              { label: "Kleuren actief", value: data.metrics.active_filament_colors, tone: "slate", href: "/filament" },
             ]}
           />
         </SectionCard>
@@ -171,7 +128,7 @@ function DashboardContent({ data }: { data: DashboardData }) {
           </div>
         </SectionCard>
         <SectionCard title="Omzettrend" description="Werkelijke orderomzet per maand in het huidige jaar.">
-          {monthlyRevenue.some((value) => value > 0) ? <MiniBars values={monthlyRevenue} /> : <EmptyState title="Nog geen omzet" description="De omzetgrafiek verschijnt zodra orders met een bedrag zijn geïmporteerd." actionHref="/orders" actionLabel="Naar orders" />}
+          {data.monthlyRevenue.some((value) => value > 0) ? <MiniBars values={data.monthlyRevenue} /> : <EmptyState title="Nog geen omzet" description="De omzetgrafiek verschijnt zodra orders met een bedrag zijn geïmporteerd." actionHref="/orders" actionLabel="Naar orders" />}
         </SectionCard>
       </div>
 
@@ -184,17 +141,17 @@ function DashboardContent({ data }: { data: DashboardData }) {
         </SectionCard>
         <SectionCard title="Geplande prints" description="Open printtaken voor de komende productie.">
           <div className="space-y-3">
-            {openPrintJobs.slice(0, 5).map((job) => (
+            {data.openPrintJobs.map((job) => (
               <ActivityItem href="/printplanning" key={job.id} title={`Printtaak #${job.id}`} text={`${job.quantity_planned || job.quantity_needed} stuks in ${job.material || "-"} / ${job.color || "-"}`} meta={job.status || "nieuw"} />
             ))}
-            {!openPrintJobs.length ? <EmptyState title="Geen planning" description="Open printtaken verschijnen hier." /> : null}
+            {!data.openPrintJobs.length ? <EmptyState title="Geen planning" description="Open printtaken verschijnen hier." /> : null}
           </div>
         </SectionCard>
         <SectionCard title="Recente waarschuwingen" description="Snelle signalen die aandacht nodig hebben.">
           <div className="space-y-3">
-            <ActivityItem href="/verkoopkanalen" title="Synchronisatie" text={`${syncNeeded.length} publicatie(s) moeten opnieuw naar verkoopkanalen.`} meta="verkoopkanalen" />
-            <ActivityItem href="/filament" title="Filament" text={`${lowFilament.length} rol(len) zitten rond of onder minimum.`} meta="voorraad" />
-            <ActivityItem href="/voorraad" title="Productvoorraad" text={`${lowInventory.length} variant(en) hebben lage vrije voorraad.`} meta="planning" />
+            <ActivityItem href="/verkoopkanalen" title="Synchronisatie" text={`${data.metrics.sync_needed} publicatie(s) moeten opnieuw naar verkoopkanalen.`} meta="verkoopkanalen" />
+            <ActivityItem href="/filament" title="Filament" text={`${data.metrics.low_filament} rol(len) zitten rond of onder minimum.`} meta="voorraad" />
+            <ActivityItem href="/voorraad" title="Productvoorraad" text={`${data.metrics.low_inventory} variant(en) hebben lage vrije voorraad.`} meta="planning" />
           </div>
         </SectionCard>
       </div>

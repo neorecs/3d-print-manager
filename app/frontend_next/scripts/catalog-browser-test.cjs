@@ -11,6 +11,7 @@ async function listen(server) {
 
 async function main() {
   let creates = 0, uploads = 0, mediaFails = false, orderProcesses = 0, completedPayload = null;
+  const overviewRequests = [];
   const products = [
     { id: 1, name: "Telefoonhouder", internal_title: "Telefoonhouder", active: true, status: "klaar_voor_publicatie", print_file_path: "model.stl" },
     { id: 2, name: "Archiefproduct", active: false, status: "gearchiveerd" },
@@ -50,6 +51,14 @@ async function main() {
       return reply({ status: "completed" });
     }
     if (url.pathname === "/orders/1") return reply({ ...orders[0], items: orderItems });
+    if (url.pathname === "/products/overview") {
+      overviewRequests.push(url.search);
+      const view = url.searchParams.get("view") || "actief";
+      const rows = products
+        .filter((product) => view === "alle" || (view === "archief" ? !product.active || product.status === "gearchiveerd" : product.active && product.status !== "gearchiveerd"))
+        .map((product) => ({ product, variants: variants.filter((item) => item.product_id === product.id), inventory: [], publications: [] }));
+      return reply({ rows, metrics: { products: rows.length, variants: rows.flatMap((row) => row.variants).length, low_stock: 0, published: 0, margin_potential: 0 }, page: 1, page_size: 20, page_count: 1, total: rows.length, view });
+    }
     if (url.pathname === "/orders") return reply(orders);
     if (url.pathname === "/order-items") return reply(orderItems);
     if (url.pathname === "/orders/import-logs") return reply([]);
@@ -126,6 +135,8 @@ async function main() {
     await page.getByRole("button", { name: "Resultaat verwerken", exact: true }).click();
     await page.getByText("Printresultaat verwerkt. Extra gelukte prints zijn naar vrije voorraad geboekt.", { exact: true }).waitFor();
     assert.deepEqual(completedPayload, { quantity_succeeded: 1, quantity_failed: 1, quantity_to_order: 1 });
+    assert.ok(overviewRequests.some((query) => query.includes("page=1") && query.includes("page_size=20") && query.includes("view=actief")));
+    assert.ok(overviewRequests.some((query) => query.includes("view=archief")));
     assert.deepEqual(errors, []);
     console.log("Browser checks passed: product creation/recovery, Studio handoff, atomic order processing and print-result registration.");
     console.log(`Screenshots: ${screenshots}`);

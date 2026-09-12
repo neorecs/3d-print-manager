@@ -4,8 +4,12 @@ from api.routes_shared import *
 router = APIRouter()
 
 @router.get("/inventory/products")
-def list_product_inventory(db: Session = Depends(get_db)):
-    return list_product_inventory_rows(db)
+def list_product_inventory(product_id: int | None = Query(None, ge=1), db: Session = Depends(get_db)):
+    if product_id is None:
+        return list_product_inventory_rows(db)
+    return list_rows(
+        db.scalars(select(ProductInventory).where(ProductInventory.product_id == product_id).order_by(ProductInventory.id)).all()
+    )
 
 
 @router.post("/inventory/products")

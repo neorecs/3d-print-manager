@@ -359,27 +359,44 @@ export type ProductPublication = {
 };
 
 export type DashboardData = {
-  products: Product[];
-  platforms: Platform[];
-  orders: Order[];
-  inventory: ProductInventory[];
-  filament: FilamentSpool[];
-  printJobs: PrintJob[];
-  recommendations: StockRecommendation[];
-  publications: ProductPublication[];
+  metrics: {
+    orders_total: number;
+    open_orders: number;
+    orders_today: number;
+    order_new: number;
+    order_production: number;
+    order_packed: number;
+    order_shipped: number;
+    order_cancelled: number;
+    monthly_revenue: number;
+    inventory_value: number;
+    low_inventory: number;
+    open_print_minutes: number;
+    planned_filament_grams: number;
+    filament_rolls: number;
+    low_filament: number;
+    active_filament_colors: number;
+    sync_needed: number;
+  };
+  monthlyRevenue: number[];
   printers: BambuPrinter[];
-  variants: ProductVariant[];
-  orderItems: OrderItem[];
+  topProducts: { product_id: number; label: string; sold: number }[];
+  lowInventory: { product_id: number; variant_id: number; label: string; free_stock: number; minimum_stock: number }[];
+  openPrintJobs: PrintJob[];
 };
 
 export type OrdersData = {
   orders: Order[];
   orderItems: OrderItem[];
   platforms: Platform[];
-  products: Product[];
-  variants: ProductVariant[];
   printJobs: PrintJob[];
   importLogs: PlatformImportLog[];
+  metrics: { total: number; new: number; paid: number; production: number; packed: number; shipped: number; cancelled: number; revenue: number };
+  page: number;
+  pageSize: number;
+  pageCount: number;
+  total: number;
+  status: string;
 };
 
 export type PlatformImportLog = {
@@ -426,13 +443,18 @@ export type ProductCatalogRow = {
 
 export type ProductCatalogData = {
   printerLoadError?: string | null;
-  products: Product[];
-  variants: ProductVariant[];
-  inventory: ProductInventory[];
   platforms: Platform[];
   printers: BambuPrinter[];
   rows: ProductCatalogRow[];
+  metrics: { products: number; variants: number; low_stock: number; published: number; margin_potential: number };
+  page: number;
+  pageSize: number;
+  pageCount: number;
+  total: number;
+  view: string;
 };
+
+export type SearchData = { products: Product[]; orders: Order[]; printers: BambuPrinter[] };
 
 export type ProductDetailData = {
   loadErrors: Partial<Record<"media" | "tags" | "translations" | "publications" | "printers", string>>;

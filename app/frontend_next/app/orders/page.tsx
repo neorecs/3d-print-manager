@@ -18,7 +18,7 @@ export default async function OrdersPage({ searchParams }: { searchParams: Promi
   let error: string | null = null;
 
   try {
-    data = await getOrdersData();
+    data = await getOrdersData(requestedPage, selectedStatus);
   } catch (caught) {
     error = caught instanceof Error ? caught.message : "Backend niet bereikbaar";
   }
@@ -29,7 +29,7 @@ export default async function OrdersPage({ searchParams }: { searchParams: Promi
         title="Orders"
         description="Verkooporders vertalen naar voorraadreserveringen, printopdrachten en verzending."
       />
-      {error || !data ? <OrdersError message={error || "Geen orderdata beschikbaar"} /> : <OrdersContent data={data} selectedStatus={selectedStatus} requestedPage={requestedPage} />}
+      {error || !data ? <OrdersError message={error || "Geen orderdata beschikbaar"} /> : <OrdersContent data={data} selectedStatus={selectedStatus} />}
     </AppShell>
   );
 }
@@ -38,25 +38,9 @@ function OrdersError({ message }: { message: string }) {
   return <ErrorState message={message} retryHref="/orders" title="Orders konden niet worden geladen" />;
 }
 
-function OrdersContent({ data, selectedStatus, requestedPage }: { data: OrdersData; selectedStatus: string; requestedPage: number }) {
-  const openOrders = data.orders.filter((order) => !["verzonden", "geannuleerd"].includes(order.status || ""));
-  const paidOrders = data.orders.filter((order) => order.payment_status === "betaald");
-  const production = data.orders.filter((order) => ["deels_te_printen", "volledig_te_printen", "ingepland"].includes(order.status || ""));
-  const shipped = data.orders.filter((order) => order.status === "verzonden");
-  const cancelled = data.orders.filter((order) => order.status === "geannuleerd");
-  const revenue = data.orders.reduce((total, order) => total + Number(order.total_amount || 0), 0);
-  const matchesFilter = (order: Order) => {
-    if (selectedStatus === "alle") return true;
-    if (selectedStatus === "betaald") return order.payment_status === "betaald";
-    if (selectedStatus === "in-productie") return ["deels_te_printen", "volledig_te_printen", "ingepland"].includes(order.status || "");
-    if (selectedStatus === "klaar") return order.status === "ingepakt";
-    return order.status === selectedStatus;
-  };
-  const filteredOrders = data.orders.filter(matchesFilter);
-  const pageSize = 25;
-  const pageCount = Math.max(1, Math.ceil(filteredOrders.length / pageSize));
-  const page = Math.min(requestedPage, pageCount);
-  const visibleOrders = filteredOrders.slice((page - 1) * pageSize, page * pageSize);
+function OrdersContent({ data, selectedStatus }: { data: OrdersData; selectedStatus: string }) {
+  const pageCount = data.pageCount;
+  const page = data.page;
   const filters = [
     ["alle", "Alle"], ["nieuw", "Nieuw"], ["betaald", "Betaald"], ["in-productie", "In productie"],
     ["klaar", "Klaar"], ["verzonden", "Verzonden"], ["geannuleerd", "Geannuleerd"],
@@ -69,15 +53,15 @@ function OrdersContent({ data, selectedStatus, requestedPage }: { data: OrdersDa
       </SectionCard>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
-        <MetricCard label="Nieuw" value={data.orders.filter((order) => order.status === "nieuw").length} note="wacht op controle" tone="warning" />
-        <MetricCard label="Betaald" value={paidOrders.length} note="met orderwaarde" tone="good" />
-        <MetricCard label="In productie" value={production.length} note="te printen of ingepland" tone="warning" />
-        <MetricCard label="Klaar" value={data.orders.filter((order) => order.status === "ingepakt").length} note="klaar voor verzending" />
-        <MetricCard label="Verzonden" value={shipped.length} note="afgerond" tone="good" />
-        <MetricCard label="Omzet" value={formatCurrency(revenue)} note={`${cancelled.length} geannuleerd`} />
+        <MetricCard label="Nieuw" value={data.metrics.new} note="wacht op controle" tone="warning" />
+        <MetricCard label="Betaald" value={data.metrics.paid} note="met orderwaarde" tone="good" />
+        <MetricCard label="In productie" value={data.metrics.production} note="te printen of ingepland" tone="warning" />
+        <MetricCard label="Klaar" value={data.metrics.packed} note="klaar voor verzending" />
+        <MetricCard label="Verzonden" value={data.metrics.shipped} note="afgerond" tone="good" />
+        <MetricCard label="Omzet" value={formatCurrency(data.metrics.revenue)} note={`${data.metrics.cancelled} geannuleerd`} />
       </div>
 
-      <SectionCard title="Filters" description={`${filteredOrders.length} van ${data.orders.length} orders gevonden.`}>
+      <SectionCard title="Filters" description={`${data.total} van ${data.metrics.total} orders gevonden.`}>
         <div className="flex flex-wrap gap-2">
           {filters.map(([value, label]) => (
             <Link
@@ -92,9 +76,9 @@ function OrdersContent({ data, selectedStatus, requestedPage }: { data: OrdersDa
       </SectionCard>
 
       <SectionCard title="Orderoverzicht" description="Elke order toont verkoopkanaal, productregels, betaling, leverdatum en gekoppelde printopdracht.">
-        {visibleOrders.length ? (
+        {data.orders.length ? (
           <div className="space-y-3">
-            {visibleOrders.map((order) => (
+            {data.orders.map((order) => (
               <OrderCard
                 items={data.orderItems.filter((item) => item.order_id === order.id)}
                 key={order.id}
