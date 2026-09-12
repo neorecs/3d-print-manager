@@ -82,7 +82,7 @@ Versie 0.14 beveiliging, gegevensintegriteit en UX-hardening:
 - Productmedia, documenten en printbestanden via beveiligde downloadroutes
 - Traceerbare handmatige voorraadwijzigingen met gebruiker, bron en voor/na-standen
 - Cent-nauwkeurige btw-berekening en blokkade op boeken in afgesloten btw-perioden
-- Gepagineerde product- en orderoverzichten en een volledig doorklikbaar dashboard
+- Server-side gepagineerde product- en orderoverzichten, begrensd zoeken en een geaggregeerd doorklikbaar dashboard
 - Cloudvriendelijke Bambu Studio-workflow als standaard: downloaden, controleren en vanuit Bambu Studio printen
 - Directe Bambu-printstart via LAN blijft als ingeklapte geavanceerde optie beschikbaar
 

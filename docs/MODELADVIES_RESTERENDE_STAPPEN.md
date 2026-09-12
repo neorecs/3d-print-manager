@@ -4,11 +4,11 @@ Dit document legt vast welk model het best past bij de resterende punten uit `AN
 
 Het advies volgt de positionering in de [officiele OpenAI-modeldocumentatie](https://developers.openai.com/api/docs/models): een sterk professioneel werkmodel voor de uitvoering en het meest capabele model alleen voor de zwaarste controles. Modelnamen en beschikbaarheid kunnen later veranderen; actualiseer dit document dan opnieuw.
 
-Actuele stand op 12 september 2026: 17 van 25 auditpunten zijn afgerond. Punt 15 is met GPT-5.6 Sol voltooid en geverifieerd in GitHub Actions-run `34688300442`. De GPT-6 Astra-review wordt gecombineerd met de definitieve livegangaudit. Punt 12 is de aanbevolen volgende stap.
+Actuele stand op 12 september 2026: 18 van 25 auditpunten zijn afgerond. Punt 12 is met GPT-5.6 Sol voltooid en geverifieerd in GitHub Actions-run `34699454229`. Punt 13 is de aanbevolen volgende stap: uitvoering met Sol, daarna een gerichte Astra-review van platform- en financiele risico's.
 
 | Punt | Onderwerp | Aanbevolen model | Reden |
 | --- | --- | --- | --- |
-| 12 | Datavolume en prestaties | GPT-5.6 Sol | Gericht meten, API-query's verbeteren en regressietests schrijven |
+| 12 | Datavolume en prestaties | GPT-5.6 Sol | Uitgevoerd met Sol op 12 september 2026; server-side paginering, aggregaties en volumetests zijn groen in run `34699454229` |
 | 13 | Verkoop en administratieketen | GPT-5.6 Sol + GPT-6 Astra-review | Sol voor implementatie; Astra voor de laatste controle van platform- en financiële risico's |
 | 14 | Integratie- en browsertests | GPT-5.6 Sol | Uitgevoerd met Sol op 12 september 2026; PostgreSQL- en browserketen zijn groen in GitHub Actions-run `34686176416` |
 | 15 | Lokale configuratie en herstel | GPT-5.6 Sol + GPT-6 Astra-review | Uitgevoerd met Sol op 12 september 2026; gezamenlijke restore is groen, Astra-review volgt bij de definitieve livegangcontrole |
