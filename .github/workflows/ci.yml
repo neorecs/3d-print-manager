@@ -19,6 +19,24 @@ jobs:
       - if: always()
         run: docker compose -f docker-compose.test.yml down --volumes
 
+  configuration-and-recovery:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Incomplete example configuration is rejected
+        run: |
+          if python scripts/validate_configuration.py --env .env.example; then
+            echo ".env.example hoort zonder gegenereerde secrets ongeldig te zijn."
+            exit 1
+          fi
+      - run: python scripts/initialize_local_env.py --output .env.ci
+      - run: python scripts/validate_configuration.py --env .env.ci
+      - run: docker compose --env-file .env.ci config --quiet
+      - run: python scripts/run_recovery_test.py
+
   frontend-build-and-smoke:
     runs-on: ubuntu-latest
     defaults:

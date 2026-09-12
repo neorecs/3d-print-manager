@@ -58,6 +58,14 @@ sha256sum -c print_manager_YYYYMMDDTHHMMSSZ.dump.sha256
 
 Voer dit uit naar een lege testdatabase, nooit direct over productie heen.
 
+De repository bevat een volledig geisoleerde herstelproef. Deze maakt tijdelijke Docker-volumes, migreert en vult een bron-database, maakt zowel een database- als uploadsbackup, controleert beide checksums en herstelt alles naar een tweede lege database en testmap:
+
+```powershell
+python scripts/run_recovery_test.py
+```
+
+De tijdelijke containers en volumes worden ook na een mislukking opgeruimd. Dezelfde opdracht draait bij iedere push in GitHub Actions. De proef gebruikt uitsluitend herkenbare testwaarden en benadert geen NAS- of productiedata.
+
 Globale stappen:
 
 1. Maak of kies een lege testdatabase.
@@ -92,11 +100,13 @@ Zonder geslaagde hersteltest:
 
 ## Laatste hersteltest
 
-Datum: 2026-08-14
+Datum: 2026-09-12
 
-- Databasebackup: `print_manager_20260814T122224Z.dump`
-- Databasechecksum: OK
-- Restore naar tijdelijke database: OK, inclusief controle van de producttabel
-- Uploadsbackup: `print_manager_uploads_20260814T122224Z.tar.gz`
-- Uploadschecksum en archiefinhoud: OK
-- Tijdelijke database verwijderd: OK
+- Verse PostgreSQL 16-installatie via alle Alembic-migraties: geautomatiseerd
+- Databasebackup en checksum: geautomatiseerd
+- Uploadsbackup en checksum: geautomatiseerd
+- Restore naar afzonderlijke lege PostgreSQL-database: geautomatiseerd
+- Hersteld productrecord en exacte inhoud van uploadbestand: geautomatiseerd
+- Tijdelijke containers en volumes verwijderen: geautomatiseerd
+
+Dit bewijst de technische herstelketen. Voor livegang blijft daarnaast periodiek een proef met een echte productiebackup nodig; leg daarvan datum en uitkomst vast zonder persoonsgegevens of secrets in Git te zetten.

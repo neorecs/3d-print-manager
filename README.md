@@ -92,10 +92,11 @@ Platformpublicaties kunnen een eigen fotoselectie gebruiken. Als er geen platfor
 
 ## Lokaal starten
 
-1. Kopieer de voorbeeldomgeving:
+1. Genereer een lokale configuratie met unieke secrets:
 
 ```powershell
-Copy-Item .env.example .env
+python scripts/initialize_local_env.py
+python scripts/validate_configuration.py
 ```
 
 2. Start de containers:
@@ -107,11 +108,10 @@ docker compose up --build
 3. Open:
 
 - Next.js dashboard: http://localhost:38502
-- Streamlit dashboard/fallback: http://localhost:38501
-- FastAPI docs: http://localhost:38080/docs
 - Healthcheck: http://localhost:38080/health
 
 De backend voert bij het starten automatisch `alembic upgrade head` uit.
+Maak bij een verse installatie via het loginscherm het eerste adminaccount aan. De benodigde tijdelijke bootstrap-secret staat uitsluitend in je lokale `.env`; verwijder of leeg `AUTH_BOOTSTRAP_SECRET` nadat het account is aangemaakt en herstart de stack.
 
 ## Frontends
 
@@ -127,7 +127,7 @@ API_BASE_URL=http://backend:8000
 BACKEND_INTERNAL_TOKEN=een-lange-willekeurige-waarde
 ```
 
-Streamlit blijft beschikbaar als fallback. Nieuwe productiewaardige schermen en verbeteringen horen in Next.js. De uitfaseringslijst staat in `docs/STREAMLIT_UITFASERING.md`.
+Streamlit blijft alleen als legacy-fallback in de broncode staan en start niet standaard. Voor een bewuste ontwikkelcontrole kan het profiel worden gestart met `docker compose --profile legacy-streamlit up --build`; deze fallback is geen onderdeel van de beveiligde v1-gebruikersroute. Nieuwe productiewaardige schermen en verbeteringen horen in Next.js. De uitfaseringslijst staat in `docs/STREAMLIT_UITFASERING.md`.
 
 ## NAS Next.js stack
 
@@ -170,19 +170,11 @@ AUTH_COOKIE_SECURE=false
 
 Gebruik verschillende lange willekeurige waarden voor `AUTH_SECRET` en `BACKEND_INTERNAL_TOKEN`. De frontend valideert iedere beschermde sessie tegen de database. Wachtwoord-, rol-, MFA- en accountwijzigingen trekken bestaande sessies direct in.
 
-In de NAS-compose valt `AUTH_SECRET` tijdelijk terug op `CREDENTIAL_ENCRYPTION_KEY` als er nog geen losse `AUTH_SECRET` is ingesteld. Voor productie heeft een aparte lange `AUTH_SECRET` de voorkeur.
+`AUTH_SECRET`, `BACKEND_INTERNAL_TOKEN` en `CREDENTIAL_ENCRYPTION_KEY` zijn afzonderlijke verplichte waarden. Hergebruik een sleutel niet voor een tweede doel.
 
 Gebruik `AUTH_COOKIE_SECURE=false` zolang de app intern via gewone HTTP draait. Zet dit op `true` zodra je HTTPS gebruikt.
 
-Voor databasegebruikers kan de backend een eerste admin aanmaken via `/auth/bootstrap-admin` wanneer `AUTH_BOOTSTRAP_SECRET` tijdelijk is ingesteld. Zet daarna `AUTH_BACKEND_LOGIN=true` op de Next.js service zodat de login tegen de FastAPI `users` tabel controleert. Verwijder of leeg `AUTH_BOOTSTRAP_SECRET` na het aanmaken van de eerste admin.
-
-Voorbeeld bootstrap-call:
-
-```powershell
-Invoke-RestMethod -Method Post http://localhost:38080/auth/bootstrap-admin `
-  -ContentType "application/json" `
-  -Body '{"bootstrap_secret":"tijdelijke-secret","email":"admin@example.com","password":"lang-sterk-wachtwoord","display_name":"Beheerder"}'
-```
+Wanneer `AUTH_BOOTSTRAP_SECRET` tijdelijk is ingesteld en nog geen admin bestaat, toont het Next.js-loginscherm `Eerste adminaccount aanmaken`. Gebruik daar de secret uit `.env`. Verwijder of leeg die waarde na het aanmaken en herstart de stack. Rechtstreekse backendcalls vereisen daarnaast het interne backendtoken en zijn niet de normale gebruikersroute.
 
 De backend legt loginpogingen en het aanmaken van de eerste admin vast in `audit_logs`. MFA/TOTP kan backendmatig worden voorbereid via `/auth/mfa/setup` en bevestigd via `/auth/mfa/confirm`. Zodra MFA voor een gebruiker is ingeschakeld, vraagt de loginflow om een geldige TOTP-code voordat de Next.js sessie wordt gezet.
 
@@ -209,13 +201,7 @@ SHOPIFY_SHOP_DOMAIN=
 SHOPIFY_API_VERSION=2026-04
 ```
 
-Credentials die via Streamlit/API worden opgeslagen, worden versleuteld met `CREDENTIAL_ENCRYPTION_KEY`. Genereer voor echte tokens eerst een eigen key:
-
-```powershell
-Invoke-RestMethod http://localhost:38080/credentials/generate-key
-```
-
-Zet de waarde daarna in `.env` als `CREDENTIAL_ENCRYPTION_KEY`. De Docker Compose fallback-key is alleen bedoeld voor lokaal prototypegebruik.
+Credentials die via de applicatie worden opgeslagen, worden versleuteld met `CREDENTIAL_ENCRYPTION_KEY`. De lokale initializer maakt hiervoor een unieke sleutel; Docker Compose heeft geen fallback-key.
 
 Shopify live publicatie/synchronisatie gebruikt de Admin GraphQL API `2026-04`. De eerste live scope ondersteunt product aanmaken en productdetails/media synchroniseren. Bulkvarianten, voorraad-sync en echte orderimport volgen nog.
 

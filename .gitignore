@@ -13,3 +13,4 @@ venv/
 postgres_data/
 app/backend/exports/
 app/backend/uploads/
+docs/NAS_COMPOSE_BACKUP_*.yml

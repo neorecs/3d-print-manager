@@ -4,7 +4,7 @@ services:
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-print_manager}
       POSTGRES_USER: ${POSTGRES_USER:-print_manager}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required; run python scripts/initialize_local_env.py}
     ports:
       - "35432:5432"
     volumes:
@@ -18,10 +18,25 @@ services:
   backend:
     build: ./app/backend
     environment:
-      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://print_manager:change-me@db:5432/print_manager}
+      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required; run python scripts/initialize_local_env.py}
       BACKEND_CORS_ORIGINS: ${BACKEND_CORS_ORIGINS:-http://localhost:8501,http://localhost:3000,http://localhost:38502}
-      CREDENTIAL_ENCRYPTION_KEY: ${CREDENTIAL_ENCRYPTION_KEY:-MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=}
+      CREDENTIAL_ENCRYPTION_KEY: ${CREDENTIAL_ENCRYPTION_KEY:?CREDENTIAL_ENCRYPTION_KEY is required; run python scripts/initialize_local_env.py}
       SHOPIFY_API_VERSION: ${SHOPIFY_API_VERSION:-2026-04}
+      CONNECTORS_LIVE_MODE: ${CONNECTORS_LIVE_MODE:-false}
+      AI_OPENAI_ENABLED: ${AI_OPENAI_ENABLED:-false}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_PRODUCT_MODEL: ${OPENAI_PRODUCT_MODEL:-gpt-5.4-mini}
+      AI_PRODUCT_MAX_OUTPUT_TOKENS: ${AI_PRODUCT_MAX_OUTPUT_TOKENS:-2500}
+      AI_DAILY_REQUEST_LIMIT: ${AI_DAILY_REQUEST_LIMIT:-20}
+      UPLOAD_IMAGE_MAX_BYTES: ${UPLOAD_IMAGE_MAX_BYTES:-15728640}
+      UPLOAD_ACCOUNTING_MAX_BYTES: ${UPLOAD_ACCOUNTING_MAX_BYTES:-26214400}
+      UPLOAD_PRINT_FILE_MAX_BYTES: ${UPLOAD_PRINT_FILE_MAX_BYTES:-524288000}
+      AUTH_BOOTSTRAP_SECRET: ${AUTH_BOOTSTRAP_SECRET:-}
+      AUTH_SECRET: ${AUTH_SECRET:?AUTH_SECRET is required; run python scripts/initialize_local_env.py}
+      BACKEND_INTERNAL_TOKEN: ${BACKEND_INTERNAL_TOKEN:?BACKEND_INTERNAL_TOKEN is required; run python scripts/initialize_local_env.py}
+      AUTH_ENABLED: ${AUTH_ENABLED:-true}
+      AUTH_BACKEND_LOGIN: ${AUTH_BACKEND_LOGIN:-true}
+      AUTH_COOKIE_SECURE: ${AUTH_COOKIE_SECURE:-false}
     ports:
       - "38080:8000"
     volumes:
@@ -31,6 +46,7 @@ services:
         condition: service_healthy
 
   frontend:
+    profiles: ["legacy-streamlit"]
     build: ./app/frontend_streamlit
     environment:
       API_BASE_URL: ${API_BASE_URL:-http://backend:8000}
@@ -46,6 +62,14 @@ services:
     environment:
       API_BASE_URL: ${FRONTEND_NEXT_API_BASE_URL:-http://backend:8000}
       NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-http://localhost:38080}
+      BACKEND_INTERNAL_TOKEN: ${BACKEND_INTERNAL_TOKEN:?BACKEND_INTERNAL_TOKEN is required; run python scripts/initialize_local_env.py}
+      AUTH_ENABLED: ${AUTH_ENABLED:-true}
+      AUTH_SECRET: ${AUTH_SECRET:?AUTH_SECRET is required; run python scripts/initialize_local_env.py}
+      AUTH_ADMIN_EMAIL: ${AUTH_ADMIN_EMAIL:-}
+      AUTH_ADMIN_NAME: ${AUTH_ADMIN_NAME:-Beheerder}
+      AUTH_ADMIN_PASSWORD: ${AUTH_ADMIN_PASSWORD:-}
+      AUTH_BACKEND_LOGIN: ${AUTH_BACKEND_LOGIN:-true}
+      AUTH_COOKIE_SECURE: ${AUTH_COOKIE_SECURE:-false}
     ports:
       - "38502:3000"
     depends_on:

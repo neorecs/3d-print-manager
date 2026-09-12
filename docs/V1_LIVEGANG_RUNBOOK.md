@@ -16,11 +16,11 @@ Live betekent hier eerst: intern gebruiken met echte producten, echte voorraad, 
 | Backend healthcheck | klaar in compose | NAS-compose controleert `/health`. |
 | Frontend healthcheck | klaar in compose | NAS-compose controleert de Next.js startpagina. |
 | PostgreSQL database | klaar | Draait op PostgreSQL; backup en hersteltest zijn gecontroleerd. |
-| Secrets buiten Git | klaar als werkwijze | Controleer Dockhand env voor `DATABASE_URL` en `CREDENTIAL_ENCRYPTION_KEY`. |
+| Secrets buiten Git | actie vereist | Een oud NAS-composebackupbestand stond in Git. Roteer alle daarin gebruikte waarden voor livegang; verwijdering uit de huidige branch wist Git-historie niet. |
 | Connector mockmodus | klaar | `CONNECTORS_LIVE_MODE=false` houden tot live platformtest. |
 | Backup aanwezig | klaar | `postgres_backup` service draait; `.dump` en `.sha256` zijn gecontroleerd. |
 | Bestandsbackup aanwezig | klaar in compose | `uploads_backup` bewaart foto's, documenten en printbestanden met checksum. |
-| Gezamenlijke hersteltest | open | Database en uploadbestanden samen herstellen en controleren. |
+| Gezamenlijke hersteltest | klaar in CI | Geisoleerde database- en uploadsrestore draait bij iedere push; voer daarnaast periodiek een proef met een echte productiebackup uit. |
 | Voorraadconcurrency | klaar in code | Rijvergrendeling en databaseconstraints voorkomen normale overreservering. |
 | Rollen | klaar in hoofdinterface | Viewer is alleen-lezen; credentials, gebruikers en fiscale instellingen zijn admin-only. |
 | AI-kostenlimiet | klaar in code | Daglimiet en tokenregistratie zijn aanwezig; echte AI blijft standaard uit. |
@@ -96,7 +96,7 @@ Bewaar ook:
    - Bambu-printers.
 5. Noteer uitkomst in dit document of in een apart log.
 
-### Uitgevoerde hersteltest
+### Uitgevoerde productiehersteltest
 
 Datum: 2026-06-29
 
@@ -124,6 +124,14 @@ Gecontroleerde tellingen:
 | print_jobs | 2 |
 | accounting_sales | 0 |
 | bambu_printers | 1 |
+
+### Geautomatiseerde gezamenlijke hersteltest
+
+Sinds 2026-09-12 voert GitHub Actions een verse PostgreSQL-installatie en een gezamenlijke database- plus uploadsbackup/restore uit. Lokaal is dezelfde geisoleerde proef beschikbaar via `python scripts/run_recovery_test.py`. Deze test gebruikt geen NAS-data.
+
+## Verplichte secretrotatie voor livegang
+
+Een eerder bijgehouden NAS-composebackup bevatte configuratiewaarden en is uit de huidige branch verwijderd en genegeerd. Omdat de repository publiek is geweest, moeten alle waarden uit dat bestand als bekend worden beschouwd. Roteer minimaal het databasewachtwoord, de credential-encryptiesleutel en alle sessie-, interne en bootstrapsecrets. Controleer ook printeraccesscodes en platformtokens als die ooit in dezelfde configuratie stonden. Git-historie opschonen is een afzonderlijke, verstorende actie en vervangt rotatie niet.
 
 ## Go/no-go voor Etsy/Shopify
 

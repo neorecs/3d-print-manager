@@ -5,46 +5,40 @@ Doel: de volledige 3D Print Manager lokaal draaien met PostgreSQL, FastAPI backe
 ## 1. Werkmap en branch
 
 ```powershell
-cd C:\Users\neorec\Documents\Codex\2026-07-14\ok\work\3d-print-manager
+cd <pad-naar-de-repository>\3d-print-manager
 git checkout main
 git pull origin main
 ```
 
 ## 2. Lokale omgeving maken
 
-Maak een `.env` vanuit het voorbeeld als die nog niet bestaat:
+Genereer een `.env` met unieke lokale secrets en controleer het configuratiecontract:
 
 ```powershell
-Copy-Item .env.example .env
+python scripts/initialize_local_env.py
+python scripts/validate_configuration.py
 ```
 
-Zet minimaal deze waarden in `.env`:
+De initializer zet minimaal deze waarden veilig klaar:
 
 ```env
 POSTGRES_DB=print_manager
 POSTGRES_USER=print_manager
-POSTGRES_PASSWORD=change-me
-DATABASE_URL=postgresql+psycopg://print_manager:change-me@db:5432/print_manager
+POSTGRES_PASSWORD=<unieke-waarde>
+DATABASE_URL=postgresql+psycopg://print_manager:<dezelfde-unieke-waarde>@db:5432/print_manager
 BACKEND_CORS_ORIGINS=http://localhost:38502,http://localhost:38080
 FRONTEND_NEXT_API_BASE_URL=http://backend:8000
 NEXT_PUBLIC_API_BASE_URL=http://localhost:38080
 
 AUTH_ENABLED=true
-AUTH_SECRET=zet-hier-een-lange-willekeurige-lokale-secret
+AUTH_SECRET=<unieke-lange-waarde>
+BACKEND_INTERNAL_TOKEN=<andere-unieke-lange-waarde>
 AUTH_BACKEND_LOGIN=true
-AUTH_BOOTSTRAP_SECRET=tijdelijke-bootstrap-secret
+AUTH_BOOTSTRAP_SECRET=<tijdelijke-unieke-waarde>
 
 CONNECTORS_LIVE_MODE=false
-CREDENTIAL_ENCRYPTION_KEY=zet-hier-een-echte-fernet-key
+CREDENTIAL_ENCRYPTION_KEY=<unieke-fernet-key>
 ```
-
-Genereer later een echte `CREDENTIAL_ENCRYPTION_KEY` via de backend:
-
-```powershell
-Invoke-RestMethod http://localhost:38080/credentials/generate-key
-```
-
-Vervang daarna de tijdelijke waarde in `.env` en herstart de containers.
 
 ## 3. Stack bouwen en starten
 
@@ -56,18 +50,11 @@ docker compose ps
 Open:
 
 - Next.js app: http://localhost:38502
-- Backend docs: http://localhost:38080/docs
 - Backend health: http://localhost:38080/health
 
 ## 4. Eerste admin aanmaken
 
-Voer dit eenmalig uit zolang `AUTH_BOOTSTRAP_SECRET` gevuld is:
-
-```powershell
-Invoke-RestMethod -Method Post http://localhost:38080/auth/bootstrap-admin `
-  -ContentType "application/json" `
-  -Body '{"bootstrap_secret":"tijdelijke-bootstrap-secret","email":"admin@example.com","password":"lang-sterk-wachtwoord-123","display_name":"Beheerder"}'
-```
+Open het Next.js-loginscherm. Zolang `AUTH_BOOTSTRAP_SECRET` gevuld is en er nog geen admin bestaat, verschijnt `Eerste adminaccount aanmaken`. Vul daar de bootstrap-secret uit `.env`, het adminadres en een tijdelijk sterk wachtwoord in.
 
 Maak daarna `AUTH_BOOTSTRAP_SECRET` leeg in `.env` en herstart backend en frontend:
 
@@ -86,24 +73,7 @@ docker compose up -d --build backend frontend_next
 
 ## 6. MFA testen
 
-Start MFA setup via de backend docs of een API-call:
-
-```powershell
-$setup = Invoke-RestMethod -Method Post http://localhost:38080/auth/mfa/setup `
-  -ContentType "application/json" `
-  -Body '{"email":"admin@example.com","password":"lang-sterk-wachtwoord-123"}'
-
-$setup.otpauth_url
-$setup.secret
-```
-
-Voeg de secret toe aan een authenticator-app en bevestig MFA:
-
-```powershell
-Invoke-RestMethod -Method Post http://localhost:38080/auth/mfa/confirm `
-  -ContentType "application/json" `
-  -Body '{"email":"admin@example.com","password":"lang-sterk-wachtwoord-123","code":"123456"}'
-```
+Open na het inloggen `Instellingen` en start daar MFA-configuratie. Scan de QR-code met de authenticator-app en bevestig met de actuele zescijferige code.
 
 Log daarna uit en opnieuw in. De login moet na email en wachtwoord om een MFA-code vragen.
 
@@ -132,3 +102,15 @@ Volledig opnieuw beginnen met lege database:
 docker compose down -v
 docker compose up --build -d db backend frontend_next
 ```
+
+Gebruik `down -v` alleen voor een bewust lege lokale testinstallatie; nooit voor de NAS-productiestack.
+
+## 9. Gecombineerd herstel testen
+
+Met een draaiende lokale Docker-engine:
+
+```powershell
+python scripts/run_recovery_test.py
+```
+
+Deze proef gebruikt een afzonderlijke Compose-stack zonder hostpoorten of productievolumes. Database en uploadbestand moeten beide met geldige checksum worden teruggezet en inhoudelijk worden gecontroleerd.
