@@ -20,7 +20,8 @@ De actuele functionele en operationele status staat uitsluitend in `ACCEPTATIECH
 | Backend healthcheck | klaar in compose | NAS-compose controleert `/health`. |
 | Frontend healthcheck | klaar in compose | NAS-compose controleert de Next.js startpagina. |
 | PostgreSQL database | runtimecontrole | Instellingen moet bevestigen dat de database bereikbaar is. |
-| Secrets buiten Git | actie vereist | Een oud NAS-composebackupbestand stond in Git. Roteer alle daarin gebruikte waarden voor livegang; verwijdering uit de huidige branch wist Git-historie niet. |
+| Secrets buiten Git | bewust uitgesteld, risico open | Een oud NAS-composebackupbestand stond in Git. De gebruiker heeft rotatie op 13 september 2026 bewust overgeslagen; dit blijft een beveiligingsrisico en een open actie voor definitieve livegang. |
+| Testorders en testomzet | klaar | Op 13 september 2026 zijn na een gecontroleerde databasebackup drie expliciet geselecteerde testorders met hun directe afgeleiden verwijderd. |
 | Connector mockmodus | klaar | `CONNECTORS_LIVE_MODE=false` houden tot live platformtest. |
 | Backup aanwezig | runtimecontrole | Instellingen toont datum en geldigheid van de laatste databasebackup. |
 | Bestandsbackup aanwezig | runtimecontrole | Instellingen toont datum en geldigheid van de laatste backup van uploads. |

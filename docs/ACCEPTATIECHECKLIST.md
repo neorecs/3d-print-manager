@@ -53,6 +53,15 @@ Platformspecifieke fotoselectie en fotovolgorde bestaan via `product_publication
 - Administratie toont de bon-/inkoopactie voor periode- en fiscale instellingen; fiscale instellingen, periodeafsluiting en handmatige verkoop zijn ingeklapt.
 - De controle was alleen-lezen. Testorders, omzet, voorraad, filament en administratieregels zijn niet gewijzigd.
 
+## NAS testdata-opruiming 13 september 2026
+
+- Vooraf is een verse PostgreSQL-backup gemaakt: `print_manager_20260913T193925Z.dump`; de SHA-256-controle is geslaagd.
+- De drie expliciet geselecteerde testorders `ORD-2026-0001`, `SHOPIFY-2-MOCK-SHOPIFY-1001` en `ETSY-1-MOCK-ETSY-1001` zijn transactioneel verwijderd.
+- Alleen directe afgeleiden zijn opgeruimd: drie orderregels, ordergebonden voorraadmutaties, een nog niet gestarte printtaak en een winstberekening. Er waren geen definitieve boekhoudverkopen.
+- Zes gereserveerde producten zijn vrijgegeven. De fysieke voorraad bleef zes en de gereserveerde voorraad is nu nul.
+- Nacontrole: nul orders, nul euro orderomzet en nul ordergebonden printtaken. Producten, filament, printers en gebruikers zijn behouden.
+- De secretrotatie is op verzoek overgeslagen. De eerder vastgestelde historische blootstelling blijft daarom een open beveiligingsrisico en mag niet als opgelost worden aangemerkt.
+
 ## V1.0-besluit
 
 - **Intern gebruik op het vertrouwde lokale netwerk:** mogelijk zodra Instellingen geen interne blokkades toont. Recente database- en bestandsbackups plus een productiehersteltest tellen mee; platformversleuteling is pas nodig als echte platformtokens worden opgeslagen.
