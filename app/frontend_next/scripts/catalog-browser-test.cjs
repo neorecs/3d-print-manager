@@ -149,6 +149,7 @@ async function main() {
     await page.getByRole("button", { name: "Order verwerken", exact: true }).click();
     await page.getByText("Order verwerkt: voorraad en printplanning zijn bijgewerkt. Verkoopboeking is vastgelegd.", { exact: true }).waitFor();
     assert.equal(orderProcesses, 1);
+    await page.reload();
     await page.getByRole("link", { name: "Open deze taak in Productie", exact: true }).click();
     await page.waitForURL((url) => url.pathname === "/printplanning" && url.searchParams.get("job") === "1" && url.hash === "#printtaak-1");
     assert.equal(await page.locator("#printtaak-1").evaluate((element) => element.open), true);
