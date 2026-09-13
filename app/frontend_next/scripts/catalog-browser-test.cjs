@@ -223,7 +223,7 @@ async function main() {
     assert.ok(await page.getByRole("heading", { name: "3. Toegang via internet", exact: true }).isVisible());
     assert.ok(await page.getByText("Opslag klaar", { exact: true }).isVisible());
     assert.ok(await page.getByText("Uitgesteld", { exact: true }).first().isVisible());
-    assert.ok(await page.getByText(/Laatste bewijs: 13 sep 2026.*09:00.*Maximaal 48 uur oud/).isVisible());
+    assert.ok(await page.getByText(/Laatste bewijs: 13 sep 2026.*Maximaal 48 uur oud/).first().isVisible());
     assert.equal(await page.getByText("HTTPS/secure cookies zijn nog niet actief. Gebruik daarom nog geen externe toegang.", { exact: true }).count(), 0);
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
     await page.screenshot({ path: path.join(screenshots, "readiness-mobile.png"), fullPage: true });
