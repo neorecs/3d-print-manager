@@ -21,7 +21,7 @@ Dit is de enige leidende bron voor de actuele v1.0-status. Projectplannen en aud
 | 6 | Afwijkende platformtitel, omschrijving, tags, categorie en prijs beheren | Ja | Ja | Ja | Deels | Echte platformpayload nog niet geaccepteerd |
 | 7 | Publiceren en synchroniseren naar Etsy | Ja | Gesimuleerd | Nee | Nee | Echte OAuth, scopes, taxonomy en conceptlisting testen |
 | 8 | Publiceren en synchroniseren naar Shopify | Ja | Gesimuleerd | Nee | Nee | Echte credentials, scopes, varianten en voorraad-sync testen |
-| 9 | Filamentrollen beheren | Ja | Ja | Ja | Deels | Dagelijkse UX wordt nog verbeterd |
+| 9 | Filamentrollen beheren | Ja | Ja | Ja | Deels | Bestaande rollen staan voor toevoegen; read-only op NAS gecontroleerd op 13 september 2026 |
 | 10 | Productvoorraad beheren | Ja | Ja | Ja | Deels | Correctie- en reserveringsflow breder beproeven |
 | 11 | Orders uit Etsy en Shopify importeren | Ja | Gesimuleerd | Nee | Nee | Per platform een gecontroleerde live-import uitvoeren |
 | 12 | Orderregels via SKU aan interne producten koppelen | Ja | Ja | Niet vastgelegd | Proef nodig | Import- en ordertests dekken de koppeling |
@@ -38,11 +38,20 @@ Dit is de enige leidende bron voor de actuele v1.0-status. Projectplannen en aud
 | 23 | Voorraadadvies berekenen | Ja | Ja | Niet vastgelegd | Proef nodig | Periode, reden, berekentijd en actuele vrije voorraad zijn zichtbaar |
 | 24 | Advies accepteren, aanpassen of negeren | Ja | Ja | Niet vastgelegd | Proef nodig | Actieve adviezen en historie zijn gescheiden |
 | 25 | Geaccepteerd advies omzetten naar printtaak | Ja | Ja | Niet vastgelegd | Proef nodig | Actuele voorraad wordt hercontroleerd en dubbele omzetting is geblokkeerd |
-| 26 | Tonen welke platformpublicaties synchronisatie nodig hebben | Ja | Ja | Ja | Deels | Echte synchronisatie blijft platformafhankelijk |
+| 26 | Tonen welke platformpublicaties synchronisatie nodig hebben | Ja | Ja | Ja | Deels | Status en gewone koppelingslabels read-only op NAS gecontroleerd; echte synchronisatie blijft platformafhankelijk |
 | 27 | Basis werkt via een Streamlit-dashboard | Ja | Deels | Ja | Ja | Streamlit blijft fallback; Next.js is de officiele hoofdinterface |
 | 28 | Backend en frontend los van elkaar houden | Ja | Ja | Ja | Ja | FastAPI en Next.js zijn afzonderlijke services |
 
 Platformspecifieke fotoselectie en fotovolgorde bestaan via `product_publication_media`.
+
+## NAS UX-controle 13 september 2026
+
+- Functionele versie `bfd074e` is via Dockhand uitgerold; frontend, backend, database en worker waren gezond.
+- Orders toont eerst filters en bestaande testorders, daarna pas ophalen en ingeklapte geavanceerde importinstellingen.
+- Filament toont de bestaande rol voor het ingeklapte formulier om een nieuwe rol toe te voegen.
+- Verkoopkanalen toont eerst koppelingsstatus en publicaties met aandacht; instellingen zijn ingeklapt en interne veldnamen zijn vervangen door Nederlandse labels.
+- Administratie toont de bon-/inkoopactie voor periode- en fiscale instellingen; fiscale instellingen, periodeafsluiting en handmatige verkoop zijn ingeklapt.
+- De controle was alleen-lezen. Testorders, omzet, voorraad, filament en administratieregels zijn niet gewijzigd.
 
 ## V1.0-besluit
 
