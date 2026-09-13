@@ -559,6 +559,9 @@ export type SystemReadiness = {
   database_backup_recent: boolean;
   upload_backup_recent: boolean;
   restore_test_recent: boolean;
+  database_backup_last_success?: string | null;
+  upload_backup_last_success?: string | null;
+  restore_test_last_success?: string | null;
   auth_enabled: boolean;
   auth_backend_login: boolean;
   secure_cookie_enabled: boolean;
@@ -568,7 +571,12 @@ export type SystemReadiness = {
   platform_subscription_required_now: boolean;
   safe_without_platform_subscription: boolean;
   backup_plan_documented: boolean;
+  internal_use_ready: boolean;
   ready_for_real_tokens: boolean;
+  external_access_ready: boolean;
+  internal_blockers: string[];
+  platform_blockers: string[];
+  external_access_blockers: string[];
   blockers: string[];
   next_checks: string[];
 };

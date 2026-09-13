@@ -4,9 +4,13 @@ Doel: de 3D Print Manager gecontroleerd live-klaar maken voor echte producten, v
 
 ## Beslisregel
 
-We gaan pas live met echte platformdata als alle punten in "Harde voorwaarden" groen zijn.
+Gebruik drie afzonderlijke beslissingen. Een blokkade in een latere fase maakt een eerdere fase niet rood:
 
-Live betekent hier eerst: intern gebruiken met echte producten, echte voorraad, echte Bambu-printers en eventueel echte administratiegegevens. Etsy/Shopify live-publicatie en orderimport zijn een aparte go/no-go stap.
+1. **Intern live:** echte producten, voorraad, printers en administratie op het vertrouwde lokale netwerk.
+2. **Platform live:** echte Etsy- of Shopify-tokens en een gecontroleerde proef per platform.
+3. **Extern bereikbaar:** gebruikers openen de website via internet; bewust uitgesteld tot een domein en HTTPS.
+
+De actuele functionele en operationele status staat uitsluitend in `ACCEPTATIECHECKLIST.md`. Dit runbook beschrijft de werkwijze. Het scherm Instellingen levert runtimebewijs met tijdstippen; CI-bewijs vervangt geen productiehersteltest.
 
 ## Harde voorwaarden
 
@@ -15,18 +19,20 @@ Live betekent hier eerst: intern gebruiken met echte producten, echte voorraad, 
 | Next.js is hoofdfrontend | klaar | Gebruik `http://10.5.1.150:38502/` als hoofdscherm. |
 | Backend healthcheck | klaar in compose | NAS-compose controleert `/health`. |
 | Frontend healthcheck | klaar in compose | NAS-compose controleert de Next.js startpagina. |
-| PostgreSQL database | klaar | Draait op PostgreSQL; backup en hersteltest zijn gecontroleerd. |
+| PostgreSQL database | runtimecontrole | Instellingen moet bevestigen dat de database bereikbaar is. |
 | Secrets buiten Git | actie vereist | Een oud NAS-composebackupbestand stond in Git. Roteer alle daarin gebruikte waarden voor livegang; verwijdering uit de huidige branch wist Git-historie niet. |
 | Connector mockmodus | klaar | `CONNECTORS_LIVE_MODE=false` houden tot live platformtest. |
-| Backup aanwezig | klaar | `postgres_backup` service draait; `.dump` en `.sha256` zijn gecontroleerd. |
-| Bestandsbackup aanwezig | klaar in compose | `uploads_backup` bewaart foto's, documenten en printbestanden met checksum. |
-| Gezamenlijke hersteltest | klaar in CI | Geisoleerde database- en uploadsrestore draait bij iedere push; voer daarnaast periodiek een proef met een echte productiebackup uit. |
+| Backup aanwezig | runtimecontrole | Instellingen toont datum en geldigheid van de laatste databasebackup. |
+| Bestandsbackup aanwezig | runtimecontrole | Instellingen toont datum en geldigheid van de laatste backup van uploads. |
+| Gezamenlijke hersteltest | CI klaar, productie apart controleren | De geisoleerde CI-restore is bewezen; Instellingen moet daarnaast een recente productiehersteltest met datum tonen. |
 | Voorraadconcurrency | klaar in code | Rijvergrendeling en databaseconstraints voorkomen normale overreservering. |
 | Rollen | klaar in hoofdinterface | Viewer is alleen-lezen; credentials, gebruikers en fiscale instellingen zijn admin-only. |
 | AI-kostenlimiet | klaar in code | Daglimiet en tokenregistratie zijn aanwezig; echte AI blijft standaard uit. |
 | Etsy live test | open | Pas na backup/herstel en juiste credentials. |
 | Shopify live test | open | Pas na backup/herstel en juiste credentials. |
 | Administratiecontrole | deels klaar | Basis aanwezig; fiscale instellingen laten controleren. |
+
+HTTPS staat niet in deze tabel als blokkade voor intern gebruik of uitgaande platformcalls. Voor toegang tot de website via internet blijft het wel een harde voorwaarde, samen met een domein, secure cookies en een aparte beveiligingscontrole.
 
 ## Livefase 1: intern live
 
@@ -127,7 +133,7 @@ Gecontroleerde tellingen:
 
 ### Geautomatiseerde gezamenlijke hersteltest
 
-Sinds 2026-09-12 voert GitHub Actions een verse PostgreSQL-installatie en een gezamenlijke database- plus uploadsbackup/restore uit. Lokaal is dezelfde geisoleerde proef beschikbaar via `python scripts/run_recovery_test.py`. Deze test gebruikt geen NAS-data.
+Sinds 2026-09-12 voert GitHub Actions een verse PostgreSQL-installatie en een gezamenlijke database- plus uploadsbackup/restore uit. Lokaal is dezelfde geisoleerde proef beschikbaar via `python scripts/run_recovery_test.py`. Deze test gebruikt geen NAS-data en maakt de runtimecontrole voor een productiehersteltest daarom niet automatisch groen.
 
 ## Verplichte secretrotatie voor livegang
 
@@ -156,8 +162,8 @@ No-go als:
 
 ## Aanbevolen volgorde vanaf nu
 
-1. NAS healthchecks actief krijgen.
-2. Productcatalogus met echte producten vullen.
-3. Voorraad/filament echt invoeren.
-4. Shopify als eerste live lezen/importeren testen.
-5. Daarna pas Etsy OAuth/publicatie onderzoeken.
+1. Controleer in Instellingen of intern gebruik geen blokkades en recente bewijsdatums toont.
+2. Productcatalogus, voorraad en filament met echte gegevens vullen en praktisch aftekenen.
+3. Wacht op Etsy-goedkeuring en voer daarna één gecontroleerde Etsy-proef uit; houd Shopify nog uit.
+4. Controleer administratie-uitkomsten met concrete verkoopsituaties.
+5. Richt pas bij een eigen domein HTTPS en toegang via internet in.

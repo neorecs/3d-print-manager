@@ -1,6 +1,6 @@
 # Leidende acceptatiechecklist versie 1.0
 
-Bijgewerkt: 12 september 2026.
+Bijgewerkt: 13 september 2026.
 
 Dit is de enige leidende bron voor de actuele v1.0-status. Projectplannen en audits leggen ontwerp en historie vast, maar bepalen niet of een onderdeel operationeel is geaccepteerd.
 
@@ -35,9 +35,9 @@ Dit is de enige leidende bron voor de actuele v1.0-status. Projectplannen en aud
 | 20 | Printtaken groeperen op kleur en materiaal | Ja | Ja | Niet vastgelegd | Proef nodig | Batches groeperen; optimalisatie is geen v1.0-blokkade |
 | 21 | Productielijst voor Bambu Studio exporteren | Ja | Ja | Ja | Deels | Studio-openworkflow is bevestigd; volledige batchdag nog beproeven |
 | 22 | Verkooptrends tonen | Ja | Ja | Niet vastgelegd | Proef nodig | Alleen werkelijk aangesloten grafieken gelden als gebouwd |
-| 23 | Voorraadadvies berekenen | Ja | Ja | Niet vastgelegd | Proef nodig | Actuele voorraadcontrole en uitleg worden nog aangescherpt |
-| 24 | Advies accepteren, aanpassen of negeren | Ja | Ja | Niet vastgelegd | Proef nodig | Afgehandelde adviezen moeten duidelijker uit de werkvoorraad |
-| 25 | Geaccepteerd advies omzetten naar printtaak | Ja | Ja | Niet vastgelegd | Proef nodig | Herhaalactie en actuele voorraad opnieuw controleren |
+| 23 | Voorraadadvies berekenen | Ja | Ja | Niet vastgelegd | Proef nodig | Periode, reden, berekentijd en actuele vrije voorraad zijn zichtbaar |
+| 24 | Advies accepteren, aanpassen of negeren | Ja | Ja | Niet vastgelegd | Proef nodig | Actieve adviezen en historie zijn gescheiden |
+| 25 | Geaccepteerd advies omzetten naar printtaak | Ja | Ja | Niet vastgelegd | Proef nodig | Actuele voorraad wordt hercontroleerd en dubbele omzetting is geblokkeerd |
 | 26 | Tonen welke platformpublicaties synchronisatie nodig hebben | Ja | Ja | Ja | Deels | Echte synchronisatie blijft platformafhankelijk |
 | 27 | Basis werkt via een Streamlit-dashboard | Ja | Deels | Ja | Ja | Streamlit blijft fallback; Next.js is de officiele hoofdinterface |
 | 28 | Backend en frontend los van elkaar houden | Ja | Ja | Ja | Ja | FastAPI en Next.js zijn afzonderlijke services |
@@ -46,10 +46,18 @@ Platformspecifieke fotoselectie en fotovolgorde bestaan via `product_publication
 
 ## V1.0-besluit
 
-- **Intern gebruik:** mogelijk, mits productiekeys zijn ingesteld en de actuele backup/herstelcontrole groen is.
+- **Intern gebruik op het vertrouwde lokale netwerk:** mogelijk zodra Instellingen geen interne blokkades toont. Recente database- en bestandsbackups plus een productiehersteltest tellen mee; platformversleuteling is pas nodig als echte platformtokens worden opgeslagen.
+- **Echte platformtokens opslaan:** mogelijk zodra Instellingen `Opslag klaar` toont. Houd de koppelingen in veilige teststand en voer gegevens alleen in via het vertrouwde lokale netwerk zolang HTTPS is uitgesteld.
 - **Etsy live:** nog niet geaccepteerd; eerst één gecontroleerde OAuth-, conceptpublicatie- en orderimportproef.
 - **Shopify live:** nog niet geaccepteerd; eerst één gecontroleerde publicatie-, varianten-, voorraad- en orderimportproef.
 - **Administratie:** bruikbaar als beheer- en exporthulpmiddel, nog geen vervanging voor fiscale controle.
-- **Externe toegang:** HTTPS en certificaat blijven uitgesteld tot een eigen domein wordt gebruikt.
+- **Toegang tot de website via internet:** bewust uitgesteld. Een domein, HTTPS, secure cookies en een afzonderlijke externe beveiligingscontrole zijn eerst vereist. Dit blokkeert lokaal gebruik en uitgaande platformkoppelingen niet.
+
+## Bewijsbronnen
+
+- Deze checklist is de enige leidende bron voor de functionele en operationele v1.0-acceptatie.
+- Het scherm **Instellingen** toont de actuele technische toestand van de draaiende omgeving en de geregistreerde tijdstippen van backups en hersteltest.
+- GitHub Actions bewijst de geisoleerde technische herstelketen, maar is geen bewijs dat de actuele NAS-productiebackup is teruggezet.
+- `V1_LIVEGANG_RUNBOOK.md` beschrijft de procedure; het overschrijft geen ontbrekend runtime- of gebruikersbewijs met een groen label.
 
 Gebruik voor de concrete go/no-go-volgorde `docs/V1_LIVEGANG_RUNBOOK.md`. Bewijs van een test moet daar of in deze checklist met datum worden vastgelegd voordat `Operationeel geaccepteerd` op `Ja` wordt gezet.

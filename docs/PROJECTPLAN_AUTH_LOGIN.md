@@ -1,5 +1,7 @@
 # Projectplan auth en wereldwijde toegang
 
+> **Documentstatus:** historisch implementatieplan. Gebruik `ACCEPTATIECHECKLIST.md` voor de actuele livegangstatus en `V1_LIVEGANG_RUNBOOK.md` voor de uitvoeringsvolgorde. HTTPS is alleen een voorwaarde voor toegang tot de website via internet en blokkeert lokaal gebruik of uitgaande platformkoppelingen niet.
+
 ## Doel
 
 De 3D Print Manager krijgt een productiewaardige loginbasis, zodat de app later veilig buiten het lokale netwerk gebruikt kan worden.

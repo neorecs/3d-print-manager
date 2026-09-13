@@ -98,6 +98,20 @@ async function main() {
     if (url.pathname === "/analytics/top-materials") return reply([{ material: "PLA", quantity_sold: 6, revenue: 77.7, estimated_profit: 35.5 }]);
     if (url.pathname === "/stock-recommendations") return reply(recommendations);
     if (url.pathname === "/cost-settings") return reply([]);
+    if (url.pathname === "/system/readiness") return reply({
+      connectors_live_mode: false, live_calls_blocked: true,
+      credential_encryption_configured: true, internal_api_configured: true, session_signing_configured: true,
+      database_configured: true, database_reachable: true, upload_storage_writable: true, upload_backup_configured: true,
+      database_backup_recent: true, upload_backup_recent: true, restore_test_recent: true,
+      database_backup_last_success: "2026-09-13T07:00:00Z", upload_backup_last_success: "2026-09-13T07:05:00Z", restore_test_last_success: "2026-09-12T09:00:00Z",
+      auth_enabled: true, auth_backend_login: true, secure_cookie_enabled: false,
+      ai_enabled: false, ai_configured: false, openai_model: "gpt-5.4-mini",
+      platform_subscription_required_now: false, safe_without_platform_subscription: true, backup_plan_documented: true,
+      internal_use_ready: true, ready_for_real_tokens: true, external_access_ready: false,
+      internal_blockers: [], platform_blockers: [],
+      external_access_blockers: ["Internettoegang is uitgesteld. Gebruik eerst een domein, HTTPS en secure cookies voordat de site buiten het lokale netwerk bereikbaar wordt."],
+      blockers: [], next_checks: ["Controleer het herstelbewijs."],
+    });
     if (url.pathname === "/products") return reply(products);
     if (/^\/products\/\d+$/.test(url.pathname)) return reply(products.find((p) => p.id === Number(url.pathname.split("/").pop())));
     if (url.pathname.endsWith("/media") && mediaFails) return reply({ detail: "Test foto storing" }, 503);
@@ -203,10 +217,20 @@ async function main() {
     assert.ok(await page.getByText("Eerder omgezet naar een printtaak.", { exact: true }).isVisible());
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
     await page.screenshot({ path: path.join(screenshots, "stock-advice-mobile.png"), fullPage: true });
+    await page.goto(`${base}/instellingen`);
+    await page.getByRole("heading", { name: "1. Intern gebruiken", exact: true }).waitFor();
+    assert.ok(await page.getByRole("heading", { name: "2. Echte platformtokens", exact: true }).isVisible());
+    assert.ok(await page.getByRole("heading", { name: "3. Toegang via internet", exact: true }).isVisible());
+    assert.ok(await page.getByText("Opslag klaar", { exact: true }).isVisible());
+    assert.ok(await page.getByText("Uitgesteld", { exact: true }).first().isVisible());
+    assert.ok(await page.getByText(/Laatste bewijs: 13 sep 2026.*09:00.*Maximaal 48 uur oud/).isVisible());
+    assert.equal(await page.getByText("HTTPS/secure cookies zijn nog niet actief. Gebruik daarom nog geen externe toegang.", { exact: true }).count(), 0);
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
+    await page.screenshot({ path: path.join(screenshots, "readiness-mobile.png"), fullPage: true });
     assert.ok(overviewRequests.some((query) => query.includes("page=1") && query.includes("page_size=20") && query.includes("view=actief")));
     assert.ok(overviewRequests.some((query) => query.includes("view=archief")));
     assert.deepEqual(errors, []);
-    console.log("Browser checks passed: core workflow, truthful printer measurements and explainable stock advice with history.");
+    console.log("Browser checks passed: core workflow, truthful measurements, stock advice and separated live-readiness decisions.");
     console.log(`Screenshots: ${screenshots}`);
   } finally {
     await browser?.close();

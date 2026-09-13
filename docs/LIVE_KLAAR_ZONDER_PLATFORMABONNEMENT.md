@@ -1,5 +1,7 @@
 # Live-klaar zonder Etsy/Shopify abonnement
 
+> **Statusbron:** `ACCEPTATIECHECKLIST.md` bepaalt de actuele functionele en operationele status. Dit document beschrijft alleen wat zonder platformabonnement kan worden voorbereid. Actuele backup- en herstelbewijzen staan met datum in Instellingen.
+
 Doel: de 3D Print Manager technisch voorbereiden op echte data zonder nu al betaalde afspraken of live-koppelingen met Etsy/Shopify nodig te hebben.
 
 ## Veilig uitgangspunt
@@ -98,3 +100,5 @@ Kort gezegd:
 1. Eerst intern live met echte producten, voorraad en printers.
 2. Daarna backup en restore-test bewijzen.
 3. Daarna pas per verkoopplatform een bewuste live test uitvoeren.
+
+Een domein en HTTPS zijn pas vereist als de website via internet bereikbaar wordt gemaakt. Zij blokkeren lokaal gebruik en uitgaande Etsy- of Shopify-koppelingen niet; voer platformtokens zolang alleen via het vertrouwde lokale netwerk in.
