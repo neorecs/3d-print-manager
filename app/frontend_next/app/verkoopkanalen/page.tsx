@@ -53,10 +53,10 @@ function SalesChannelsContent({ data }: { data: SalesChannelsData }) {
                 {data.statuses.map((status) => (
                   <tr key={status.platform_id}>
                     <td className="font-semibold">{status.platform}</td>
-                    <td>{status.platform_type}</td>
-                    <td>{status.mode}</td>
+                    <td>{formatPlatformType(status.platform_type)}</td>
+                    <td>{formatConnectorMode(status.mode)}</td>
                     <td><StatusBadge status={status.ready_for_live ? "live klaar" : "configuratie nodig"} /></td>
-                    <td>{status.missing_credentials.length ? status.missing_credentials.join(", ") : "-"}</td>
+                    <td>{status.missing_credentials.length ? status.missing_credentials.map(formatCredentialName).join(", ") : "-"}</td>
                     <td><Link className="font-bold text-brand hover:text-white" href={`/verkoopkanalen/${status.platform_id}`}>Openen</Link></td>
                   </tr>
                 ))}
@@ -103,4 +103,27 @@ function SalesChannelsContent({ data }: { data: SalesChannelsData }) {
       </SectionCard>
     </div>
   );
+}
+
+function formatPlatformType(value: string) {
+  const labels: Record<string, string> = { etsy: "Etsy", shopify: "Shopify" };
+  return labels[value.toLowerCase()] || value.replaceAll("_", " ");
+}
+
+function formatConnectorMode(value: string) {
+  const labels: Record<string, string> = { mock: "Veilige teststand", live: "Live" };
+  return labels[value.toLowerCase()] || value.replaceAll("_", " ");
+}
+
+function formatCredentialName(value: string) {
+  const labels: Record<string, string> = {
+    api_key: "API-sleutel",
+    shared_secret: "App-geheim",
+    access_token: "Toegangscode",
+    shop_id: "Winkelnummer",
+    shop_domain: "Winkeladres",
+    taxonomy_id: "Categorie-instelling",
+    readiness_state_id: "Publicatiestatus",
+  };
+  return labels[value] || value.replaceAll("_", " ");
 }

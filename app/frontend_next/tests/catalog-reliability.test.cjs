@@ -167,6 +167,9 @@ test("daily work stays ahead of setup and technical options", () => {
   assert.doesNotMatch(orderImport, /Paginaformaat/);
   assert.doesNotMatch(channelManager, /Credentials beheren/);
   assert.match(channelManager, /Koppeling instellen/);
+  assert.match(channels, /api_key: "API-sleutel"/);
+  assert.match(channels, /readiness_state_id: "Publicatiestatus"/);
+  assert.match(channels, /mock: "Veilige teststand"/);
   assert.match(accountingControls, /<option value="false">Nee<\/option>/);
   assert.match(accountingControls, /<option value="true">Ja<\/option>/);
   assert.doesNotMatch(accountingControls, /options=\{\["false", "true"\]\}/);
