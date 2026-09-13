@@ -4,7 +4,7 @@ Dit document legt vast welk model het best past bij de resterende punten uit `AN
 
 Het advies volgt de positionering in de [officiele OpenAI-modeldocumentatie](https://developers.openai.com/api/docs/models): een sterk professioneel werkmodel voor de uitvoering en het meest capabele model alleen voor de zwaarste controles. Modelnamen en beschikbaarheid kunnen later veranderen; actualiseer dit document dan opnieuw.
 
-Actuele stand op 13 september 2026: 21 van 25 auditpunten zijn in code afgerond. Punt 19 is voltooid en geverifieerd in GitHub Actions-run `34746258994`: filters, pagina's, producttabs en geselecteerde printtaken blijven bij doorklikken behouden. De echte Etsy-proef en fiscale go/no-go blijven gereserveerd voor een gerichte GPT-6 Astra-review. Punt 20 is de aanbevolen volgende implementatiestap met GPT-5.6 Sol.
+Actuele stand op 13 september 2026: 22 van 25 auditpunten zijn in code afgerond. Punt 20 is voltooid en geverifieerd in GitHub Actions-run `34747173348`: printermetingen, onbekende waarden en berekende orderinformatie zijn duidelijk onderscheiden. De echte Etsy-proef en fiscale go/no-go blijven gereserveerd voor een gerichte GPT-6 Astra-review. Punt 23 is de aanbevolen volgende implementatiestap met GPT-5.6 Sol.
 
 | Punt | Onderwerp | Aanbevolen model | Reden |
 | --- | --- | --- | --- |
@@ -14,7 +14,7 @@ Actuele stand op 13 september 2026: 21 van 25 auditpunten zijn in code afgerond.
 | 15 | Lokale configuratie en herstel | GPT-5.6 Sol + GPT-6 Astra-review | Uitgevoerd met Sol op 12 september 2026; gezamenlijke restore is groen, Astra-review volgt bij de definitieve livegangcontrole |
 | 16 | Documentatie en placeholders | GPT-5.6 Luna | Uitgevoerd op 12 september 2026; leidende bewijschecklist en eerlijke scherminhoud zijn groen in run `34701798060` |
 | 19 | Context behouden bij doorklikken | GPT-5.6 Sol | Uitgevoerd met Sol op 13 september 2026; contextnavigatie en browsertest zijn groen in run `34746258994` |
-| 20 | Gemeten versus geschatte gegevens | GPT-5.6 Sol | Vereist controle van databetekenis in backend en UI |
+| 20 | Gemeten versus geschatte gegevens | GPT-5.6 Sol | Uitgevoerd met Sol op 13 september 2026; presentatiehelpers en mobiele browsertest zijn groen in run `34747173348` |
 | 23 | Analyse en voorraadadviezen | GPT-5.6 Sol | Berekeningen moeten uitlegbaar en met tests aantoonbaar zijn |
 | 24 | Tegenstrijdige livegangadviezen | GPT-5.6 Luna | Documentatie opschonen en een leidende checklist aanwijzen |
 | 25 | Dagelijks werk boven configuratie | GPT-5.6 Sol | Brede UX-wijziging over meerdere dagelijkse werkprocessen |
