@@ -18,6 +18,7 @@ from domain.statuses import (
     RECOMMENDATION_ACCEPTED,
     RECOMMENDATION_ADJUSTED,
     RECOMMENDATION_CONVERTED,
+    RECOMMENDATION_EXPIRED,
     RECOMMENDATION_IGNORED,
     RECOMMENDATION_NEW,
 )
@@ -410,7 +411,11 @@ def build_sales_analysis(db: Session, period_days: int) -> list[dict]:
     order_items = db.scalars(
         select(OrderItem)
         .join(Order, OrderItem.order_id == Order.id)
-        .where(Order.order_date.is_(None) | (Order.order_date >= cutoff))
+        .where(
+            Order.order_date.is_not(None),
+            Order.order_date >= cutoff,
+            Order.status != ORDER_CANCELLED,
+        )
     ).all()
     grouped = {}
     for item in order_items:
@@ -499,36 +504,40 @@ def generate_stock_recommendations(payload: StockRecommendationGenerate | None =
     rows = build_sales_analysis(db, payload.period_days)
     generated = []
     updated = []
+    active_statuses = [RECOMMENDATION_NEW, RECOMMENDATION_ACCEPTED, RECOMMENDATION_ADJUSTED]
+    existing_items = db.scalars(
+        select(StockRecommendation).where(StockRecommendation.status.in_(active_statuses))
+    ).all()
+    existing_by_variant = {
+        (item.product_id, item.product_variant_id): item for item in existing_items
+    }
+    handled_ids: set[int] = set()
 
     for row in rows:
         current_free_stock = get_free_stock_for_variant(db, row["product_id"], row["product_variant_id"])
         expected_sales = int(round(row["average_weekly_sales"] * payload.weeks_ahead))
         recommended_stock_level = expected_sales + payload.safety_stock
         recommended_print_quantity = max(0, recommended_stock_level - current_free_stock)
-        if recommended_print_quantity <= 0:
-            continue
-
         reason = (
-            f"Gemiddelde weekverkoop {row['average_weekly_sales']} x {payload.weeks_ahead} week/weken "
+            f"Berekend over {payload.period_days} dagen. Gemiddelde weekverkoop "
+            f"{row['average_weekly_sales']} x {payload.weeks_ahead} week/weken "
             f"= {expected_sales}, plus veiligheidsvoorraad {payload.safety_stock}, "
             f"min vrije voorraad {current_free_stock}."
         )
-        existing = db.scalar(
-            select(StockRecommendation).where(
-                StockRecommendation.product_id == row["product_id"],
-                StockRecommendation.product_variant_id == row["product_variant_id"],
-                StockRecommendation.status.in_([RECOMMENDATION_NEW, RECOMMENDATION_ADJUSTED]),
-            )
-        )
+        existing = existing_by_variant.get((row["product_id"], row["product_variant_id"]))
         if existing:
-            existing.current_free_stock = current_free_stock
-            existing.expected_sales = expected_sales
-            existing.safety_stock = payload.safety_stock
-            existing.recommended_stock_level = recommended_stock_level
-            existing.recommended_print_quantity = recommended_print_quantity
-            existing.reason = reason
-            updated.append(existing)
-        else:
+            handled_ids.add(existing.id)
+            if existing.status == RECOMMENDATION_NEW:
+                existing.current_free_stock = current_free_stock
+                existing.expected_sales = expected_sales
+                existing.safety_stock = payload.safety_stock
+                existing.recommended_stock_level = recommended_stock_level
+                existing.recommended_print_quantity = recommended_print_quantity
+                existing.reason = reason
+                if recommended_print_quantity <= 0:
+                    existing.status = RECOMMENDATION_EXPIRED
+                updated.append(existing)
+        elif recommended_print_quantity > 0:
             existing = StockRecommendation(
                 product_id=row["product_id"],
                 product_variant_id=row["product_variant_id"],
@@ -542,6 +551,17 @@ def generate_stock_recommendations(payload: StockRecommendationGenerate | None =
             )
             db.add(existing)
             generated.append(existing)
+
+    for existing in existing_items:
+        if existing.id in handled_ids or existing.status != RECOMMENDATION_NEW:
+            continue
+        existing.current_free_stock = get_free_stock_for_variant(
+            db, existing.product_id, existing.product_variant_id
+        )
+        existing.recommended_print_quantity = 0
+        existing.reason = "Vervallen: geen verkoop in de gekozen analyseperiode. Genereer later opnieuw na nieuwe verkopen."
+        existing.status = RECOMMENDATION_EXPIRED
+        updated.append(existing)
 
     db.commit()
     return {
@@ -564,20 +584,24 @@ def get_free_stock_for_variant(db: Session, product_id: int, product_variant_id:
 
 @router.post("/stock-recommendations/{item_id}/accept")
 def accept_stock_recommendation(item_id: int, db: Session = Depends(get_db)):
-    item = get_or_404(db, StockRecommendation, item_id)
+    item = _get_actionable_recommendation(db, item_id)
+    _refresh_recommendation_stock(db, item)
     item.status = RECOMMENDATION_ACCEPTED
     db.commit()
+    db.refresh(item)
     return to_dict(item)
 
 
 @router.put("/stock-recommendations/{item_id}")
 def update_stock_recommendation(item_id: int, payload: StockRecommendationUpdate, db: Session = Depends(get_db)):
-    item = get_or_404(db, StockRecommendation, item_id)
+    item = _get_actionable_recommendation(db, item_id)
     if payload.safety_stock < 0 or payload.recommended_print_quantity < 0:
         raise HTTPException(status_code=400, detail="Aantallen mogen niet negatief zijn")
+    current_free_stock = get_free_stock_for_variant(db, item.product_id, item.product_variant_id)
+    item.current_free_stock = current_free_stock
     item.safety_stock = payload.safety_stock
     item.recommended_print_quantity = payload.recommended_print_quantity
-    item.recommended_stock_level = item.current_free_stock + payload.recommended_print_quantity
+    item.recommended_stock_level = current_free_stock + payload.recommended_print_quantity
     explanation = payload.reason or "Handmatig aangepast door gebruiker."
     item.reason = (
         f"{explanation} Advies aangepast naar {payload.recommended_print_quantity} extra printen "
@@ -591,7 +615,7 @@ def update_stock_recommendation(item_id: int, payload: StockRecommendationUpdate
 
 @router.post("/stock-recommendations/{item_id}/ignore")
 def ignore_stock_recommendation(item_id: int, db: Session = Depends(get_db)):
-    item = get_or_404(db, StockRecommendation, item_id)
+    item = _get_actionable_recommendation(db, item_id)
     item.status = RECOMMENDATION_IGNORED
     db.commit()
     return to_dict(item)
@@ -599,8 +623,19 @@ def ignore_stock_recommendation(item_id: int, db: Session = Depends(get_db)):
 
 @router.post("/stock-recommendations/{item_id}/convert-to-print-job")
 def convert_stock_recommendation(item_id: int, db: Session = Depends(get_db)):
-    item = get_or_404(db, StockRecommendation, item_id)
+    item = _get_actionable_recommendation(db, item_id)
+    if item.status not in {RECOMMENDATION_ACCEPTED, RECOMMENDATION_ADJUSTED}:
+        raise HTTPException(status_code=409, detail="Accepteer of pas het voorraadadvies eerst aan")
     variant = db.get(ProductVariant, item.product_variant_id)
+    if not variant or not variant.active:
+        raise HTTPException(status_code=409, detail="De productvariant bestaat niet meer of is niet actief")
+    _refresh_recommendation_stock(db, item)
+    if item.recommended_print_quantity <= 0:
+        item.status = RECOMMENDATION_EXPIRED
+        item.reason = f"Vervallen: de actuele vrije voorraad ({item.current_free_stock}) is nu voldoende."
+        db.commit()
+        db.refresh(item)
+        return {"status": "geen_print_nodig", "recommendation": to_dict(item), "print_job": None}
     print_job = PrintJob(
         product_id=item.product_id,
         product_variant_id=item.product_variant_id,
@@ -623,4 +658,21 @@ def convert_stock_recommendation(item_id: int, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(print_job)
     return to_dict(print_job)
+
+
+def _get_actionable_recommendation(db: Session, item_id: int) -> StockRecommendation:
+    item = db.scalar(
+        select(StockRecommendation).where(StockRecommendation.id == item_id).with_for_update()
+    )
+    if not item:
+        raise HTTPException(status_code=404, detail="Voorraadadvies niet gevonden")
+    if item.status in {RECOMMENDATION_CONVERTED, RECOMMENDATION_IGNORED, RECOMMENDATION_EXPIRED}:
+        raise HTTPException(status_code=409, detail="Dit voorraadadvies is al afgehandeld")
+    return item
+
+
+def _refresh_recommendation_stock(db: Session, item: StockRecommendation) -> None:
+    current_free_stock = get_free_stock_for_variant(db, item.product_id, item.product_variant_id)
+    item.current_free_stock = current_free_stock
+    item.recommended_print_quantity = max(0, item.recommended_stock_level - current_free_stock)
 

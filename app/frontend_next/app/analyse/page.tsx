@@ -23,7 +23,7 @@ export default async function AnalyticsPage() {
     <AppShell>
       <PageHeader
         title="Analyse"
-        description="Omzet, winst, filamentverbruik, printerbezetting en voorraadadvies voor betere productieplanning."
+        description="Verkooptrends en uitlegbaar voorraadadvies voor betere productieplanning."
         actions={<GenerateRecommendationsButton />}
       />
       {error || !data ? <ErrorState message={error} retryHref="/analyse" title="Analyse kon niet worden geladen" /> : <AnalyticsContent data={data} />}
@@ -35,41 +35,43 @@ function AnalyticsContent({ data }: { data: AnalyticsData }) {
   const revenue = data.salesTrends.reduce((total, row) => total + Number(row.revenue || 0), 0);
   const profit = data.salesTrends.reduce((total, row) => total + Number(row.estimated_profit || 0), 0);
   const sold = data.salesTrends.reduce((total, row) => total + Number(row.quantity_sold || 0), 0);
-  const openRecommendations = data.recommendations.filter((row) => !["genegeerd", "omgezet_naar_printtaak"].includes(row.status || ""));
+  const openStatuses = new Set(["nieuw", "geaccepteerd", "aangepast"]);
+  const openRecommendations = data.recommendations.filter((row) => openStatuses.has(row.status || ""));
+  const recommendationHistory = data.recommendations.filter((row) => !openStatuses.has(row.status || ""));
   const margin = revenue ? Math.round((profit / revenue) * 100) : 0;
-  const topProducts = data.topProducts.map((row) => ({ label: row.product || "Product", value: row.quantity_sold, note: formatCurrency(row.revenue) }));
+  const profitProducts = data.topProducts.map((row) => ({ label: row.product || "Product", value: Number(row.estimated_profit || 0), note: formatCurrency(row.estimated_profit || 0) }));
   const revenueBars = data.topProducts.slice(0, 12).map((row) => Number(row.revenue || 0));
 
   return (
     <div className="space-y-6">
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
         <MetricCard label="Verkocht" value={sold} note="laatste 30 dagen" />
-        <MetricCard label="Omzet" value={formatCurrency(revenue)} note="laatste 30 dagen" />
+        <MetricCard label="Orderwaarde" value={formatCurrency(revenue)} note="niet-geannuleerde orders, 30 dagen" />
         <MetricCard label="Geschatte winst" value={formatCurrency(profit)} note={`${margin}% marge`} tone="good" />
         <MetricCard label="Producttrends" value={data.salesTrends.length} note="met historische data" />
         <MetricCard label="Open adviezen" value={openRecommendations.length} note="voorraadadvies" tone={openRecommendations.length ? "warning" : "good"} />
       </div>
 
       <div className="grid gap-5 xl:grid-cols-3">
-        <SectionCard title="Omzetverdeling" description="Werkelijke omzet van de best verkochte producten in de gekozen periode.">
+        <SectionCard title="Orderwaarde per product" description="Waarde van niet-geannuleerde orderregels in de gekozen periode.">
           {revenueBars.length ? <MiniBars values={revenueBars} /> : <EmptyState title="Nog geen omzettrend" description="De grafiek verschijnt zodra er verwerkte orderhistorie is." actionHref="/orders" actionLabel="Naar orders" />}
         </SectionCard>
-        <SectionCard title="Winst per product" description="Rangschik op marge en absolute winst.">
-          {topProducts.length ? <BarList items={topProducts} /> : <EmptyState title="Nog geen winstdata" description="Verkoop- en kostengegevens zijn nodig om producten te vergelijken." actionHref="/catalogus" actionLabel="Naar producten" />}
+        <SectionCard title="Geschatte winst per product" description="Orderwaarde min bekende variant- en geschatte filamentkosten.">
+          {profitProducts.length ? <BarList items={profitProducts} /> : <EmptyState title="Nog geen winstdata" description="Verkoop- en kostengegevens zijn nodig om producten te vergelijken." actionHref="/catalogus" actionLabel="Naar producten" />}
         </SectionCard>
-        <SectionCard title="Printerbezetting" description="Wordt berekend zodra voldoende echte printerhistorie beschikbaar is.">
-          <EmptyState title="Nog geen bezettingshistorie" description="Actuele printerstatus is beschikbaar onder Printers; historische bezetting wordt hier pas getoond met voldoende metingen." actionHref="/bambu-printers" actionLabel="Naar printers" />
+        <SectionCard title="Printerbezetting" description="Deze analyse is nog niet aangesloten op opgeslagen printerhistorie.">
+          <EmptyState title="Bezettingsanalyse nog niet beschikbaar" description="De app slaat nog geen tijdreeks op waarmee printerbezetting betrouwbaar kan worden berekend." actionHref="/bambu-printers" actionLabel="Naar printers" />
         </SectionCard>
       </div>
 
       <div className="grid gap-5 xl:grid-cols-2">
-        <SectionCard title="Filamentverbruik" description="Werkelijk geboekt verbruik wordt hier per materiaal samengevat zodra printresultaten dit registreren.">
-          <EmptyState title="Nog geen verbruiksmetingen" description="Verwerk printresultaten om materiaalverbruik op te bouwen." actionHref="/printplanning" actionLabel="Naar productie" />
+        <SectionCard title="Filamentverbruik" description="Deze analyse is nog niet aangesloten op geboekte verbruikshistorie.">
+          <EmptyState title="Verbruiksanalyse nog niet beschikbaar" description="Meer printresultaten alleen vullen dit overzicht nog niet; de meetketen moet eerst worden aangesloten." actionHref="/filament" actionLabel="Naar filament" />
         </SectionCard>
         <SectionCard title="Verwachte voorraadbehoefte" description="Advies op basis van trend, vrije voorraad en veiligheidsvoorraad.">
-          {data.recommendations.length ? (
+          {openRecommendations.length ? (
             <div className="space-y-3">
-              {data.recommendations.slice(0, 5).map((item) => (
+              {openRecommendations.map((item) => (
                 <SoftPanel key={item.id}>
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
@@ -78,13 +80,15 @@ function AnalyticsContent({ data }: { data: AnalyticsData }) {
                     </div>
                     <StatusBadge status={item.status} />
                   </div>
-                  <div className="mt-3 grid grid-cols-4 gap-2">
-                    <Small label="Vrij" value={item.current_free_stock} />
+                  <div className="mt-3 grid grid-cols-2 gap-2 md:grid-cols-4">
+                    <Small label="Vrij bij berekening" value={item.current_free_stock} />
                     <Small label="Verwacht" value={item.expected_sales} />
                     <Small label="Veilig" value={item.safety_stock || 0} />
                     <Small label="Print" value={item.recommended_print_quantity} />
                   </div>
-                  <div className="mt-3"><RecommendationActions recommendationId={item.id} /></div>
+                  <p className="mt-3 text-sm leading-6 text-slate-300">{item.reason || "Geen berekeningsuitleg beschikbaar."}</p>
+                  <p className="mt-2 text-xs font-semibold text-muted">Berekend: {formatDateTime(item.updated_at || item.created_at)}</p>
+                  <div className="mt-3"><RecommendationActions quantity={item.recommended_print_quantity} recommendationId={item.id} safetyStock={Number(item.safety_stock || 0)} status={item.status} /></div>
                 </SoftPanel>
               ))}
             </div>
@@ -93,6 +97,23 @@ function AnalyticsContent({ data }: { data: AnalyticsData }) {
           )}
         </SectionCard>
       </div>
+
+      {recommendationHistory.length ? (
+        <SectionCard title="Historie voorraadadviezen" description="Afgehandelde en vervallen adviezen blijven controleerbaar zonder actieve knoppen.">
+          <details>
+            <summary className="cursor-pointer font-black text-slate-200">Toon {recommendationHistory.length} afgehandelde adviezen</summary>
+            <div className="mt-4 space-y-3">
+              {recommendationHistory.map((item) => (
+                <div className="rounded-xl border border-line bg-panelSoft p-4" key={item.id}>
+                  <div className="flex flex-wrap items-center justify-between gap-2"><strong className="text-ink">{item.product || `Product ${item.product_id}`} - {item.variant || item.sku || `Variant ${item.product_variant_id}`}</strong><StatusBadge status={item.status} /></div>
+                  <p className="mt-2 text-sm text-muted">{item.reason || "Geen uitleg beschikbaar."}</p>
+                  <p className="mt-2 text-xs font-semibold text-muted">Laatst berekend: {formatDateTime(item.updated_at || item.created_at)}</p>
+                </div>
+              ))}
+            </div>
+          </details>
+        </SectionCard>
+      ) : null}
 
       <SectionCard title="Trendtabellen" description="Onderliggende data blijft beschikbaar voor controle en uitleg.">
         <div className="grid gap-4 xl:grid-cols-3">
@@ -103,6 +124,12 @@ function AnalyticsContent({ data }: { data: AnalyticsData }) {
       </SectionCard>
     </div>
   );
+}
+
+function formatDateTime(value?: string | null) {
+  if (!value) return "onbekend";
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? "onbekend" : date.toLocaleString("nl-NL");
 }
 
 function AnalyticsTable({ title, rows, labelKey }: { title: string; rows: AnalyticsRow[]; labelKey: keyof AnalyticsRow }) {

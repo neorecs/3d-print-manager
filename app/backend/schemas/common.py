@@ -351,9 +351,9 @@ class CostSettingCreate(BaseModel):
 
 
 class StockRecommendationGenerate(BaseModel):
-    period_days: int = 30
-    safety_stock: int = 2
-    weeks_ahead: int = 1
+    period_days: int = Field(default=30, ge=1, le=365)
+    safety_stock: int = Field(default=2, ge=0)
+    weeks_ahead: int = Field(default=1, ge=1, le=52)
 
 
 class StockRecommendationUpdate(BaseModel):

@@ -21,6 +21,10 @@ async function main() {
   const orderItems = [{ id: 1, order_id: 1, product_id: 1, product_variant_id: 1, sku: "HOUDER-ROOD", quantity_ordered: 2, quantity_from_inventory: 0, quantity_to_print: 0, inventory_status: "niet_op_voorraad", unit_sale_price: 12.95 }];
   const printJobs = [];
   const accountingSales = [];
+  const recommendations = [
+    { id: 1, product_id: 1, product_variant_id: 1, product: "Telefoonhouder", variant: "Rood PLA", current_free_stock: 2, expected_sales: 6, safety_stock: 2, recommended_stock_level: 8, recommended_print_quantity: 6, reason: "Berekend over 30 dagen op basis van gemiddelde weekverkoop en vrije voorraad.", status: "nieuw", updated_at: "2026-09-13T08:00:00Z" },
+    { id: 2, product_id: 1, product_variant_id: 1, product: "Telefoonhouder", variant: "Rood PLA", current_free_stock: 4, expected_sales: 6, safety_stock: 2, recommended_stock_level: 8, recommended_print_quantity: 4, reason: "Eerder omgezet naar een printtaak.", status: "omgezet_naar_printtaak", updated_at: "2026-09-12T08:00:00Z" },
+  ];
   const fixture = http.createServer(async (req, res) => {
     const url = new URL(req.url, "http://fixture");
     const chunks = [];
@@ -49,6 +53,10 @@ async function main() {
       completedPayload = JSON.parse(Buffer.concat(chunks));
       Object.assign(printJobs[0], completedPayload, { status: completedPayload.quantity_failed ? "deels_mislukt" : "geprint" });
       return reply({ status: "completed" });
+    }
+    if (url.pathname === "/stock-recommendations/1/accept" && req.method === "POST") {
+      recommendations[0].status = "geaccepteerd";
+      return reply(recommendations[0]);
     }
     if (url.pathname === "/orders/1") return reply({ ...orders[0], items: orderItems });
     if (url.pathname === "/products/overview") {
@@ -84,6 +92,12 @@ async function main() {
     if (url.pathname === "/print-jobs") return reply(printJobs);
     if (url.pathname === "/print-batches") return reply([]);
     if (url.pathname === "/accounting/sales") return reply(accountingSales);
+    if (url.pathname === "/analytics/sales-trends") return reply([{ product_id: 1, product_variant_id: 1, product: "Telefoonhouder", quantity_sold: 6, revenue: 77.7, estimated_profit: 35.5 }]);
+    if (url.pathname === "/analytics/top-products") return reply([{ product_id: 1, product: "Telefoonhouder", quantity_sold: 6, revenue: 77.7, estimated_profit: 35.5 }]);
+    if (url.pathname === "/analytics/top-colors") return reply([{ color: "rood", quantity_sold: 6, revenue: 77.7, estimated_profit: 35.5 }]);
+    if (url.pathname === "/analytics/top-materials") return reply([{ material: "PLA", quantity_sold: 6, revenue: 77.7, estimated_profit: 35.5 }]);
+    if (url.pathname === "/stock-recommendations") return reply(recommendations);
+    if (url.pathname === "/cost-settings") return reply([]);
     if (url.pathname === "/products") return reply(products);
     if (/^\/products\/\d+$/.test(url.pathname)) return reply(products.find((p) => p.id === Number(url.pathname.split("/").pop())));
     if (url.pathname.endsWith("/media") && mediaFails) return reply({ detail: "Test foto storing" }, 503);
@@ -176,10 +190,23 @@ async function main() {
     assert.equal(await page.getByText(/min resterend/).count(), 0);
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
     await page.screenshot({ path: path.join(screenshots, "printer-measurements-mobile.png"), fullPage: true });
+    await page.goto(`${base}/analyse`);
+    await page.getByText("Berekend over 30 dagen op basis van gemiddelde weekverkoop en vrije voorraad.", { exact: true }).waitFor();
+    assert.equal(await page.getByRole("button", { name: "Printtaak maken", exact: true }).count(), 0);
+    await page.getByRole("button", { name: "Accepteren", exact: true }).click();
+    await page.getByRole("button", { name: "Printtaak maken", exact: true }).waitFor();
+    await page.getByRole("button", { name: "Aanpassen", exact: true }).click();
+    assert.ok(await page.getByLabel("Veiligheidsvoorraad", { exact: true }).isVisible());
+    assert.ok(await page.getByText("Bezettingsanalyse nog niet beschikbaar", { exact: true }).isVisible());
+    assert.ok(await page.getByText("Verbruiksanalyse nog niet beschikbaar", { exact: true }).isVisible());
+    await page.getByText("Toon 1 afgehandelde adviezen", { exact: true }).click();
+    assert.ok(await page.getByText("Eerder omgezet naar een printtaak.", { exact: true }).isVisible());
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
+    await page.screenshot({ path: path.join(screenshots, "stock-advice-mobile.png"), fullPage: true });
     assert.ok(overviewRequests.some((query) => query.includes("page=1") && query.includes("page_size=20") && query.includes("view=actief")));
     assert.ok(overviewRequests.some((query) => query.includes("view=archief")));
     assert.deepEqual(errors, []);
-    console.log("Browser checks passed: product creation/recovery, Studio handoff, atomic order processing, print-result registration and truthful printer measurements.");
+    console.log("Browser checks passed: core workflow, truthful printer measurements and explainable stock advice with history.");
     console.log(`Screenshots: ${screenshots}`);
   } finally {
     await browser?.close();

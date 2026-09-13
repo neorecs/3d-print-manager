@@ -1,5 +1,5 @@
 from support import *
-from api.routes.planning import mark_print_job_bambu_studio_opened
+from api.routes.planning import accept_stock_recommendation, mark_print_job_bambu_studio_opened
 from models import BambuPrinter
 from schemas.common import PrintJobBambuStudioOpen
 
@@ -190,6 +190,110 @@ class PlanningTestCase(BackendTestCase):
         self.assertEqual(updated["recommended_print_quantity"], 6)
         self.assertEqual(print_job["quantity_needed"], 6)
         self.assertEqual(print_job["quantity_to_inventory"], 6)
+
+    def test_recommendation_rechecks_stock_and_cannot_create_two_print_jobs(self) -> None:
+        product, variant = self.make_product_variant("STOCK-RECHECK")
+        inventory = ProductInventory(
+            product_id=product.id,
+            product_variant_id=variant.id,
+            quantity_on_hand=10,
+            quantity_reserved=0,
+        )
+        recommendation = StockRecommendation(
+            product_id=product.id,
+            product_variant_id=variant.id,
+            current_free_stock=3,
+            expected_sales=10,
+            safety_stock=2,
+            recommended_stock_level=12,
+            recommended_print_quantity=9,
+            reason="Oud advies.",
+            status="nieuw",
+        )
+        self.db.add_all([inventory, recommendation])
+        self.db.commit()
+
+        accepted = accept_stock_recommendation(recommendation.id, self.db)
+        print_job = convert_stock_recommendation(recommendation.id, self.db)
+
+        self.assertEqual(accepted["current_free_stock"], 10)
+        self.assertEqual(accepted["recommended_print_quantity"], 2)
+        self.assertEqual(print_job["quantity_needed"], 2)
+        self.assertEqual(len(self.db.scalars(select(PrintJob)).all()), 1)
+        with self.assertRaises(HTTPException) as raised:
+            convert_stock_recommendation(recommendation.id, self.db)
+        self.assertEqual(raised.exception.status_code, 409)
+        self.assertEqual(len(self.db.scalars(select(PrintJob)).all()), 1)
+
+    def test_cancelled_orders_do_not_generate_stock_advice(self) -> None:
+        platform = self.make_platform()
+        product, variant = self.make_product_variant("STOCK-CANCELLED")
+        order = Order(
+            internal_order_number="T-CANCELLED",
+            platform_id=platform.id,
+            external_order_id="EXT-CANCELLED",
+            order_date=datetime.now(timezone.utc),
+            status="geannuleerd",
+        )
+        self.db.add(order)
+        self.db.commit()
+        self.db.add(OrderItem(
+            order_id=order.id,
+            product_id=product.id,
+            product_variant_id=variant.id,
+            quantity_ordered=20,
+            unit_sale_price=10,
+        ))
+        self.db.commit()
+
+        result = generate_stock_recommendations(
+            StockRecommendationGenerate(period_days=30, safety_stock=2, weeks_ahead=1),
+            self.db,
+        )
+
+        self.assertEqual(result["generated_count"], 0)
+        self.assertEqual(self.db.scalars(select(StockRecommendation)).all(), [])
+
+    def test_regeneration_preserves_an_accepted_recommendation(self) -> None:
+        platform = self.make_platform()
+        product, variant = self.make_product_variant("STOCK-ACCEPTED")
+        order = Order(
+            internal_order_number="T-ACCEPTED",
+            platform_id=platform.id,
+            external_order_id="EXT-ACCEPTED",
+            order_date=datetime.now(timezone.utc),
+        )
+        recommendation = StockRecommendation(
+            product_id=product.id,
+            product_variant_id=variant.id,
+            current_free_stock=0,
+            expected_sales=4,
+            safety_stock=3,
+            recommended_stock_level=7,
+            recommended_print_quantity=7,
+            reason="Door gebruiker geaccepteerd advies.",
+            status="geaccepteerd",
+        )
+        self.db.add_all([order, recommendation])
+        self.db.commit()
+        self.db.add(OrderItem(
+            order_id=order.id,
+            product_id=product.id,
+            product_variant_id=variant.id,
+            quantity_ordered=20,
+            unit_sale_price=10,
+        ))
+        self.db.commit()
+
+        generate_stock_recommendations(
+            StockRecommendationGenerate(period_days=30, safety_stock=9, weeks_ahead=2),
+            self.db,
+        )
+        self.db.refresh(recommendation)
+
+        self.assertEqual(recommendation.status, "geaccepteerd")
+        self.assertEqual(recommendation.recommended_print_quantity, 7)
+        self.assertEqual(recommendation.reason, "Door gebruiker geaccepteerd advies.")
 
     def test_batch_suggestions_group_open_jobs_by_material_and_color(self) -> None:
         product, variant = self.make_product_variant("BATCH-ADVICE")
