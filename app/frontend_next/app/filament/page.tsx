@@ -1,6 +1,5 @@
 import { AppShell } from "@/components/AppShell";
 import { CollapsibleHelp } from "@/components/CollapsibleHelp";
-import { EmptyState } from "@/components/EmptyState";
 import { ErrorState } from "@/components/ErrorState";
 import { MetricCard } from "@/components/MetricCard";
 import { PageHeader } from "@/components/PageHeader";
@@ -59,15 +58,6 @@ function FilamentContent({ data }: { data: FilamentData }) {
       <SectionCard title="Filamentrollen beheren" description="Voeg rollen toe, pas gegevens aan of werk snel het resterende gewicht bij.">
         <FilamentManager filament={data.filament} />
       </SectionCard>
-    </div>
-  );
-}
-
-function WorkflowStep({ title, text }: { title: string; text: string }) {
-  return (
-    <div className="rounded-xl border border-line border-l-4 border-l-brand bg-panelSoft px-4 py-4">
-      <div className="font-black text-ink">{title}</div>
-      <p className="mt-2 text-sm leading-6 text-muted">{text}</p>
     </div>
   );
 }

@@ -143,16 +143,6 @@ export function SalesMarketsManager({ markets }: { markets: SalesMarket[] }) {
         ))}
       </div>
 
-      <form className="rounded-lg border border-line bg-slate-950/25 p-4" onSubmit={createMarket}>
-        <h3 className="font-bold text-ink">Doelland toevoegen</h3>
-        <MarketFields draft={newDraft} onChange={updateNew} />
-        <div className="mt-4 flex justify-end">
-          <button className="rounded-md bg-brand px-4 py-2 text-sm font-black text-slate-950 disabled:opacity-60" disabled={busyKey === "new"} type="submit">
-            {busyKey === "new" ? "Aanmaken..." : "Doelland aanmaken"}
-          </button>
-        </div>
-      </form>
-
       <div className="space-y-3">
         {markets.map((market) => {
           const draft = drafts[market.id] || draftFromMarket(market);
@@ -179,6 +169,18 @@ export function SalesMarketsManager({ markets }: { markets: SalesMarket[] }) {
           );
         })}
       </div>
+
+      <details className="rounded-lg border border-line bg-slate-950/25 p-4">
+        <summary className="cursor-pointer list-none font-bold text-ink">Nieuw doelland toevoegen</summary>
+        <form className="mt-4 border-t border-line pt-4" onSubmit={createMarket}>
+          <MarketFields draft={newDraft} onChange={updateNew} />
+          <div className="mt-4 flex justify-end">
+            <button className="rounded-md bg-brand px-4 py-2 text-sm font-black text-slate-950 disabled:opacity-60" disabled={busyKey === "new"} type="submit">
+              {busyKey === "new" ? "Aanmaken..." : "Doelland aanmaken"}
+            </button>
+          </div>
+        </form>
+      </details>
     </div>
   );
 }

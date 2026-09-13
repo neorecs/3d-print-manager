@@ -1,4 +1,5 @@
 import { AppShell } from "@/components/AppShell";
+import { CollapsibleHelp } from "@/components/CollapsibleHelp";
 import { EmptyState } from "@/components/EmptyState";
 import { ErrorState } from "@/components/ErrorState";
 import { MetricCard } from "@/components/MetricCard";
@@ -50,15 +51,23 @@ function AccountingContent({ data, filters }: { data: AccountingData; filters: {
 
   return (
     <div className="space-y-6">
-      <SectionCard title="Wat doe ik hier?" description="Deze module helpt administratie vastleggen en exporteerbaar maken. Laat aangiftekeuzes controleren door je boekhouder of fiscalist.">
-        <div className="grid gap-3 md:grid-cols-3">
-          <Step title="1. Verkoopboek" text="Orders en facturen worden hier verkoopregels met netto, btw en bruto bedrag." />
-          <Step title="2. Inkoopboek" text="Filament, verpakking, onderdelen en verzendkosten worden kostenregels met bon/factuur." />
-          <Step title="3. Btw-controle" text="De app telt verkoop-btw en voorbelasting op en signaleert ontbrekende documenten." />
-        </div>
+      <CollapsibleHelp>
+        <p>Leg vooral bonnetjes en inkopen vast. Orders vullen het verkoopboek aan; de app telt daarna btw en ontbrekende documenten op. Laat aangiftekeuzes controleren door je boekhouder of fiscalist.</p>
+      </CollapsibleHelp>
+
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+        <MetricCard label="Omzet excl. btw" value={formatCurrency(data.vatSummary.sales_net)} note={`${data.vatSummary.sales_count} verkoopregels`} />
+        <MetricCard label="Kosten excl. btw" value={formatCurrency(data.vatSummary.purchase_net)} note={`${data.vatSummary.purchase_count} inkoopregels`} />
+        <MetricCard label="Verkoop-btw" value={formatCurrency(data.vatSummary.sales_vat)} note="te betalen btw" tone="warning" />
+        <MetricCard label="Voorbelasting" value={formatCurrency(data.vatSummary.purchase_vat)} note="terug te vragen btw" tone="good" />
+        <MetricCard label="Btw saldo" value={formatCurrency(data.vatSummary.vat_due)} note={data.vatSummary.vat_due >= 0 ? "indicatie te betalen" : "indicatie teruggaaf"} tone={vatTone} />
+      </div>
+
+      <SectionCard title="Bon of inkoop toevoegen" description="Leg filament, verpakking, printeronderdelen, software of verzendkosten vast met bon of factuur.">
+        <AccountingPurchaseForm />
       </SectionCard>
 
-      <SectionCard title="Periodefilter" description="Filter verkoopboek, inkoopboek, btw-cijfers en CSV-exports op factuurdatum. Laat leeg om alles te tonen.">
+      <SectionCard title="Periode bekijken" description="Filter verkoopboek, inkoopboek, btw-cijfers en CSV-exports op factuurdatum. Laat leeg om alles te tonen.">
         <form className="grid gap-4 md:grid-cols-[1fr_1fr_auto_auto]" action="/administratie">
           <label className="space-y-2">
             <span className="text-sm font-bold text-slate-300">Vanaf</span>
@@ -77,14 +86,6 @@ function AccountingContent({ data, filters }: { data: AccountingData; filters: {
         </form>
       </SectionCard>
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
-        <MetricCard label="Omzet excl. btw" value={formatCurrency(data.vatSummary.sales_net)} note={`${data.vatSummary.sales_count} verkoopregels`} />
-        <MetricCard label="Kosten excl. btw" value={formatCurrency(data.vatSummary.purchase_net)} note={`${data.vatSummary.purchase_count} inkoopregels`} />
-        <MetricCard label="Verkoop-btw" value={formatCurrency(data.vatSummary.sales_vat)} note="te betalen btw" tone="warning" />
-        <MetricCard label="Voorbelasting" value={formatCurrency(data.vatSummary.purchase_vat)} note="terug te vragen btw" tone="good" />
-        <MetricCard label="Btw saldo" value={formatCurrency(data.vatSummary.vat_due)} note={data.vatSummary.vat_due >= 0 ? "indicatie te betalen" : "indicatie teruggaaf"} tone={vatTone} />
-      </div>
-
       <SectionCard title="Administratiecontrole" description="Eerste controles voordat je exporteert of aangifte voorbereidt.">
         <div className="grid gap-3 md:grid-cols-3">
           <Check title="Bewaarplicht" text="Bewaar facturen, bonnen en basisadministratie minimaal 7 jaar." status="controle nodig" />
@@ -94,7 +95,10 @@ function AccountingContent({ data, filters }: { data: AccountingData; filters: {
       </SectionCard>
 
       <SectionCard title="Fiscale instellingen" description="Leg expliciet vast welke fiscale aannames de app gebruikt. Controleer dit met je boekhouder of fiscalist.">
-        <FiscalSettingsForm settings={data.fiscalSettings} />
+        <details className="rounded-lg border border-line bg-panelSoft p-4">
+          <summary className="cursor-pointer list-none font-bold text-ink">Fiscale instellingen wijzigen</summary>
+          <div className="mt-4 border-t border-line pt-4"><FiscalSettingsForm settings={data.fiscalSettings} /></div>
+        </details>
       </SectionCard>
 
       <SectionCard title="Export voor boekhouder" description="Download CSV-bestanden met de huidige verkoopregels, inkoopregels en btw-samenvatting. Controleer fiscale keuzes voordat je dit gebruikt voor aangifte.">
@@ -106,7 +110,6 @@ function AccountingContent({ data, filters }: { data: AccountingData; filters: {
       </SectionCard>
 
       <SectionCard title="Btw-periode afsluiten" description="Leg de btw-samenvatting voor de geselecteerde periode vast. Afgesloten perioden worden niet stil overschreven.">
-        <VatPeriodCloseForm endDate={filters.endDate} startDate={filters.startDate} />
         {data.vatPeriods.length ? (
           <div className="mt-5 table-scroll">
             <table className="data-table">
@@ -135,14 +138,17 @@ function AccountingContent({ data, filters }: { data: AccountingData; filters: {
             </table>
           </div>
         ) : null}
-      </SectionCard>
-
-      <SectionCard title="Inkoopboeking toevoegen" description="Leg filament, verpakking, printeronderdelen, software of verzendkosten vast met bon of factuur.">
-        <AccountingPurchaseForm />
+        <details className="mt-4 rounded-lg border border-line bg-panelSoft p-4">
+          <summary className="cursor-pointer list-none font-bold text-ink">Nieuwe btw-periode afsluiten</summary>
+          <div className="mt-4 border-t border-line pt-4"><VatPeriodCloseForm endDate={filters.endDate} startDate={filters.startDate} /></div>
+        </details>
       </SectionCard>
 
       <SectionCard title="Verkoopboeking toevoegen" description="Gebruik dit alleen voor handmatige verkopen of correcties buiten de automatische orderflow. Orders boek je bij voorkeur vanuit orderdetail.">
-        <AccountingSaleForm />
+        <details className="rounded-lg border border-line bg-panelSoft p-4">
+          <summary className="cursor-pointer list-none font-bold text-ink">Handmatige verkoop toevoegen</summary>
+          <div className="mt-4 border-t border-line pt-4"><AccountingSaleForm /></div>
+        </details>
       </SectionCard>
 
       <SectionCard title="Documenten" description="Bonnen en facturen die aan verkoop- of inkoopboekingen zijn gekoppeld.">
@@ -221,7 +227,7 @@ function AccountingContent({ data, filters }: { data: AccountingData; filters: {
                           Order {item.order_id}
                         </a>
                       ) : (
-                        item.source || "handmatig"
+                        formatAccountingSource(item.source)
                       )}
                     </td>
                     <td><CorrectionButton disabled={item.entry_type === "credit" || item.status === "gecorrigeerd"} id={item.id} type="sale" /></td>
@@ -275,15 +281,6 @@ function AccountingContent({ data, filters }: { data: AccountingData; filters: {
   );
 }
 
-function Step({ title, text }: { title: string; text: string }) {
-  return (
-    <div className="rounded-xl border border-line border-l-4 border-l-brand bg-panelSoft px-4 py-4">
-      <div className="font-black text-ink">{title}</div>
-      <p className="mt-2 text-sm leading-6 text-muted">{text}</p>
-    </div>
-  );
-}
-
 function Check({ title, text, status }: { title: string; text: string; status: string }) {
   return (
     <div className="rounded-xl border border-line bg-panelSoft p-4">
@@ -310,6 +307,16 @@ function formatDate(value?: string | null) {
   if (!value) return "-";
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString("nl-NL");
+}
+
+function formatAccountingSource(value?: string | null) {
+  const labels: Record<string, string> = {
+    order_inventory_check: "Automatisch vanuit ordercontrole",
+    order: "Automatisch vanuit order",
+    manual: "Handmatig toegevoegd",
+    handmatig: "Handmatig toegevoegd",
+  };
+  return value ? labels[value] || value.replaceAll("_", " ") : "Handmatig toegevoegd";
 }
 
 function normalizeDateParam(value?: string) {

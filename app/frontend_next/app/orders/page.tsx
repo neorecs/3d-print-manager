@@ -50,10 +50,6 @@ function OrdersContent({ data, selectedStatus }: { data: OrdersData; selectedSta
 
   return (
     <div className="space-y-6">
-      <SectionCard title="Orders importeren" description="Haal nieuwe orders op uit je ingestelde verkoopkanalen. In de veilige teststand worden geen wijzigingen naar verkoopkanalen gestuurd.">
-        <ShopifyImportButton />
-      </SectionCard>
-
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
         <MetricCard label="Nieuw" value={data.metrics.new} note="wacht op controle" tone="warning" />
         <MetricCard label="Betaald" value={data.metrics.paid} note="betaling bevestigd" tone="good" />
@@ -101,6 +97,10 @@ function OrdersContent({ data, selectedStatus }: { data: OrdersData; selectedSta
             <Link className={`rounded-md border border-line px-3 py-2 ${page === pageCount ? "pointer-events-none opacity-40" : "hover:border-brand"}`} href={ordersListHref(selectedStatus, page + 1)}>Volgende</Link>
           </div>
         ) : null}
+      </SectionCard>
+
+      <SectionCard title="Orders ophalen" description="Haal nieuwe orders op uit je ingestelde verkoopkanalen. In de veilige teststand worden geen wijzigingen naar verkoopkanalen gestuurd.">
+        <ShopifyImportButton />
       </SectionCard>
 
       <SectionCard title="Importgeschiedenis" description="Laatste importresultaten per verkoopkanaal.">

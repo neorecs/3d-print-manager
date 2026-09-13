@@ -148,3 +148,27 @@ test("printer presentation never invents measurements or remaining time", () => 
   assert.equal(printerPresentation.remainingTimeLabel(finished), "Geen actieve print");
   assert.equal(printerPresentation.taskLabel(finished), "Laatste bekende opdracht: Dumpling");
 });
+
+test("daily work stays ahead of setup and technical options", () => {
+  const read = (...segments) => fs.readFileSync(path.join(__dirname, "..", ...segments), "utf8");
+  const filament = read("app", "filament", "FilamentManager.tsx");
+  const orders = read("app", "orders", "page.tsx");
+  const orderImport = read("app", "orders", "ShopifyImportButton.tsx");
+  const channels = read("app", "verkoopkanalen", "page.tsx");
+  const channelManager = read("app", "verkoopkanalen", "SalesChannelsManager.tsx");
+  const accounting = read("app", "administratie", "page.tsx");
+  const accountingControls = read("app", "administratie", "AccountingControls.tsx");
+
+  assert.ok(filament.indexOf("filament.map") < filament.indexOf('id="filament-toevoegen"'));
+  assert.ok(orders.indexOf('title="Orderoverzicht"') < orders.indexOf('title="Orders ophalen"'));
+  assert.ok(channels.indexOf('title="Koppelingsstatus"') < channels.indexOf('title="Instellingen verkoopkanalen"'));
+  assert.ok(accounting.indexOf('title="Bon of inkoop toevoegen"') < accounting.indexOf('title="Fiscale instellingen"'));
+  assert.match(orderImport, /Geavanceerde importinstellingen/);
+  assert.doesNotMatch(orderImport, /Paginaformaat/);
+  assert.doesNotMatch(channelManager, /Credentials beheren/);
+  assert.match(channelManager, /Koppeling instellen/);
+  assert.match(accountingControls, /<option value="false">Nee<\/option>/);
+  assert.match(accountingControls, /<option value="true">Ja<\/option>/);
+  assert.doesNotMatch(accountingControls, /options=\{\["false", "true"\]\}/);
+  assert.match(accounting, /order_inventory_check: "Automatisch vanuit ordercontrole"/);
+});

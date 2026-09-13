@@ -44,14 +44,6 @@ function SalesChannelsContent({ data }: { data: SalesChannelsData }) {
         <MetricCard label="Sync nodig" value={syncNeeded.length} note="bijwerken vereist" tone={syncNeeded.length ? "warning" : "good"} />
       </div>
 
-      <SectionCard title="Doellanden en talen" description="Bepaal eerst in welke landen je verkoopt. Deze instellingen sturen later welke vertalingen en platformvelden verplicht zijn.">
-        <SalesMarketsManager markets={data.markets} />
-      </SectionCard>
-
-      <SectionCard title="Kanalen beheren" description="Toegangsgegevens worden veilig versleuteld opgeslagen; dit scherm toont de status en basisgegevens.">
-        <SalesChannelsManager platforms={data.platforms} />
-      </SectionCard>
-
       <SectionCard title="Koppelingsstatus" description="Zie per kanaal welke toegang nog ontbreekt voordat live importeren en synchroniseren veilig kan.">
         {data.statuses.length ? (
           <div className="table-scroll">
@@ -91,6 +83,23 @@ function SalesChannelsContent({ data }: { data: SalesChannelsData }) {
             })}
           </div>
         ) : <EmptyState title="Geen publicatie-acties" description="Er zijn geen bekende publicatiefouten of sync-acties." />}
+      </SectionCard>
+
+      <SectionCard title="Instellingen verkoopkanalen" description="Open alleen het onderdeel dat je wilt toevoegen of wijzigen.">
+        <div className="space-y-3">
+          <details className="rounded-lg border border-line bg-panelSoft p-4">
+            <summary className="cursor-pointer list-none font-bold text-ink">Doellanden en talen beheren</summary>
+            <div className="mt-4 border-t border-line pt-4">
+              <SalesMarketsManager markets={data.markets} />
+            </div>
+          </details>
+          <details className="rounded-lg border border-line bg-panelSoft p-4">
+            <summary className="cursor-pointer list-none font-bold text-ink">Verkoopkanalen toevoegen of wijzigen</summary>
+            <div className="mt-4 border-t border-line pt-4">
+              <SalesChannelsManager platforms={data.platforms} />
+            </div>
+          </details>
+        </div>
       </SectionCard>
     </div>
   );

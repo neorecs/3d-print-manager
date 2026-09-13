@@ -87,7 +87,10 @@ async function main() {
     if (url.pathname === "/orders") return reply(orders);
     if (url.pathname === "/order-items") return reply(orderItems);
     if (url.pathname === "/orders/import-logs") return reply([]);
+    if (url.pathname === "/filament") return reply([{ id: 1, brand: "Bambu Lab", material: "PLA", color: "Rood", initial_weight_grams: 1000, remaining_weight_grams: 640, purchase_price: 24.99, price_per_gram: 0.025, minimum_remaining_grams: 100, location: "Rek A", active: true }]);
+    if (url.pathname === "/sales-markets") return reply([{ id: 1, country_code: "NL", country_name: "Nederland", primary_language: "nl", additional_languages: "", currency: "EUR", active: true }]);
     if (url.pathname === "/platforms") return reply([{ id: 1, name: "Testkanaal", type: "etsy", active: true }]);
+    if (url.pathname === "/platforms/1/connector-status") return reply({ platform_id: 1, platform: "Testkanaal", platform_type: "etsy", mode: "teststand", ready_for_live: false, missing_credentials: ["API-sleutel"] });
     if (url.pathname === "/product-variants") return reply(variants);
     if (url.pathname === "/print-jobs") return reply(printJobs);
     if (url.pathname === "/print-batches") return reply([]);
@@ -174,7 +177,23 @@ async function main() {
     await page.getByRole("link", { name: "Printbestand", exact: true }).click();
     await page.getByRole("button", { name: "Open in Bambu Studio", exact: true }).waitFor();
     assert.equal(await page.getByRole("button", { name: "Open in Bambu Studio", exact: true }).isEnabled(), true);
+    await page.goto(`${base}/filament`);
+    await page.getByText("Bambu Lab - PLA - Rood", { exact: true }).waitFor();
+    assert.equal(await page.locator("#filament-toevoegen").getByLabel("Merk", { exact: true }).isVisible(), false);
+    await page.getByText("Nieuwe filamentrol toevoegen", { exact: true }).click();
+    assert.equal(await page.locator("#filament-toevoegen").getByLabel("Merk", { exact: true }).isVisible(), true);
+    await page.goto(`${base}/verkoopkanalen`);
+    await page.getByRole("heading", { name: "Koppelingsstatus", exact: true }).waitFor();
+    assert.equal(await page.getByText("Nieuw verkoopkanaal toevoegen", { exact: true }).isVisible(), false);
+    await page.getByText("Verkoopkanalen toevoegen of wijzigen", { exact: true }).click();
+    assert.equal(await page.getByText("Nieuw verkoopkanaal toevoegen", { exact: true }).isVisible(), true);
     await page.goto(`${base}/orders?status=nieuw`);
+    await page.getByRole("link", { name: "WEB-TEST-1", exact: true }).waitFor();
+    assert.equal(await page.getByLabel("Maximaal aantal orders", { exact: true }).isVisible(), false);
+    await page.getByText("Geavanceerde importinstellingen", { exact: true }).click();
+    assert.equal(await page.getByLabel("Maximaal aantal orders", { exact: true }).isVisible(), true);
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
+    await page.screenshot({ path: path.join(screenshots, "daily-work-mobile.png"), fullPage: true });
     await page.getByRole("link", { name: "WEB-TEST-1", exact: true }).click();
     await page.waitForURL(/\/orders\/1\?returnTo=/);
     await page.getByRole("link", { name: "Terug naar orders", exact: true }).click();
@@ -230,7 +249,7 @@ async function main() {
     assert.ok(overviewRequests.some((query) => query.includes("page=1") && query.includes("page_size=20") && query.includes("view=actief")));
     assert.ok(overviewRequests.some((query) => query.includes("view=archief")));
     assert.deepEqual(errors, []);
-    console.log("Browser checks passed: core workflow, truthful measurements, stock advice and separated live-readiness decisions.");
+    console.log("Browser checks passed: core workflow, daily-work hierarchy, truthful measurements, stock advice and separated live-readiness decisions.");
     console.log(`Screenshots: ${screenshots}`);
   } finally {
     await browser?.close();

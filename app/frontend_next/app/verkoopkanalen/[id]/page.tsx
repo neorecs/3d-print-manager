@@ -61,7 +61,7 @@ function SalesChannelDetailContent({ data }: { data: SalesChannelDetailData }) {
         ) : <EmptyState title="Geen connectorstatus" description="De backend gaf geen connectorstatus terug voor dit kanaal." />}
       </SectionCard>
 
-      <SectionCard title="Credentials beheren" description="Sla tokens en sleutels op. Waarden worden na opslaan niet meer in de UI getoond.">
+      <SectionCard title="Koppeling instellen" description="Sla de benodigde toegangsgegevens op. Waarden worden na opslaan niet meer in de UI getoond.">
         <PlatformCredentialsManager platform={data.platform} status={data.status} credentials={data.credentials} />
       </SectionCard>
 

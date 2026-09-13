@@ -177,23 +177,6 @@ export function FilamentManager({ filament }: { filament: FilamentSpool[] }) {
       {message ? <div className="rounded-md border border-emerald-400/25 bg-emerald-400/10 px-3 py-2 text-sm font-semibold text-emerald-300">{message}</div> : null}
       {error ? <div className="rounded-md border border-red-400/25 bg-red-400/10 px-3 py-2 text-sm font-semibold text-red-300">{error}</div> : null}
 
-      <form className="rounded-lg border border-line bg-slate-950/25 p-4" onSubmit={createSpool}>
-        <div className="mb-4">
-          <h3 className="font-bold text-ink">Filamentrol toevoegen</h3>
-          <p className="mt-1 text-sm text-muted">Leg merk, materiaal, kleur, gewicht en aankoopprijs vast. De prijs per gram wordt automatisch berekend.</p>
-        </div>
-        <FilamentFields draft={newDraft} onChange={updateNew} />
-        <div className="mt-4 flex justify-end">
-          <button
-            className="rounded-md bg-brand px-4 py-2 text-sm font-black text-slate-950 disabled:cursor-not-allowed disabled:opacity-60"
-            disabled={busyKey === "new"}
-            type="submit"
-          >
-            {busyKey === "new" ? "Aanmaken..." : "Filamentrol aanmaken"}
-          </button>
-        </div>
-      </form>
-
       <div className="space-y-3">
         {filament.length ? (
           filament.map((spool) => {
@@ -262,10 +245,27 @@ export function FilamentManager({ filament }: { filament: FilamentSpool[] }) {
           })
         ) : (
           <div className="rounded-md border border-amber-400/25 bg-amber-400/10 px-4 py-3 text-sm font-semibold text-amber-200">
-            Nog geen filamentrollen. Voeg hierboven je eerste rol toe.
+            Nog geen filamentrollen. Open hieronder <strong>Nieuwe filamentrol toevoegen</strong> om je eerste rol vast te leggen.
           </div>
         )}
       </div>
+
+      <details className="rounded-lg border border-line bg-slate-950/25 p-4" id="filament-toevoegen">
+        <summary className="cursor-pointer list-none font-bold text-ink">Nieuwe filamentrol toevoegen</summary>
+        <form className="mt-4 border-t border-line pt-4" onSubmit={createSpool}>
+          <p className="mb-4 text-sm text-muted">Leg merk, materiaal, kleur, gewicht en aankoopprijs vast. De prijs per gram wordt automatisch berekend.</p>
+          <FilamentFields draft={newDraft} onChange={updateNew} />
+          <div className="mt-4 flex justify-end">
+            <button
+              className="rounded-md bg-brand px-4 py-2 text-sm font-black text-slate-950 disabled:cursor-not-allowed disabled:opacity-60"
+              disabled={busyKey === "new"}
+              type="submit"
+            >
+              {busyKey === "new" ? "Aanmaken..." : "Filamentrol aanmaken"}
+            </button>
+          </div>
+        </form>
+      </details>
     </div>
   );
 }

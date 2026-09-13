@@ -98,24 +98,6 @@ export function SalesChannelsManager({ platforms }: { platforms: Platform[] }) {
     <div className="space-y-5">
       {message ? <div className="rounded-md border border-emerald-400/25 bg-emerald-400/10 px-3 py-2 text-sm font-semibold text-emerald-300">{message}</div> : null}
       {error ? <div className="rounded-md border border-red-400/25 bg-red-400/10 px-3 py-2 text-sm font-semibold text-red-300">{error}</div> : null}
-      <form className="rounded-lg border border-line bg-slate-950/25 p-4" onSubmit={createPlatform}>
-        <h3 className="font-bold text-ink">Verkoopkanaal toevoegen</h3>
-        <div className="mt-4 grid gap-4 md:grid-cols-2">
-          <TextField label="Naam" value={newDraft.name} onChange={(value) => updateNew("name", value)} placeholder="Bijv. Mijn Shopify" />
-          <TextField label="Type" value={newDraft.type} onChange={(value) => updateNew("type", value)} placeholder="shopify, etsy, woocommerce" />
-          <TextField label="API basis-URL" value={newDraft.api_base_url} onChange={(value) => updateNew("api_base_url", value)} placeholder="Optioneel" />
-          <label className="flex items-center gap-3 rounded-md border border-line bg-slate-950/35 px-3 py-2 text-sm text-ink font-semibold">
-            <input checked={newDraft.active} onChange={(event) => updateNew("active", event.target.checked)} type="checkbox" />
-            Actief
-          </label>
-        </div>
-        <div className="mt-4 flex justify-end">
-          <button className="rounded-md bg-brand px-4 py-2 text-sm font-black text-slate-950 disabled:opacity-60" disabled={busyKey === "new"} type="submit">
-            {busyKey === "new" ? "Aanmaken..." : "Kanaal aanmaken"}
-          </button>
-        </div>
-      </form>
-
       <div className="space-y-3">
         {platforms.map((platform) => {
           const draft = drafts[platform.id] || draftFromPlatform(platform);
@@ -128,19 +110,24 @@ export function SalesChannelsManager({ platforms }: { platforms: Platform[] }) {
                     <div className="mt-1 text-sm text-muted">{platform.type} - {platform.active ? "actief" : "inactief"}</div>
                   </div>
                   <Link className="rounded-md border border-line px-3 py-2 text-sm font-bold text-ink hover:border-brand hover:text-brand" href={`/verkoopkanalen/${platform.id}`}>
-                    Credentials beheren
+                    Koppeling instellen
                   </Link>
                 </div>
               </summary>
               <div className="mt-4 grid gap-4 border-t border-line pt-4 md:grid-cols-2">
                 <TextField label="Naam" value={draft.name} onChange={(value) => updateExisting(platform.id, "name", value)} />
                 <TextField label="Type" value={draft.type} onChange={(value) => updateExisting(platform.id, "type", value)} />
-                <TextField label="API basis-URL" value={draft.api_base_url} onChange={(value) => updateExisting(platform.id, "api_base_url", value)} />
                 <label className="flex items-center gap-3 rounded-md border border-line bg-slate-950/35 px-3 py-2 text-sm text-ink font-semibold">
                   <input checked={draft.active} onChange={(event) => updateExisting(platform.id, "active", event.target.checked)} type="checkbox" />
                   Actief
                 </label>
               </div>
+              <details className="mt-4 rounded-md border border-line bg-slate-950/25 px-3 py-2">
+                <summary className="cursor-pointer text-sm font-bold text-slate-300">Geavanceerde instellingen</summary>
+                <div className="mt-3 border-t border-line pt-3">
+                  <TextField label="Technisch API-adres" value={draft.api_base_url} onChange={(value) => updateExisting(platform.id, "api_base_url", value)} />
+                </div>
+              </details>
               <div className="mt-4 flex justify-end">
                 <button className="rounded-md bg-brand px-4 py-2 text-sm font-black text-slate-950 disabled:opacity-60" disabled={busyKey === String(platform.id)} onClick={() => savePlatform(platform.id)} type="button">
                   {busyKey === String(platform.id) ? "Opslaan..." : "Kanaal opslaan"}
@@ -150,6 +137,31 @@ export function SalesChannelsManager({ platforms }: { platforms: Platform[] }) {
           );
         })}
       </div>
+
+      <details className="rounded-lg border border-line bg-slate-950/25 p-4">
+        <summary className="cursor-pointer list-none font-bold text-ink">Nieuw verkoopkanaal toevoegen</summary>
+        <form className="mt-4 border-t border-line pt-4" onSubmit={createPlatform}>
+          <div className="grid gap-4 md:grid-cols-2">
+            <TextField label="Naam" value={newDraft.name} onChange={(value) => updateNew("name", value)} placeholder="Bijv. Mijn Shopify" />
+            <TextField label="Soort verkoopkanaal" value={newDraft.type} onChange={(value) => updateNew("type", value)} placeholder="Bijv. Shopify of Etsy" />
+            <label className="flex items-center gap-3 rounded-md border border-line bg-slate-950/35 px-3 py-2 text-sm text-ink font-semibold">
+              <input checked={newDraft.active} onChange={(event) => updateNew("active", event.target.checked)} type="checkbox" />
+              Kanaal actief
+            </label>
+          </div>
+          <details className="mt-4 rounded-md border border-line bg-slate-950/25 px-3 py-2">
+            <summary className="cursor-pointer text-sm font-bold text-slate-300">Geavanceerde instellingen</summary>
+            <div className="mt-3 border-t border-line pt-3">
+              <TextField label="Technisch API-adres" value={newDraft.api_base_url} onChange={(value) => updateNew("api_base_url", value)} placeholder="Alleen invullen als het kanaal dit vereist" />
+            </div>
+          </details>
+          <div className="mt-4 flex justify-end">
+            <button className="rounded-md bg-brand px-4 py-2 text-sm font-black text-slate-950 disabled:opacity-60" disabled={busyKey === "new"} type="submit">
+              {busyKey === "new" ? "Aanmaken..." : "Kanaal aanmaken"}
+            </button>
+          </div>
+        </form>
+      </details>
     </div>
   );
 }

@@ -46,9 +46,9 @@ export function FiscalSettingsForm({ settings }: { settings: AccountingFiscalSet
       {error ? <Notice tone="bad" text={error} /> : null}
       <div className="grid gap-4 md:grid-cols-3">
         <Select label="Btw-regime" value={values.btw_regime} onChange={(value) => setValues({ ...values, btw_regime: value })} options={["standaard", "kor", "marge", "anders"]} />
-        <Select label="KOR actief" value={values.kor_enabled} onChange={(value) => setValues({ ...values, kor_enabled: value })} options={["false", "true"]} />
+        <BooleanChoice label="Kleineondernemersregeling (KOR)" value={values.kor_enabled} onChange={(value) => setValues({ ...values, kor_enabled: value })} />
         <Text label="Standaardland" value={values.default_country} onChange={(value) => setValues({ ...values, default_country: value })} />
-        <Select label="EU-verkoop actief" value={values.eu_sales_enabled} onChange={(value) => setValues({ ...values, eu_sales_enabled: value })} options={["false", "true"]} />
+        <BooleanChoice label="Verkoop aan andere EU-landen" value={values.eu_sales_enabled} onChange={(value) => setValues({ ...values, eu_sales_enabled: value })} />
         <Text label="Standaard btw %" value={values.default_vat_rate} onChange={(value) => setValues({ ...values, default_vat_rate: value })} />
       </div>
       <button className="rounded-md bg-brand px-4 py-2 text-sm font-black text-slate-950" type="submit">Fiscale instellingen opslaan</button>
@@ -157,6 +157,18 @@ function Select({ label, value, onChange, options }: { label: string; value: str
       <span className="text-sm font-bold text-slate-300">{label}</span>
       <select className="w-full rounded-md border border-line bg-slate-950/35 px-3 py-2 text-sm text-ink outline-none focus:border-brand" onChange={(event) => onChange(event.target.value)} value={value}>
         {options.map((option) => <option key={option} value={option}>{option}</option>)}
+      </select>
+    </label>
+  );
+}
+
+function BooleanChoice({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
+  return (
+    <label className="space-y-2">
+      <span className="text-sm font-bold text-slate-300">{label}</span>
+      <select className="w-full rounded-md border border-line bg-slate-950/35 px-3 py-2 text-sm text-ink outline-none focus:border-brand" onChange={(event) => onChange(event.target.value)} value={value}>
+        <option value="false">Nee</option>
+        <option value="true">Ja</option>
       </select>
     </label>
   );
