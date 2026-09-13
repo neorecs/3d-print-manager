@@ -10,7 +10,7 @@ async function listen(server) {
 }
 
 async function main() {
-  let creates = 0, uploads = 0, mediaFails = false, orderProcesses = 0, completedPayload = null;
+  let creates = 0, uploads = 0, mediaFails = false, printerFails = true, orderProcesses = 0, completedPayload = null;
   const overviewRequests = [];
   const products = [
     { id: 1, name: "Telefoonhouder", internal_title: "Telefoonhouder", active: true, status: "klaar_voor_publicatie", print_file_path: "model.stl" },
@@ -87,7 +87,13 @@ async function main() {
     if (url.pathname === "/products") return reply(products);
     if (/^\/products\/\d+$/.test(url.pathname)) return reply(products.find((p) => p.id === Number(url.pathname.split("/").pop())));
     if (url.pathname.endsWith("/media") && mediaFails) return reply({ detail: "Test foto storing" }, 503);
-    if (url.pathname === "/bambu/printers") return reply({ detail: "Geen testprinter bereikbaar" }, 503);
+    if (url.pathname === "/bambu/printers") {
+      if (printerFails) return reply({ detail: "Geen testprinter bereikbaar" }, 503);
+      return reply([
+        { id: 1, name: "P2S actief", model: "P2S", host: "printer-1", mqtt_port: 8883, active: true, last_status: "bereikbaar", last_seen_at: "2026-09-13T08:00:00Z", printer_state: "RUNNING", print_progress: 75, nozzle_temperature: 220, bed_temperature: null, current_task: "Telefoonhouder" },
+        { id: 2, name: "P2S gereed", model: "P2S", host: "printer-2", mqtt_port: 8883, active: true, last_status: "bereikbaar", last_seen_at: "2026-09-13T07:00:00Z", printer_state: "FINISH", print_progress: 100, nozzle_temperature: null, bed_temperature: null, current_task: "Dumpling" },
+      ]);
+    }
     return reply([]);
   });
   process.env.API_BASE_URL = await listen(fixture);
@@ -159,10 +165,21 @@ async function main() {
     await page.getByRole("button", { name: "Resultaat verwerken", exact: true }).click();
     await page.getByText("Printresultaat verwerkt. Extra gelukte prints zijn naar vrije voorraad geboekt.", { exact: true }).waitFor();
     assert.deepEqual(completedPayload, { quantity_succeeded: 1, quantity_failed: 1, quantity_to_order: 1 });
+    printerFails = false;
+    await page.goto(`${base}/bambu-printers`);
+    await page.getByText("Resterende tijd onbekend", { exact: true }).waitFor();
+    assert.ok(await page.getByText("Geen actieve print", { exact: true }).isVisible());
+    assert.ok(await page.getByText("Laatste bekende opdracht: Dumpling", { exact: true }).isVisible());
+    assert.equal(await page.getByText("Niet geregistreerd", { exact: true }).count(), 2);
+    assert.ok(await page.getByText("220°C", { exact: true }).isVisible());
+    assert.ok(await page.getByText("Onbekend", { exact: true }).count() >= 4);
+    assert.equal(await page.getByText(/min resterend/).count(), 0);
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
+    await page.screenshot({ path: path.join(screenshots, "printer-measurements-mobile.png"), fullPage: true });
     assert.ok(overviewRequests.some((query) => query.includes("page=1") && query.includes("page_size=20") && query.includes("view=actief")));
     assert.ok(overviewRequests.some((query) => query.includes("view=archief")));
     assert.deepEqual(errors, []);
-    console.log("Browser checks passed: product creation/recovery, Studio handoff, atomic order processing and print-result registration.");
+    console.log("Browser checks passed: product creation/recovery, Studio handoff, atomic order processing, print-result registration and truthful printer measurements.");
     console.log(`Screenshots: ${screenshots}`);
   } finally {
     await browser?.close();

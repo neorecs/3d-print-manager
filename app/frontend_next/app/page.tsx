@@ -8,6 +8,16 @@ import { SectionCard } from "@/components/SectionCard";
 import { StatusBadge } from "@/components/StatusBadge";
 import { formatCurrency, formatMinutes, getDashboardData } from "@/lib/api";
 import { printJobHref, productInventoryHref } from "@/lib/navigation";
+import {
+  hasStatusMeasurement,
+  isPrinting,
+  lastMeasuredLabel,
+  operationalState,
+  progressLabel,
+  progressValue,
+  taskLabel,
+  temperatureLabel,
+} from "@/lib/printerPresentation";
 import type { DashboardData } from "@/lib/types";
 
 export default async function DashboardPage() {
@@ -24,7 +34,7 @@ export default async function DashboardPage() {
     <AppShell>
       <PageHeader
         title="Printfarm dashboard"
-        description="Realtime overzicht voor printers, orders, voorraad, filament en productieplanning."
+        description="Operationeel overzicht voor printers, orders, voorraad, filament en productieplanning."
         actions={<a className="rounded-xl bg-brand px-4 py-2 text-sm font-black text-slate-950" href="/">Ververs dashboard</a>}
       />
       {error || !data ? <DashboardError message={error || "Geen data beschikbaar"} /> : <DashboardContent data={data} />}
@@ -49,28 +59,28 @@ function DashboardContent({ data }: { data: DashboardData }) {
     note: `${item.free_stock} vrij`,
     href: productInventoryHref(item.product_id),
   }));
-  const printerState = (printer: DashboardData["printers"][number]) => (printer.printer_state || "offline").toLowerCase();
-  const onlinePrinters = data.printers.filter((printer) => printer.active && !["offline", "unknown", "onbekend"].includes(printerState(printer)));
-  const printingPrinters = data.printers.filter((printer) => ["running", "printing", "print", "bezig"].includes(printerState(printer)));
+  const printerState = (printer: DashboardData["printers"][number]) => operationalState(printer).toLowerCase();
+  const measuredPrinters = data.printers.filter(hasStatusMeasurement);
+  const printingPrinters = data.printers.filter(isPrinting);
   const pausedPrinters = data.printers.filter((printer) => printerState(printer).includes("pause"));
   const errorPrinters = data.printers.filter((printer) => ["failed", "error", "fout"].some((state) => printerState(printer).includes(state)));
   const offlinePrinters = data.printers.filter((printer) => !printer.active || ["offline", "unknown", "onbekend"].includes(printerState(printer)));
   return (
     <div className="space-y-6">
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
-        <MetricCard href="/bambu-printers" label="Actieve printers" value={onlinePrinters.length} note={`${data.printers.length} geregistreerd`} tone="good" />
-        <MetricCard href="/printplanning" label="Prints bezig" value={printingPrinters.length} note={formatMinutes(data.metrics.open_print_minutes)} tone="warning" />
+        <MetricCard href="/bambu-printers" label="Printerstatus ontvangen" value={measuredPrinters.length} note={`${data.printers.length} geregistreerd`} tone="good" />
+        <MetricCard href="/printplanning" label="Prints bezig" value={printingPrinters.length} note={`${formatMinutes(data.metrics.open_print_minutes)} open werk (geschat)`} tone="warning" />
         <MetricCard href="/orders" label="Orders vandaag" value={data.metrics.orders_today} note="nieuw binnengekomen" />
         <MetricCard href="/orders" label="Openstaande orders" value={data.metrics.open_orders} note="nog te verwerken" tone="warning" />
         <MetricCard href="/voorraad" label="Voorraadwaarde" value={formatCurrency(data.metrics.inventory_value)} note="indicatieve waarde" />
-        <MetricCard href="/administratie" label="Omzet maand" value={formatCurrency(data.metrics.monthly_revenue)} note="verwacht / bekend" tone="good" />
+        <MetricCard href="/administratie" label="Omzet maand" value={formatCurrency(data.metrics.monthly_revenue)} note="bekende orderbedragen" tone="good" />
       </div>
 
       <div className="grid gap-5 xl:grid-cols-3">
         <SectionCard title="Printerstatus" description="Farmstatus op basis van printer- en printwachtrijsignalen.">
           <StatusSummary
             items={[
-              { label: "Online", value: onlinePrinters.length, tone: "green", href: "/bambu-printers" },
+              { label: "Status ontvangen", value: measuredPrinters.length, tone: "green", href: "/bambu-printers" },
               { label: "Print bezig", value: printingPrinters.length, tone: "blue", href: "/printplanning" },
               { label: "Pauze", value: pausedPrinters.length, tone: "slate", href: "/bambu-printers" },
               { label: "Foutmelding", value: errorPrinters.length, tone: "red", href: "/bambu-printers" },
@@ -95,7 +105,7 @@ function DashboardContent({ data }: { data: DashboardData }) {
               { label: "Rollen op voorraad", value: data.metrics.filament_rolls, tone: "green", href: "/filament" },
               { label: "Bijna leeg", value: data.metrics.low_filament, tone: data.metrics.low_filament ? "amber" : "green", href: "/filament" },
               { label: "Onder minimum", value: data.metrics.low_filament, tone: data.metrics.low_filament ? "red" : "green", href: "/filament" },
-              { label: "Gepland verbruik", value: `${(data.metrics.planned_filament_grams / 1000).toFixed(1)} kg`, tone: "blue", href: "/analyse" },
+              { label: "Verbruik (geschat)", value: `${(data.metrics.planned_filament_grams / 1000).toFixed(1)} kg`, tone: "blue", href: "/analyse" },
               { label: "Kleuren actief", value: data.metrics.active_filament_colors, tone: "slate", href: "/filament" },
             ]}
           />
@@ -103,7 +113,7 @@ function DashboardContent({ data }: { data: DashboardData }) {
       </div>
 
       <div className="grid gap-5 xl:grid-cols-[1.2fr_.8fr]">
-        <SectionCard title="Printer live overzicht" description="Laatst ontvangen status van de geregistreerde Bambu-printers.">
+        <SectionCard title="Laatst gemeten printerstatus" description="Meetwaarden kunnen verouderd zijn; het meettijdstip staat op elke printerkaart.">
           <div className="grid gap-4 md:grid-cols-2">
             {data.printers.map((printer) => (
               <a className="block rounded-xl focus:outline-none focus:ring-2 focus:ring-brand/50" href="/bambu-printers" key={printer.id}>
@@ -111,17 +121,18 @@ function DashboardContent({ data }: { data: DashboardData }) {
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <div className="break-words text-lg font-black text-ink">{printer.name}</div>
-                    <div className="mt-1 break-words text-sm text-muted">{printer.current_task || "Geen actieve opdracht"}</div>
+                    <div className="mt-1 break-words text-sm text-muted">{taskLabel(printer)}</div>
                   </div>
                   <StatusBadge status={printer.printer_state || "onbekend"} />
                 </div>
                 <div className="mt-4 h-2.5 overflow-hidden rounded-full bg-slate-800">
-                  <div className="h-full rounded-full bg-brand" style={{ width: `${Math.max(0, Math.min(100, Number(printer.print_progress || 0)))}%` }} />
+                  <div className="h-full rounded-full bg-brand" style={{ width: `${progressValue(printer) ?? 0}%` }} />
                 </div>
                 <div className="mt-3 flex flex-wrap justify-between gap-2 text-sm text-muted">
-                  <span>{Math.round(Number(printer.print_progress || 0))}%</span>
-                  <span>Nozzle {Math.round(Number(printer.nozzle_temperature || 0))}C / Bed {Math.round(Number(printer.bed_temperature || 0))}C</span>
+                  <span>{progressLabel(printer)}</span>
+                  <span>Nozzle {temperatureLabel(printer.nozzle_temperature)} / Bed {temperatureLabel(printer.bed_temperature)}</span>
                 </div>
+                <div className="mt-2 text-xs font-semibold text-muted">{lastMeasuredLabel(printer.last_seen_at)}</div>
               </SoftPanel>
               </a>
             ))}

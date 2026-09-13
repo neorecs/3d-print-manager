@@ -56,7 +56,7 @@ function OrdersContent({ data, selectedStatus }: { data: OrdersData; selectedSta
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
         <MetricCard label="Nieuw" value={data.metrics.new} note="wacht op controle" tone="warning" />
-        <MetricCard label="Betaald" value={data.metrics.paid} note="met orderwaarde" tone="good" />
+        <MetricCard label="Betaald" value={data.metrics.paid} note="betaling bevestigd" tone="good" />
         <MetricCard label="In productie" value={data.metrics.production} note="te printen of ingepland" tone="warning" />
         <MetricCard label="Klaar" value={data.metrics.packed} note="klaar voor verzending" />
         <MetricCard label="Verzonden" value={data.metrics.shipped} note="afgerond" tone="good" />
@@ -77,7 +77,7 @@ function OrdersContent({ data, selectedStatus }: { data: OrdersData; selectedSta
         </div>
       </SectionCard>
 
-      <SectionCard title="Orderoverzicht" description="Elke order toont verkoopkanaal, productregels, betaling, leverdatum en gekoppelde printopdracht.">
+      <SectionCard title="Orderoverzicht" description="Elke order toont verkoopkanaal, productregels, betaling, een berekend levervoorstel en de gekoppelde printopdracht.">
         {data.orders.length ? (
           <div className="space-y-3">
             {data.orders.map((order) => (
@@ -164,9 +164,10 @@ function OrderCard({ order, items, platform, printJobs, returnTo }: { order: Ord
           <Small label="Aantal" value={ordered} />
           <Small label="Te printen" value={toPrint} />
           <Small label="Betaling" value={paid === "betaald" ? "Betaald" : paid === "onbekend" ? "Onbekend" : paid} />
-          <Small label="Leverdatum (schatting)" value={deliveryDate} />
+          <Small label="Levervoorstel (geschat)" value={deliveryDate} />
         </div>
       </div>
+      <p className="mt-3 text-xs text-muted">Het levervoorstel is berekend vanaf de orderdatum: 2 dagen zonder printwerk en 5 dagen met printwerk. Het is niet door het verkoopkanaal bevestigd.</p>
       <div className="mt-4 grid gap-3 border-t border-line pt-4 md:grid-cols-4">
         <Small label="Bedrag" value={formatCurrency(order.total_amount)} />
         <Small label="Kanaal" value={platform?.type || "-"} />

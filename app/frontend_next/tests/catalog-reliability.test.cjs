@@ -18,6 +18,7 @@ function load(file, imports = {}) {
 const results = load("lib/loadResult.ts");
 const catalog = load("lib/catalogView.ts");
 const navigation = load("lib/navigation.ts");
+const printerPresentation = load("lib/printerPresentation.ts", { "./types": {} });
 function api(failures = []) {
   return load("lib/api.ts", {
     "./format": {}, "./loadResult": results,
@@ -127,4 +128,23 @@ test("navigation keeps list filters and focuses related work", () => {
   assert.equal(navigation.safeOrdersReturnHref("https://example.com/orders"), "/orders");
   assert.equal(navigation.printJobHref(7), "/printplanning?job=7#printtaak-7");
   assert.equal(navigation.productInventoryHref(9), "/catalogus/9?tab=voorraad");
+});
+
+test("printer presentation never invents measurements or remaining time", () => {
+  const unknown = { id: 1, name: "P2S", host: "printer", mqtt_port: 8883, active: true };
+  assert.equal(printerPresentation.operationalState(unknown), "onbekend");
+  assert.equal(printerPresentation.progressLabel(unknown), "Voortgang onbekend");
+  assert.equal(printerPresentation.temperatureLabel(null), "Onbekend");
+  assert.equal(printerPresentation.remainingTimeLabel(unknown), "Geen actuele tijdmeting");
+  assert.equal(printerPresentation.hasStatusMeasurement(unknown), false);
+
+  const printing = { ...unknown, printer_state: "RUNNING", print_progress: 75, nozzle_temperature: 220, last_seen_at: "2026-09-13T08:00:00Z" };
+  assert.equal(printerPresentation.progressLabel(printing), "75%");
+  assert.equal(printerPresentation.temperatureLabel(printing.nozzle_temperature), "220°C");
+  assert.equal(printerPresentation.remainingTimeLabel(printing), "Resterende tijd onbekend");
+  assert.equal(printerPresentation.hasStatusMeasurement(printing), true);
+
+  const finished = { ...printing, printer_state: "FINISH", current_task: "Dumpling" };
+  assert.equal(printerPresentation.remainingTimeLabel(finished), "Geen actieve print");
+  assert.equal(printerPresentation.taskLabel(finished), "Laatste bekende opdracht: Dumpling");
 });
