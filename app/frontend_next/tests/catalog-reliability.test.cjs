@@ -156,6 +156,7 @@ test("daily work stays ahead of setup and technical options", () => {
   const orderImport = read("app", "orders", "ShopifyImportButton.tsx");
   const channels = read("app", "verkoopkanalen", "page.tsx");
   const channelManager = read("app", "verkoopkanalen", "SalesChannelsManager.tsx");
+  const credentialManager = read("app", "verkoopkanalen", "[id]", "PlatformCredentialsManager.tsx");
   const accounting = read("app", "administratie", "page.tsx");
   const accountingControls = read("app", "administratie", "AccountingControls.tsx");
 
@@ -167,6 +168,10 @@ test("daily work stays ahead of setup and technical options", () => {
   assert.doesNotMatch(orderImport, /Paginaformaat/);
   assert.doesNotMatch(channelManager, /Credentials beheren/);
   assert.match(channelManager, /Koppeling instellen/);
+  assert.match(credentialManager, /label: "App-geheim"/);
+  assert.match(credentialManager, /label: "OAuth-toegangstoken"/);
+  assert.match(credentialManager, /label: "Winkelnummer"/);
+  assert.doesNotMatch(credentialManager, />Credentialnaam</);
   assert.match(channels, /api_key: "API-sleutel"/);
   assert.match(channels, /readiness_state_id: "Publicatiestatus"/);
   assert.match(channels, /mock: "Veilige teststand"/);

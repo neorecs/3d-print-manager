@@ -2,8 +2,8 @@
 
 import { FormEvent, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import type { Platform, PlatformConnectorStatus, PlatformCredential } from "@/lib/types";
 import { StatusBadge } from "@/components/StatusBadge";
+import type { Platform, PlatformConnectorStatus, PlatformCredential } from "@/lib/types";
 
 type Props = {
   platform: Platform;
@@ -11,50 +11,77 @@ type Props = {
   credentials: PlatformCredential[];
 };
 
-const credentialHelp: Record<string, string> = {
-  api_key: "Etsy App API Key keystring.",
-  shared_secret: "Etsy shared secret dat bij de API-key hoort.",
-  access_token: "OAuth access token van Etsy of Admin API-token van Shopify.",
-  shop_id: "Numerieke Etsy shop-ID.",
-  taxonomy_id: "Etsy categorie-ID voor dit verkoopkanaal.",
-  readiness_state_id: "Etsy verwerkingsprofiel-ID voor fysieke producten.",
-  variation_property_id: "Etsy taxonomy property-ID voor producten met meerdere uitvoeringen.",
-  shop_domain: "Shopify-domein, bijvoorbeeld jouw-winkel.myshopify.com.",
-  location_id: "Shopify location-ID voor voorraadsynchronisatie.",
+type CredentialField = {
+  key: string;
+  label: string;
+  description: string;
+  placeholder: string;
+  secret?: boolean;
+  optional?: boolean;
+};
+
+const platformFields: Record<string, CredentialField[]> = {
+  etsy: [
+    { key: "api_key", label: "API-key", description: "De Etsy App API Key keystring uit het Developer Portal.", placeholder: "Plak hier de Etsy API-key", secret: true },
+    { key: "shared_secret", label: "App-geheim", description: "Het Shared Secret dat bij de Etsy API-key hoort.", placeholder: "Plak hier het Etsy Shared Secret", secret: true },
+    { key: "access_token", label: "OAuth-toegangstoken", description: "Geeft toegang tot jouw Etsy-winkel. Dit wordt later via Verbinden met Etsy opgehaald.", placeholder: "Plak hier voorlopig het OAuth-token", secret: true },
+    { key: "shop_id", label: "Winkelnummer", description: "Het numerieke shop-ID van jouw Etsy-winkel.", placeholder: "Bijvoorbeeld 12345678" },
+    { key: "taxonomy_id", label: "Standaardcategorie", description: "Etsy categorie-ID voor nieuwe publicaties.", placeholder: "Numerieke Etsy categorie-ID" },
+    { key: "readiness_state_id", label: "Verwerkingsprofiel", description: "Etsy processing profile voor fysieke producten.", placeholder: "Numeriek verwerkingsprofiel-ID" },
+    { key: "variation_property_id", label: "Variatie-eigenschap", description: "Alleen nodig als Etsy-varianten een taxonomy property gebruiken.", placeholder: "Numerieke property-ID", optional: true },
+  ],
+  shopify: [
+    { key: "shop_domain", label: "Winkeladres", description: "Het permanente myshopify.com-adres van de winkel.", placeholder: "jouw-winkel.myshopify.com" },
+    { key: "access_token", label: "Admin API-token", description: "Het Shopify Admin API access token.", placeholder: "Plak hier het Admin API-token", secret: true },
+    { key: "location_id", label: "Voorraadlocatie", description: "Shopify location-ID voor voorraadsynchronisatie.", placeholder: "Numeriek location-ID", optional: true },
+  ],
 };
 
 export function PlatformCredentialsManager({ platform, status, credentials }: Props) {
   const router = useRouter();
-  const suggestedKeys = useMemo(() => {
-    const platformKeys = platform.type.toLowerCase() === "etsy"
-      ? ["taxonomy_id", "readiness_state_id", "variation_property_id"]
-      : platform.type.toLowerCase() === "shopify" ? ["location_id"] : [];
-    const keys = [...(status?.missing_credentials || []), ...(status?.required_credentials || []), ...platformKeys, ...credentials.map((item) => item.key_name)];
-    return Array.from(new Set(keys)).filter(Boolean);
+  const fields = useMemo(() => {
+    const known = platformFields[platform.type.toLowerCase()] || [];
+    const knownKeys = new Set(known.map((field) => field.key));
+    const additionalKeys = [
+      ...(status?.required_credentials || []),
+      ...(status?.missing_credentials || []),
+      ...credentials.map((item) => item.key_name),
+    ].filter((key) => key && !knownKeys.has(key));
+    const additional: CredentialField[] = Array.from(new Set(additionalKeys)).map((key) => ({
+      key,
+      label: key,
+      description: "Aanvullend gegeven dat deze connector gebruikt.",
+      placeholder: "Vul de waarde in",
+      secret: true,
+    }));
+    return [...known, ...additional];
   }, [credentials, platform.type, status]);
-  const [keyName, setKeyName] = useState(suggestedKeys[0] || "");
-  const [secretValue, setSecretValue] = useState("");
+  const [values, setValues] = useState<Record<string, string>>({});
   const [busyKey, setBusyKey] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  async function saveCredential(event: FormEvent<HTMLFormElement>) {
+  function credentialFor(key: string) {
+    return credentials.find((credential) => credential.key_name === key);
+  }
+
+  async function saveCredential(event: FormEvent<HTMLFormElement>, field: CredentialField) {
     event.preventDefault();
-    setBusyKey("save");
+    const value = values[field.key]?.trim() || "";
+    setBusyKey(field.key);
     setMessage(null);
     setError(null);
     try {
-      if (!keyName.trim()) throw new Error("Vul een credentialnaam in.");
-      if (!secretValue.trim()) throw new Error("Vul de token/waarde in.");
+      if (!value) throw new Error(`Vul ${field.label.toLowerCase()} in.`);
       const response = await fetch(`/api/platforms/${platform.id}/credentials`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ key_name: keyName.trim(), encrypted_value: secretValue }),
+        body: JSON.stringify({ key_name: field.key, encrypted_value: value }),
       });
       const data = await response.json().catch(() => null);
-      if (!response.ok) throw new Error(data?.detail || "Credential kon niet worden opgeslagen");
-      setSecretValue("");
-      setMessage("Credential opgeslagen. De waarde wordt hierna niet meer getoond.");
+      if (!response.ok) throw new Error(data?.detail || `${field.label} kon niet worden opgeslagen`);
+      setValues((current) => ({ ...current, [field.key]: "" }));
+      setMessage(`${field.label} is versleuteld opgeslagen.`);
       router.refresh();
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Opslaan is mislukt");
@@ -63,15 +90,15 @@ export function PlatformCredentialsManager({ platform, status, credentials }: Pr
     }
   }
 
-  async function deleteCredential(id: number) {
-    setBusyKey(`delete-${id}`);
+  async function deleteCredential(credential: PlatformCredential, label: string) {
+    setBusyKey(`delete-${credential.id}`);
     setMessage(null);
     setError(null);
     try {
-      const response = await fetch(`/api/platform-credentials/${id}`, { method: "DELETE" });
+      const response = await fetch(`/api/platform-credentials/${credential.id}`, { method: "DELETE" });
       const data = await response.json().catch(() => null);
-      if (!response.ok) throw new Error(data?.detail || "Credential kon niet worden verwijderd");
-      setMessage("Credential verwijderd.");
+      if (!response.ok) throw new Error(data?.detail || `${label} kon niet worden verwijderd`);
+      setMessage(`${label} is verwijderd.`);
       router.refresh();
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Verwijderen is mislukt");
@@ -81,70 +108,53 @@ export function PlatformCredentialsManager({ platform, status, credentials }: Pr
   }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       {message ? <div className="rounded-md border border-emerald-400/25 bg-emerald-400/10 px-3 py-2 text-sm font-semibold text-emerald-300">{message}</div> : null}
       {error ? <div className="rounded-md border border-red-400/25 bg-red-400/10 px-3 py-2 text-sm font-semibold text-red-300">{error}</div> : null}
 
-      <form className="rounded-lg border border-line bg-slate-950/25 p-4" onSubmit={saveCredential}>
-        <div className="grid gap-4 md:grid-cols-[minmax(180px,280px)_1fr_auto] md:items-end">
-          <label className="space-y-2">
-            <span className="text-sm font-bold text-slate-300">Credentialnaam</span>
-            <input
-              className="w-full rounded-md border border-line bg-slate-950/35 px-3 py-2 text-sm text-ink outline-none focus:border-brand"
-              list="credential-key-suggestions"
-              onChange={(event) => setKeyName(event.target.value)}
-              placeholder="Bijv. access_token"
-              value={keyName}
-            />
-            <datalist id="credential-key-suggestions">
-              {suggestedKeys.map((key) => <option key={key} value={key} />)}
-            </datalist>
-          </label>
-          <label className="space-y-2">
-            <span className="text-sm font-bold text-slate-300">Token of geheime waarde</span>
-            <input
-              className="w-full rounded-md border border-line bg-slate-950/35 px-3 py-2 text-sm text-ink outline-none focus:border-brand"
-              onChange={(event) => setSecretValue(event.target.value)}
-              placeholder="Wordt versleuteld opgeslagen en niet teruggetoond"
-              type="password"
-              value={secretValue}
-            />
-          </label>
-          <button className="rounded-md bg-brand px-4 py-2 text-sm font-black text-slate-950 disabled:opacity-60" disabled={busyKey === "save"} type="submit">
-            {busyKey === "save" ? "Opslaan..." : "Opslaan"}
-          </button>
-        </div>
-        <p className="mt-3 text-sm text-muted">
-          {credentialHelp[keyName] || "Gebruik alleen een door het verkoopplatform verstrekte waarde."} Gebruik echte tokens pas wanneer dit kanaal live gekoppeld mag worden.
-        </p>
-      </form>
-
-      <div className="table-scroll">
-        <table className="data-table">
-          <thead><tr><th>Credential</th><th>Status</th><th>Opslag</th><th>Actie</th></tr></thead>
-          <tbody>
-            {credentials.length ? credentials.map((credential) => (
-              <tr key={credential.id}>
-                <td className="font-semibold">{credential.key_name}</td>
-                <td><StatusBadge status={credential.has_value ? "ingevuld" : "leeg"} /></td>
-                <td>{credential.encrypted ? "versleuteld" : "onbekend"}</td>
-                <td>
-                  <button
-                    className="rounded-md border border-red-400/25 px-3 py-1.5 text-sm font-bold text-red-300 hover:bg-red-400/10 disabled:opacity-60"
-                    disabled={busyKey === `delete-${credential.id}`}
-                    onClick={() => deleteCredential(credential.id)}
-                    type="button"
-                  >
-                    {busyKey === `delete-${credential.id}` ? "Verwijderen..." : "Verwijderen"}
+      <div className="space-y-3">
+        {fields.map((field) => {
+          const credential = credentialFor(field.key);
+          const busy = busyKey === field.key || busyKey === `delete-${credential?.id}`;
+          return (
+            <form className="rounded-md border border-line bg-slate-950/25 p-4" key={field.key} onSubmit={(event) => saveCredential(event, field)}>
+              <div className="grid gap-4 xl:grid-cols-[minmax(220px,1fr)_minmax(260px,1.3fr)_auto] xl:items-end">
+                <div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="font-black text-ink">{field.label}</span>
+                    {field.optional ? <span className="text-xs font-bold text-muted">optioneel</span> : null}
+                    <StatusBadge status={credential?.has_value ? "ingevuld" : "ontbreekt"} />
+                  </div>
+                  <p className="mt-2 text-sm text-muted">{field.description}</p>
+                </div>
+                <label className="space-y-2">
+                  <span className="text-sm font-bold text-slate-300">{credential?.has_value ? "Nieuwe waarde om te vervangen" : field.label}</span>
+                  <input
+                    autoComplete="off"
+                    className="w-full rounded-md border border-line bg-slate-950/35 px-3 py-2 text-sm text-ink outline-none focus:border-brand"
+                    onChange={(event) => setValues((current) => ({ ...current, [field.key]: event.target.value }))}
+                    placeholder={credential?.has_value ? "Huidige waarde blijft verborgen" : field.placeholder}
+                    type={field.secret ? "password" : "text"}
+                    value={values[field.key] || ""}
+                  />
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  <button className="rounded-md bg-brand px-4 py-2 text-sm font-black text-slate-950 disabled:opacity-60" disabled={busy} type="submit">
+                    {busyKey === field.key ? "Opslaan..." : credential?.has_value ? "Vervangen" : "Opslaan"}
                   </button>
-                </td>
-              </tr>
-            )) : (
-              <tr><td colSpan={4}>Nog geen credentials opgeslagen.</td></tr>
-            )}
-          </tbody>
-        </table>
+                  {credential ? (
+                    <button className="rounded-md border border-red-400/25 px-3 py-2 text-sm font-bold text-red-300 hover:bg-red-400/10 disabled:opacity-60" disabled={busy} onClick={() => deleteCredential(credential, field.label)} type="button">
+                      {busyKey === `delete-${credential.id}` ? "Verwijderen..." : "Verwijderen"}
+                    </button>
+                  ) : null}
+                </div>
+              </div>
+            </form>
+          );
+        })}
       </div>
+
+      <p className="text-sm text-muted">Opgeslagen geheime waarden worden nooit teruggetoond. Lege velden vervangen bestaande waarden niet.</p>
     </div>
   );
 }
