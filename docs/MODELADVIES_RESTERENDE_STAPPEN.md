@@ -1,10 +1,10 @@
-# Modeladvies voor de resterende auditstappen
+# Modeladvies voor de auditstappen
 
 Dit document legt vast welk model het best past bij de resterende punten uit `ANALYSE_2026-09-11.md`. Het advies is praktisch: GPT-5.6 Sol voert de meeste codewijzigingen uit; GPT-6 Astra wordt alleen ingezet als extra controle bij grote risico's of de definitieve livegang.
 
 Het advies volgt de positionering in de [officiele OpenAI-modeldocumentatie](https://developers.openai.com/api/docs/models): een sterk professioneel werkmodel voor de uitvoering en het meest capabele model alleen voor de zwaarste controles. Modelnamen en beschikbaarheid kunnen later veranderen; actualiseer dit document dan opnieuw.
 
-Actuele stand op 13 september 2026: 24 van 25 auditpunten zijn in code afgerond. Punt 24 is voltooid en geverifieerd in GitHub Actions-run `34762133779`: intern gebruik, platformtokens en internettoegang hebben nu elk een eigen status en bewijs. De echte Etsy-proef en fiscale go/no-go blijven gereserveerd voor een gerichte GPT-6 Astra-review. Punt 25 is de aanbevolen laatste implementatiestap met GPT-5.6 Sol.
+Actuele stand op 13 september 2026: alle 25 auditpunten zijn in code afgerond. Punt 25 is met GPT-5.6 Sol uitgevoerd en geverifieerd in GitHub Actions-run `34765723501`: dagelijks werk staat nu voor configuratie en technische opties zijn gericht ingeklapt. De echte Etsy-proef en fiscale go/no-go blijven gereserveerd voor een gerichte GPT-6 Astra-review.
 
 | Punt | Onderwerp | Aanbevolen model | Reden |
 | --- | --- | --- | --- |
@@ -17,7 +17,7 @@ Actuele stand op 13 september 2026: 24 van 25 auditpunten zijn in code afgerond.
 | 20 | Gemeten versus geschatte gegevens | GPT-5.6 Sol | Uitgevoerd met Sol op 13 september 2026; presentatiehelpers en mobiele browsertest zijn groen in run `34747173348` |
 | 23 | Analyse en voorraadadviezen | GPT-5.6 Sol | Uitgevoerd met Sol op 13 september 2026; uitlegbare en actuele adviezen plus mobiele gebruikersstroom zijn groen in run `34749177446` |
 | 24 | Tegenstrijdige livegangadviezen | GPT-5.6 Luna | Uitgevoerd op 13 september 2026; drie gescheiden livegangbeslissingen en gedateerd bewijs zijn groen in run `34762133779` |
-| 25 | Dagelijks werk boven configuratie | GPT-5.6 Sol | Brede UX-wijziging over meerdere dagelijkse werkprocessen |
+| 25 | Dagelijks werk boven configuratie | GPT-5.6 Sol | Uitgevoerd met Sol op 13 september 2026; dagelijkse schermhiërarchie en mobiele browsercontrole zijn groen in run `34765723501` |
 
 ## Gebruik van GPT-6 Astra
 
