@@ -3,6 +3,7 @@ import time
 from datetime import datetime, timezone
 from pathlib import Path
 
+from services.notification_service import configured_channels
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
@@ -36,6 +37,9 @@ def system_readiness_payload(db: Session) -> dict:
     offsite_backup_configured = os.getenv("OFFSITE_BACKUP_ENABLED", "false").strip().lower() in {"1", "true", "yes", "on"}
     offsite_backup_recent = _marker_is_recent(backup_status_dir / "offsite-last-success", backup_max_age_seconds)
     offsite_backup_last_success = _marker_timestamp(backup_status_dir / "offsite-last-success")
+    worker_recent = _marker_is_recent(backup_status_dir / "worker-last-run", 30 * 60)
+    worker_last_run = _marker_timestamp(backup_status_dir / "worker-last-run")
+    notification_channels = configured_channels()
     auth_enabled = os.getenv("AUTH_ENABLED", "false").strip().lower() in {"1", "true", "yes", "on"}
     auth_backend_login = os.getenv("AUTH_BACKEND_LOGIN", "false").strip().lower() in {"1", "true", "yes", "on"}
     connectors_live_mode = os.getenv("CONNECTORS_LIVE_MODE", "false").strip().lower() in {"1", "true", "yes", "on"}
@@ -99,6 +103,10 @@ def system_readiness_payload(db: Session) -> dict:
         "offsite_backup_configured": offsite_backup_configured,
         "offsite_backup_recent": offsite_backup_recent,
         "offsite_backup_last_success": offsite_backup_last_success,
+        "worker_recent": worker_recent,
+        "worker_last_run": worker_last_run,
+        "notification_channels": notification_channels,
+        "notifications_configured": bool(notification_channels),
         "auth_enabled": auth_enabled,
         "auth_backend_login": auth_backend_login,
         "secure_cookie_enabled": secure_cookie_enabled,

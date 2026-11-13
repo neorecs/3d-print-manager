@@ -4,6 +4,7 @@ from models.auth import AuditLog, User
 from models.bambu import BambuPrinter
 from models.costs import CostSetting, OrderProfitCalculation
 from models.inventory import FilamentSpool, InventoryMovement, ProductInventory
+from models.notifications import Notification
 from models.orders import Order, OrderItem
 from models.platforms import Platform, PlatformCredential, PlatformImportLog, PlatformProductLink, SalesMarket
 from models.planning import PrintBatch, PrintBatchItem, PrintJob
@@ -19,6 +20,7 @@ from models.products import (
 )
 
 __all__ = [
+    "Notification",
     "FilamentSpool",
     "AIUsageLog",
     "BambuPrinter",

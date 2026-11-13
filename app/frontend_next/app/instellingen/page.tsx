@@ -4,6 +4,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { SectionCard } from "@/components/SectionCard";
 import { StatusBadge } from "@/components/StatusBadge";
 import { getSystemReadiness } from "@/lib/api";
+import { TestNotificationButton } from "./TestNotificationButton";
 
 export const dynamic = "force-dynamic";
 
@@ -100,6 +101,17 @@ export default async function SettingsPage() {
               state={readiness.upload_backup_configured && readiness.upload_backup_recent ? "ready" : "attention"}
               detail={`${evidenceDate(readiness.upload_backup_last_success)}. Maximaal 48 uur oud.`}
             />
+            <CheckRow
+              label="Achtergrondworker"
+              state={readiness.worker_recent ? "ready" : "attention"}
+              detail={`${evidenceDate(readiness.worker_last_run)}. Haalt elke 5 minuten nieuwe orders op en verstuurt meldingen; maximaal 30 minuten oud.`}
+            />
+            <CheckRow
+              label="Meldingen op je telefoon"
+              state={readiness.notifications_configured ? "ready" : "attention"}
+              detail={readiness.notifications_configured ? `Actief via ${(readiness.notification_channels || []).join(" en ")}.` : "Nog niet ingesteld. Zet TELEGRAM_BOT_TOKEN en TELEGRAM_CHAT_ID, of NTFY_URL."}
+            />
+            {readiness.notifications_configured ? <TestNotificationButton /> : null}
             <CheckRow
               label="Backup buiten de NAS"
               state={readiness.offsite_backup_configured && readiness.offsite_backup_recent ? "ready" : "attention"}
