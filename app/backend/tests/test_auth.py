@@ -149,3 +149,50 @@ class AuthTestCase(BackendTestCase):
 
         with self.assertRaises(HTTPException):
             update_user(self.db, admin.id, "Admin", "admin", False)
+
+    def _enable_mfa(self, email: str, password: str) -> str:
+        create_admin_user(self.db, email, password, "Admin")
+        setup = start_mfa_setup(self.db, email, password)
+        confirm_mfa_setup(self.db, email, password, _totp_at_step(setup["secret"], int(time.time() // 30)))
+        return setup["secret"]
+
+    def _wrong_code(self, secret: str) -> str:
+        step = int(time.time() // 30)
+        valid = {_totp_at_step(secret, step + offset) for offset in range(-2, 3)}
+        return next(code for code in ("000000", "111111", "222222", "333333", "444444", "555555", "666666") if code not in valid)
+
+    def test_failed_mfa_codes_count_towards_login_lockout(self) -> None:
+        secret = self._enable_mfa("admin@example.com", "sterk-wachtwoord-123")
+        wrong_code = self._wrong_code(secret)
+
+        for _ in range(5):
+            with self.assertRaises(HTTPException) as failed:
+                authenticate_user(self.db, "admin@example.com", "sterk-wachtwoord-123", wrong_code)
+            self.assertEqual(failed.exception.status_code, 401)
+
+        valid_code = _totp_at_step(secret, int(time.time() // 30))
+        with self.assertRaises(HTTPException) as locked:
+            authenticate_user(self.db, "admin@example.com", "sterk-wachtwoord-123", valid_code)
+        self.assertEqual(locked.exception.status_code, 429)
+
+    def test_failed_passwords_lock_out_login(self) -> None:
+        create_admin_user(self.db, "admin@example.com", "sterk-wachtwoord-123", "Admin")
+
+        for _ in range(5):
+            with self.assertRaises(HTTPException) as failed:
+                authenticate_user(self.db, "Admin@Example.com", "verkeerd-wachtwoord")
+            self.assertEqual(failed.exception.status_code, 401)
+
+        with self.assertRaises(HTTPException) as locked:
+            authenticate_user(self.db, "admin@example.com", "sterk-wachtwoord-123")
+        self.assertEqual(locked.exception.status_code, 429)
+
+    def test_failed_logins_for_other_account_do_not_lock_out(self) -> None:
+        create_admin_user(self.db, "admin@example.com", "sterk-wachtwoord-123", "Admin")
+
+        for _ in range(5):
+            with self.assertRaises(HTTPException):
+                authenticate_user(self.db, "iemand-anders@example.com", "verkeerd-wachtwoord")
+
+        authenticated = authenticate_user(self.db, "admin@example.com", "sterk-wachtwoord-123")
+        self.assertEqual(authenticated.email, "admin@example.com")

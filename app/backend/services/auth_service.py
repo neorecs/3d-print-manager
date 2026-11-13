@@ -2,12 +2,37 @@ from datetime import datetime, timedelta, timezone
 from urllib.parse import quote
 
 from fastapi import HTTPException
-from sqlalchemy import desc, func, select
+from sqlalchemy import and_, desc, func, or_, select
 from sqlalchemy.orm import Session
 
 from core.credentials import decrypt_credential, encrypt_credential
 from core.security import generate_totp_secret, hash_password, verify_password, verify_totp_code
 from models import AuditLog, User
+
+MAX_FAILED_LOGINS = 5
+FAILED_LOGIN_WINDOW = timedelta(minutes=15)
+
+
+def failed_login_summary(normalized_email: str) -> str:
+    """Single source for the summary text the lockout query matches on."""
+    return f"Mislukte login voor {normalized_email}."
+
+
+def recent_failed_login_count(db: Session, normalized_email: str, user: User | None) -> int:
+    """Count failed password attempts for this e-mail and failed MFA codes for this user.
+
+    Both count towards the same lockout, so knowing the password alone does not allow
+    unlimited guessing of 6-digit TOTP codes.
+    """
+    cutoff = datetime.now(timezone.utc) - FAILED_LOGIN_WINDOW
+    conditions = [
+        and_(AuditLog.action == "auth.login_failed", AuditLog.summary == failed_login_summary(normalized_email)),
+    ]
+    if user is not None:
+        conditions.append(and_(AuditLog.action == "auth.mfa_login_failed", AuditLog.user_id == user.id))
+    return db.scalar(
+        select(func.count(AuditLog.id)).where(AuditLog.created_at >= cutoff, or_(*conditions))
+    ) or 0
 
 
 def get_user_by_email(db: Session, email: str) -> User | None:
@@ -146,19 +171,11 @@ def authenticate_user(
     user_agent: str | None = None,
 ) -> User:
     normalized_email = email.strip().lower()
-    cutoff = datetime.now(timezone.utc) - timedelta(minutes=15)
-    failed_attempts = db.scalar(
-        select(func.count(AuditLog.id)).where(
-            AuditLog.action.in_(["auth.login_failed", "auth.mfa_login_failed"]),
-            AuditLog.summary == f"Mislukte login voor {normalized_email}.",
-            AuditLog.created_at >= cutoff,
-        )
-    ) or 0
-    if failed_attempts >= 5:
-        raise HTTPException(status_code=429, detail="Te veel loginpogingen. Probeer het over 15 minuten opnieuw.")
     user = get_user_by_email(db, normalized_email)
+    if recent_failed_login_count(db, normalized_email, user) >= MAX_FAILED_LOGINS:
+        raise HTTPException(status_code=429, detail="Te veel loginpogingen. Probeer het over 15 minuten opnieuw.")
     if not user or not user.is_active or not verify_password(password, user.password_hash):
-        record_audit_log(db, None, "auth.login_failed", "user", None, f"Mislukte login voor {normalized_email}.", ip_address, user_agent)
+        record_audit_log(db, None, "auth.login_failed", "user", None, failed_login_summary(normalized_email), ip_address, user_agent)
         raise HTTPException(status_code=401, detail="E-mailadres of wachtwoord klopt niet.")
 
     if user.mfa_enabled:
