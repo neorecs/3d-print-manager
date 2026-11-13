@@ -115,6 +115,25 @@ async function main() {
       external_access_blockers: ["Internettoegang is uitgesteld. Gebruik eerst een domein, HTTPS en secure cookies voordat de site buiten het lokale netwerk bereikbaar wordt."],
       blockers: [], next_checks: ["Controleer het herstelbewijs."],
     });
+    if (url.pathname === "/dashboard/overview") return reply({
+      metrics: { orders_total: 41, open_orders: 7, orders_today: 3, order_new: 3, order_production: 2, order_packed: 1, order_shipped: 30, order_cancelled: 1, monthly_revenue: 1284, inventory_value: 410, low_inventory: 4, open_print_minutes: 700, planned_filament_grams: 640, filament_rolls: 9, low_filament: 1, active_filament_colors: 6, sync_needed: 2 },
+      monthly_revenue: [0, 0, 0, 0, 0, 0, 0, 0, 0, 640, 980, 1284],
+      printers: [
+        { id: 1, name: "P1S-01", active: true, last_status: "bereikbaar", last_seen_at: "2026-09-13T08:00:00Z", printer_state: "RUNNING", print_progress: 62, current_task: "Planterpot Hex M" },
+        { id: 2, name: "X1C-02", active: true, last_status: "offline", last_seen_at: "2026-09-13T06:10:00Z", printer_state: "offline", print_progress: null, current_task: null },
+        { id: 3, name: "A1-03", active: true, last_status: "bereikbaar", last_seen_at: "2026-09-13T08:00:00Z", printer_state: "IDLE", print_progress: 0, current_task: null },
+      ],
+      top_products: [{ product_id: 1, label: "Telefoonhouder", sold: 6 }],
+      low_inventory: [
+        { product_id: 1, variant_id: 1, label: "Planterpot Hex M · Wit", free_stock: 1, minimum_stock: 6 },
+        { product_id: 1, variant_id: 2, label: "Lampenkap Wave · Zand", free_stock: 2, minimum_stock: 5 },
+      ],
+      open_print_jobs: [],
+      recent_orders: [
+        { id: 1, internal_order_number: "ETSY-3187", status: "nieuw", total_amount: 38.9, currency: "EUR", order_date: "2026-09-13T19:04:00Z", platform: "Etsy" },
+        { id: 2, internal_order_number: "SHOP-1042", status: "ingepland", total_amount: 14.5, currency: "EUR", order_date: "2026-09-13T14:37:00Z", platform: "Shopify" },
+      ],
+    });
     if (url.pathname === "/products") return reply(products);
     if (/^\/products\/\d+$/.test(url.pathname)) return reply(products.find((p) => p.id === Number(url.pathname.split("/").pop())));
     if (url.pathname.endsWith("/media") && mediaFails) return reply({ detail: "Test foto storing" }, 503);

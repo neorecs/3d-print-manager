@@ -385,6 +385,15 @@ export type DashboardData = {
   topProducts: { product_id: number; label: string; sold: number }[];
   lowInventory: { product_id: number; variant_id: number; label: string; free_stock: number; minimum_stock: number }[];
   openPrintJobs: PrintJob[];
+  recentOrders: {
+    id: number;
+    internal_order_number: string;
+    status?: string | null;
+    total_amount?: number | null;
+    currency?: string | null;
+    order_date?: string | null;
+    platform?: string | null;
+  }[];
 };
 
 export type OrdersData = {

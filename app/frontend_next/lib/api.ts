@@ -73,6 +73,7 @@ export async function getDashboardData(): Promise<DashboardData> {
     top_products: DashboardData["topProducts"];
     low_inventory: DashboardData["lowInventory"];
     open_print_jobs: PrintJob[];
+    recent_orders?: DashboardData["recentOrders"];
   }>("/dashboard/overview");
   return {
     metrics: data.metrics,
@@ -81,6 +82,7 @@ export async function getDashboardData(): Promise<DashboardData> {
     topProducts: data.top_products,
     lowInventory: data.low_inventory,
     openPrintJobs: data.open_print_jobs,
+    recentOrders: data.recent_orders ?? [],
   };
 }
 
