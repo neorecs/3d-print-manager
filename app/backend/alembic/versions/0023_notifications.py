@@ -15,6 +15,13 @@ depends_on = None
 
 
 def upgrade() -> None:
+    # A fresh database gets every table from the initial migration (create_all); only add what is missing.
+    inspector = sa.inspect(op.get_bind())
+    if "notifications" in inspector.get_table_names():
+        existing_indexes = {item["name"] for item in inspector.get_indexes("notifications") if item.get("name")}
+        if "ix_notifications_status" not in existing_indexes:
+            op.create_index("ix_notifications_status", "notifications", ["status"])
+        return
     op.create_table(
         "notifications",
         sa.Column("id", sa.Integer(), primary_key=True),
