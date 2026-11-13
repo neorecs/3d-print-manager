@@ -46,8 +46,8 @@ function AnalyticsContent({ data }: { data: AnalyticsData }) {
     <div className="space-y-6">
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
         <MetricCard label="Verkocht" value={sold} note="laatste 30 dagen" />
-        <MetricCard label="Orderwaarde" value={formatCurrency(revenue)} note="niet-geannuleerde orders, 30 dagen" />
-        <MetricCard label="Geschatte winst" value={formatCurrency(profit)} note={`${margin}% marge`} tone="good" />
+        <MetricCard label="Orderwaarde" value={formatCurrency(revenue)} note="incl. btw, niet-geannuleerde orders, 30 dagen" />
+        <MetricCard label="Geschatte winst" value={formatCurrency(profit)} note={`excl. btw · ${margin}% van orderwaarde`} tone="good" />
         <MetricCard label="Producttrends" value={data.salesTrends.length} note="met historische data" />
         <MetricCard label="Open adviezen" value={openRecommendations.length} note="voorraadadvies" tone={openRecommendations.length ? "warning" : "good"} />
       </div>
@@ -56,7 +56,7 @@ function AnalyticsContent({ data }: { data: AnalyticsData }) {
         <SectionCard title="Orderwaarde per product" description="Waarde van niet-geannuleerde orderregels in de gekozen periode.">
           {revenueBars.length ? <MiniBars values={revenueBars} /> : <EmptyState title="Nog geen omzettrend" description="De grafiek verschijnt zodra er verwerkte orderhistorie is." actionHref="/orders" actionLabel="Naar orders" />}
         </SectionCard>
-        <SectionCard title="Geschatte winst per product" description="Orderwaarde min bekende variant- en geschatte filamentkosten.">
+        <SectionCard title="Geschatte winst per product" description="Orderwaarde exclusief btw, min bekende variant- en geschatte filamentkosten.">
           {profitProducts.length ? <BarList items={profitProducts} /> : <EmptyState title="Nog geen winstdata" description="Verkoop- en kostengegevens zijn nodig om producten te vergelijken." actionHref="/catalogus" actionLabel="Naar producten" />}
         </SectionCard>
         <SectionCard title="Printerbezetting" description="Deze analyse is nog niet aangesloten op opgeslagen printerhistorie.">

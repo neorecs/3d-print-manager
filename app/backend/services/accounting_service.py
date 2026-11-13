@@ -170,6 +170,30 @@ def calculate_order_gross_amount(db: Session, order: Order) -> Decimal:
     return money(sum((money(item.unit_sale_price) * int(item.quantity_ordered or 0) for item in items), Decimal("0")))
 
 
+def default_vat_rate(db: Session) -> Decimal:
+    vat_setting = db.scalar(select(AccountingFiscalSetting).where(AccountingFiscalSetting.setting_name == "default_vat_rate"))
+    try:
+        vat_rate = Decimal(vat_setting.value) if vat_setting else Decimal("21")
+    except (InvalidOperation, TypeError, ValueError) as exc:
+        raise HTTPException(status_code=409, detail="Standaard btw-percentage is ongeldig; controleer de fiscale instellingen") from exc
+    if vat_rate < 0 or vat_rate > 100:
+        raise HTTPException(status_code=409, detail="Standaard btw-percentage moet tussen 0 en 100 liggen")
+    return vat_rate
+
+
+def order_vat_rate(db: Session, order_id: int) -> Decimal:
+    """The VAT rate booked for this order, else the configured default rate."""
+    sale = db.scalar(select(AccountingSale).where(AccountingSale.order_id == order_id))
+    if sale is not None and sale.vat_rate is not None:
+        return Decimal(str(sale.vat_rate))
+    return default_vat_rate(db)
+
+
+def net_from_gross(gross_amount, vat_rate: Decimal) -> Decimal:
+    """Amount excluding VAT for a consumer price that includes VAT."""
+    return money(money(gross_amount) / (Decimal("1") + Decimal(str(vat_rate)) / Decimal("100")))
+
+
 def create_accounting_sale_from_order(db: Session, order: Order, *, commit: bool = True) -> dict:
     db.scalar(select(Order).where(Order.id == order.id).with_for_update())
     existing = db.scalar(select(AccountingSale).where(AccountingSale.order_id == order.id))
@@ -185,14 +209,8 @@ def create_accounting_sale_from_order(db: Session, order: Order, *, commit: bool
     if gross_amount <= 0:
         raise HTTPException(status_code=400, detail="Order heeft geen positief bedrag om te boeken")
 
-    vat_setting = db.scalar(select(AccountingFiscalSetting).where(AccountingFiscalSetting.setting_name == "default_vat_rate"))
-    try:
-        vat_rate = Decimal(vat_setting.value) if vat_setting else Decimal("21")
-    except (InvalidOperation, TypeError, ValueError) as exc:
-        raise HTTPException(status_code=409, detail="Standaard btw-percentage is ongeldig; controleer de fiscale instellingen") from exc
-    if vat_rate < 0 or vat_rate > 100:
-        raise HTTPException(status_code=409, detail="Standaard btw-percentage moet tussen 0 en 100 liggen")
-    net_amount = money(gross_amount / (Decimal("1") + vat_rate / Decimal("100")))
+    vat_rate = default_vat_rate(db)
+    net_amount = net_from_gross(gross_amount, vat_rate)
     vat_amount = money(gross_amount - net_amount)
     invoice_number = order.internal_order_number
     if db.scalar(select(AccountingSale.id).where(AccountingSale.invoice_number == invoice_number)):
@@ -243,45 +261,56 @@ def get_filament_price_per_gram(db: Session, material: str | None, color: str | 
 
 
 def calculate_order_profit(db: Session, order_id: int) -> OrderProfitCalculation:
+    """Estimated profit per order, excluding VAT.
+
+    Customer prices include VAT, which is passed on to the tax authority and is not
+    profit. sale_amount is therefore stored excluding VAT. Platform fees are charged
+    on the price the customer pays, so they are calculated on the gross amount.
+    """
     order = db.get(Order, order_id)
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
     seed_default_cost_settings(db)
-    settings = {item.setting_name: float(item.value) for item in db.scalars(select(CostSetting)).all()}
+    settings = {item.setting_name: Decimal(str(item.value)) for item in db.scalars(select(CostSetting)).all() if item.value is not None}
+
+    def setting(name: str) -> Decimal:
+        return settings.get(name, Decimal("0"))
+
     items = db.scalars(select(OrderItem).where(OrderItem.order_id == order_id)).all()
 
-    sale_amount = sum(float(item.unit_sale_price or 0) * item.quantity_ordered for item in items)
-    if sale_amount == 0 and order.total_amount is not None:
-        sale_amount = float(order.total_amount)
+    gross_amount = sum((money(item.unit_sale_price) * int(item.quantity_ordered or 0) for item in items), Decimal("0"))
+    if gross_amount == 0 and order.total_amount is not None:
+        gross_amount = money(order.total_amount)
+    net_amount = net_from_gross(gross_amount, order_vat_rate(db, order_id))
 
-    filament_cost = 0.0
-    electricity_hours = 0.0
+    filament_cost = Decimal("0")
+    electricity_hours = Decimal("0")
     for item in items:
         if not item.product_variant_id:
             continue
         variant = db.get(ProductVariant, item.product_variant_id)
         if not variant:
             continue
-        grams = float(variant.estimated_filament_grams or 0) * item.quantity_ordered
-        filament_cost += grams * get_filament_price_per_gram(db, variant.material, variant.color)
-        electricity_hours += ((variant.estimated_print_time_minutes or 0) * item.quantity_ordered) / 60
+        grams = Decimal(str(variant.estimated_filament_grams or 0)) * int(item.quantity_ordered or 0)
+        filament_cost += grams * Decimal(str(get_filament_price_per_gram(db, variant.material, variant.color)))
+        electricity_hours += Decimal(int(variant.estimated_print_time_minutes or 0) * int(item.quantity_ordered or 0)) / Decimal("60")
 
-    packaging_cost = settings.get("packaging_cost_per_order", 0)
-    platform_fee = sale_amount * (settings.get("platform_fee_percent", 0) / 100) + settings.get("platform_fee_fixed", 0)
-    shipping_cost = settings.get("shipping_cost_per_order", 0)
-    electricity_cost = electricity_hours * settings.get("electricity_cost_per_hour", 0)
-    estimated_profit = sale_amount - filament_cost - packaging_cost - platform_fee - shipping_cost - electricity_cost
+    packaging_cost = setting("packaging_cost_per_order")
+    platform_fee = gross_amount * setting("platform_fee_percent") / Decimal("100") + setting("platform_fee_fixed")
+    shipping_cost = setting("shipping_cost_per_order")
+    electricity_cost = electricity_hours * setting("electricity_cost_per_hour")
+    estimated_profit = net_amount - filament_cost - packaging_cost - platform_fee - shipping_cost - electricity_cost
 
     calculation = db.scalar(select(OrderProfitCalculation).where(OrderProfitCalculation.order_id == order_id))
     if not calculation:
         calculation = OrderProfitCalculation(order_id=order_id)
         db.add(calculation)
 
-    calculation.sale_amount = round(sale_amount, 2)
-    calculation.filament_cost = round(filament_cost, 2)
-    calculation.packaging_cost = round(packaging_cost, 2)
-    calculation.platform_fee = round(platform_fee, 2)
-    calculation.shipping_cost = round(shipping_cost, 2)
-    calculation.electricity_cost = round(electricity_cost, 2)
-    calculation.estimated_profit = round(estimated_profit, 2)
+    calculation.sale_amount = money(net_amount)
+    calculation.filament_cost = money(filament_cost)
+    calculation.packaging_cost = money(packaging_cost)
+    calculation.platform_fee = money(platform_fee)
+    calculation.shipping_cost = money(shipping_cost)
+    calculation.electricity_cost = money(electricity_cost)
+    calculation.estimated_profit = money(estimated_profit)
     return calculation

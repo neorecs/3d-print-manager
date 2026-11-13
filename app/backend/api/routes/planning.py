@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from datetime import datetime, timezone
 
 from fastapi import APIRouter
@@ -418,6 +420,13 @@ def build_sales_analysis(db: Session, period_days: int) -> list[dict]:
         )
     ).all()
     grouped = {}
+    default_rate = default_vat_rate(db) if order_items else None
+    order_ids = {item.order_id for item in order_items}
+    booked_rates = {
+        sale.order_id: Decimal(str(sale.vat_rate))
+        for sale in db.scalars(select(AccountingSale).where(AccountingSale.order_id.in_(order_ids))).all()
+        if sale.vat_rate is not None
+    } if order_ids else {}
     for item in order_items:
         if not item.product_id or not item.product_variant_id:
             continue
@@ -443,7 +452,7 @@ def build_sales_analysis(db: Session, period_days: int) -> list[dict]:
         revenue = float(item.unit_sale_price or variant.default_sale_price or 0) * item.quantity_ordered
         row["quantity_sold"] += item.quantity_ordered
         row["revenue"] += revenue
-        row["estimated_profit"] += estimate_item_profit(db, item, variant, revenue)
+        row["estimated_profit"] += estimate_item_profit(db, item, variant, revenue, booked_rates.get(item.order_id, default_rate))
 
     for row in grouped.values():
         row["revenue"] = round(row["revenue"], 2)
@@ -452,11 +461,14 @@ def build_sales_analysis(db: Session, period_days: int) -> list[dict]:
     return sorted(grouped.values(), key=lambda item: item["quantity_sold"], reverse=True)
 
 
-def estimate_item_profit(db: Session, item: OrderItem, variant: ProductVariant, revenue: float) -> float:
+def estimate_item_profit(db: Session, item: OrderItem, variant: ProductVariant, revenue: float, vat_rate=None) -> float:
+    """Rough profit for analytics: revenue excluding VAT minus filament and variant cost."""
+    rate = vat_rate if vat_rate is not None else order_vat_rate(db, item.order_id)
+    net_revenue = float(net_from_gross(revenue, rate))
     grams = float(variant.estimated_filament_grams or 0) * item.quantity_ordered
     filament_cost = grams * get_filament_price_per_gram(db, variant.material, variant.color)
     variant_cost = float(variant.cost_price or 0) * item.quantity_ordered
-    return revenue - filament_cost - variant_cost
+    return net_revenue - filament_cost - variant_cost
 
 
 def group_sales_dimension(db: Session, period_days: int, dimension: str) -> list[dict]:
