@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     auth_bootstrap_secret: str | None = None
     auth_secret: str | None = None
     backend_internal_token: str | None = None
+    etsy_redirect_uri: str | None = None
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 

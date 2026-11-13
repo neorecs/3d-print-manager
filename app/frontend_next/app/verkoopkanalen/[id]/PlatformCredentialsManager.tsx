@@ -24,7 +24,7 @@ const platformFields: Record<string, CredentialField[]> = {
   etsy: [
     { key: "api_key", label: "API-key", description: "De Etsy App API Key keystring uit het Developer Portal.", placeholder: "Plak hier de Etsy API-key", secret: true },
     { key: "shared_secret", label: "App-geheim", description: "Het Shared Secret dat bij de Etsy API-key hoort.", placeholder: "Plak hier het Etsy Shared Secret", secret: true },
-    { key: "access_token", label: "OAuth-toegangstoken", description: "Geeft toegang tot jouw Etsy-winkel. Dit wordt later via Verbinden met Etsy opgehaald.", placeholder: "Plak hier voorlopig het OAuth-token", secret: true },
+    { key: "access_token", label: "OAuth-toegangstoken", description: "Wordt automatisch opgehaald en ververst via Verbinden met Etsy. Alleen met de hand invullen als je geen koppeling gebruikt.", placeholder: "Gebruik bij voorkeur Verbinden met Etsy", secret: true, optional: true },
     { key: "shop_id", label: "Winkelnummer", description: "Het numerieke shop-ID van jouw Etsy-winkel.", placeholder: "Bijvoorbeeld 12345678" },
     { key: "taxonomy_id", label: "Standaardcategorie", description: "Etsy categorie-ID voor nieuwe publicaties.", placeholder: "Numerieke Etsy categorie-ID" },
     { key: "readiness_state_id", label: "Verwerkingsprofiel", description: "Etsy processing profile voor fysieke producten.", placeholder: "Numeriek verwerkingsprofiel-ID" },
@@ -37,6 +37,9 @@ const platformFields: Record<string, CredentialField[]> = {
   ],
 };
 
+// Managed by the Etsy OAuth flow; never edited by hand.
+const managedKeys = new Set(["refresh_token", "access_token_expires_at", "oauth_state", "oauth_code_verifier", "oauth_started_at"]);
+
 export function PlatformCredentialsManager({ platform, status, credentials }: Props) {
   const router = useRouter();
   const fields = useMemo(() => {
@@ -46,7 +49,7 @@ export function PlatformCredentialsManager({ platform, status, credentials }: Pr
       ...(status?.required_credentials || []),
       ...(status?.missing_credentials || []),
       ...credentials.map((item) => item.key_name),
-    ].filter((key) => key && !knownKeys.has(key));
+    ].filter((key) => key && !knownKeys.has(key) && !managedKeys.has(key));
     const additional: CredentialField[] = Array.from(new Set(additionalKeys)).map((key) => ({
       key,
       label: key,
@@ -60,6 +63,24 @@ export function PlatformCredentialsManager({ platform, status, credentials }: Pr
   const [busyKey, setBusyKey] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const isEtsy = platform.type.toLowerCase() === "etsy";
+  const etsyConnected = credentials.some((item) => item.key_name === "refresh_token" && item.has_value);
+
+  async function connectEtsy() {
+    setBusyKey("etsy-oauth");
+    setMessage(null);
+    setError(null);
+    try {
+      const response = await fetch(`/api/platform-credentials/etsy/${platform.id}/oauth/start`, { method: "POST" });
+      const data = await response.json().catch(() => null);
+      if (!response.ok || !data?.authorize_url) throw new Error(data?.detail || "Verbinden met Etsy kon niet starten.");
+      window.location.assign(data.authorize_url);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Verbinden met Etsy kon niet starten.");
+      setBusyKey(null);
+    }
+  }
 
   function credentialFor(key: string) {
     return credentials.find((credential) => credential.key_name === key);
@@ -111,6 +132,21 @@ export function PlatformCredentialsManager({ platform, status, credentials }: Pr
     <div className="space-y-4">
       {message ? <div className="rounded-md border border-emerald-400/25 bg-emerald-400/10 px-3 py-2 text-sm font-semibold text-emerald-300">{message}</div> : null}
       {error ? <div className="rounded-md border border-red-400/25 bg-red-400/10 px-3 py-2 text-sm font-semibold text-red-300">{error}</div> : null}
+
+      {isEtsy ? (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-line bg-slate-950/25 p-4">
+          <div>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="font-black text-ink">Koppeling met je Etsy-winkel</span>
+              <StatusBadge status={etsyConnected ? "verbonden" : "niet verbonden"} />
+            </div>
+            <p className="mt-2 text-sm text-muted">Je logt in bij Etsy en geeft toestemming. Daarna ververst de app het toegangstoken zelf; opnieuw verbinden is alleen nodig als de koppeling 90 dagen niet gebruikt is.</p>
+          </div>
+          <button className="rounded-md bg-brand px-4 py-2 text-sm font-black text-slate-950 disabled:opacity-60" disabled={busyKey !== null} onClick={connectEtsy} type="button">
+            {busyKey === "etsy-oauth" ? "Doorsturen..." : etsyConnected ? "Opnieuw verbinden" : "Verbinden met Etsy"}
+          </button>
+        </div>
+      ) : null}
 
       <div className="space-y-3">
         {fields.map((field) => {

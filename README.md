@@ -208,6 +208,8 @@ SHOPIFY_API_VERSION=2026-04
 
 Credentials die via de applicatie worden opgeslagen, worden versleuteld met `CREDENTIAL_ENCRYPTION_KEY`. De lokale initializer maakt hiervoor een unieke sleutel; Docker Compose heeft geen fallback-key.
 
+Etsy koppel je via **Verkoopkanalen → Etsy → Verbinden met Etsy** (OAuth met PKCE). Sla eerst de API-key en het shared secret op en zet `ETSY_REDIRECT_URI` op het adres van de app gevolgd door `/api/platform-credentials/etsy/oauth/callback`; registreer exact dat adres in je Etsy-app. De app ververst het toegangstoken (1 uur geldig) daarna zelf en bewaart elke nieuwe refresh-token versleuteld.
+
 Shopify live publicatie/synchronisatie gebruikt de Admin GraphQL API `2026-04` en ondersteunt productdetails, externe media, bulkvarianten, orderimport met platformstatus en voorraad-sync. Etsy ondersteunt conceptlisting, listingvelden, inventory/varianten, lokale productfoto-upload en receipt-import. Beide ketens zijn met gesimuleerde platformresponses getest; echte credentials en bewuste live-acceptatie blijven verplicht voordat `CONNECTORS_LIVE_MODE=true` wordt gebruikt.
 
 ## Tests
