@@ -1,11 +1,13 @@
 import json
 import logging
 import os
+import time
 import uuid
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
 from connectors.base import ConnectorResult, PlatformConnector
+from connectors.retry import MAX_ATTEMPTS, RETRYABLE_STATUS_CODES, retry_delay
 
 
 SHOPIFY_API_VERSION = os.getenv("SHOPIFY_API_VERSION", "2026-04")
@@ -15,6 +17,7 @@ logger = logging.getLogger(__name__)
 class ShopifyConnector(PlatformConnector):
     platform_type = "shopify"
     required_credentials = ["access_token", "shop_domain"]
+    sleep = staticmethod(time.sleep)
 
     def publish_product(self, payload: dict) -> ConnectorResult:
         if not self.live_mode:
@@ -259,33 +262,54 @@ class ShopifyConnector(PlatformConnector):
 
     def _graphql(self, query: str, variables: dict) -> dict:
         shop_domain = self._normalized_shop_domain()
-        request = Request(
-            f"https://{shop_domain}/admin/api/{SHOPIFY_API_VERSION}/graphql.json",
-            data=json.dumps({"query": query, "variables": variables}).encode("utf-8"),
-            headers={
-                "Content-Type": "application/json",
-                "X-Shopify-Access-Token": self.credentials["access_token"],
-            },
-            method="POST",
-        )
-        try:
-            with urlopen(request, timeout=30) as response:
-                payload = json.loads(response.read().decode("utf-8"))
-        except HTTPError as exc:
-            body = exc.read().decode("utf-8", errors="replace")
-            logger.warning("Shopify HTTP error: %s", exc.code)
-            return {"errors": [{"message": f"Shopify HTTP {exc.code}: {body}"}]}
-        except URLError as exc:
-            logger.warning("Shopify connection error: %s", exc.reason)
-            return {"errors": [{"message": f"Shopify verbinding mislukt: {exc.reason}"}]}
-        except (json.JSONDecodeError, OSError) as exc:
-            logger.warning("Shopify request failed: %s", exc)
-            return {"errors": [{"message": f"Shopify request mislukt: {exc}"}]}
+        body = json.dumps({"query": query, "variables": variables}).encode("utf-8")
+        payload = None
+        for attempt in range(MAX_ATTEMPTS):
+            request = Request(
+                f"https://{shop_domain}/admin/api/{SHOPIFY_API_VERSION}/graphql.json",
+                data=body,
+                headers={
+                    "Content-Type": "application/json",
+                    "X-Shopify-Access-Token": self.credentials["access_token"],
+                },
+                method="POST",
+            )
+            try:
+                with urlopen(request, timeout=30) as response:
+                    payload = json.loads(response.read().decode("utf-8"))
+            except HTTPError as exc:
+                error_body = exc.read().decode("utf-8", errors="replace")
+                logger.warning("Shopify HTTP error: %s", exc.code)
+                if exc.code in RETRYABLE_STATUS_CODES and attempt < MAX_ATTEMPTS - 1:
+                    self.sleep(retry_delay(exc.headers.get("Retry-After") if exc.headers else None, attempt))
+                    continue
+                return {"errors": [{"message": f"Shopify HTTP {exc.code}: {error_body}"}]}
+            except URLError as exc:
+                logger.warning("Shopify connection error: %s", exc.reason)
+                if attempt < MAX_ATTEMPTS - 1:
+                    self.sleep(retry_delay(None, attempt))
+                    continue
+                return {"errors": [{"message": f"Shopify verbinding mislukt: {exc.reason}"}]}
+            except (json.JSONDecodeError, OSError) as exc:
+                logger.warning("Shopify request failed: %s", exc)
+                return {"errors": [{"message": f"Shopify request mislukt: {exc}"}]}
+            if self._is_throttled(payload) and attempt < MAX_ATTEMPTS - 1:
+                # GraphQL rate limits come back as HTTP 200 with a THROTTLED error.
+                self.sleep(retry_delay(None, attempt))
+                continue
+            break
 
         if payload.get("errors"):
             messages = ", ".join(error.get("message", str(error)) for error in payload["errors"])
             return {"data": {}, "errors": [{"message": messages}], "raw": payload}
         return payload
+
+    @staticmethod
+    def _is_throttled(payload: dict | None) -> bool:
+        for error in (payload or {}).get("errors") or []:
+            if isinstance(error, dict) and (error.get("extensions") or {}).get("code") == "THROTTLED":
+                return True
+        return False
 
     def _product_input(self, payload: dict) -> dict:
         product_input = {
