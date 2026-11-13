@@ -72,7 +72,7 @@ function OrderContent({ data }: { data: OrderDetailData }) {
         </SectionCard>
 
         <SectionCard title="Orderacties" description="Voer acties bewust in deze volgorde uit.">
-          <OrderActions accountingSale={data.accountingSale} orderId={data.order.id} />
+          <OrderActions accountingSale={data.accountingSale} orderId={data.order.id} orderStatus={data.order.status} />
         </SectionCard>
       </div>
 

@@ -49,3 +49,19 @@ test("primary button issues one request and does not separately book accounting"
   assert.deepEqual(calls, [["/api/orders/12/action", "process"]]);
   assert.equal(refreshes, 1);
 });
+
+test("order action proxy forwards ship, pack and cancel to their own backend endpoints", async () => {
+  for (const action of ["ship", "pack", "cancel"]) {
+    let requested = null;
+    const route = load("app/api/orders/[id]/action/route.ts", {
+      "next/server": { NextResponse: { json: Response.json.bind(Response) } },
+      "@/lib/backend-auth": { getBackendBaseUrl: () => "http://backend", backendFetch: async (url) => {
+        requested = url;
+        return Response.json({ status: "ok" });
+      } },
+    });
+    const response = await route.POST({ json: async () => ({ action }) }, { params: Promise.resolve({ id: "12" }) });
+    assert.equal(response.status, 200);
+    assert.equal(requested, `http://backend/orders/12/${action}`);
+  }
+});

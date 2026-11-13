@@ -5,6 +5,15 @@ import { useRouter } from "next/navigation";
 import type { AccountingSale } from "@/lib/types";
 
 type OrderAction = "process" | "link-items" | "process-inventory" | "create-print-jobs" | "create-accounting-sale";
+type FulfillmentAction = "pack" | "ship" | "cancel";
+
+const fulfillmentLabels: Record<FulfillmentAction, string> = {
+  pack: "Ingepakt",
+  ship: "Verzonden",
+  cancel: "Order annuleren",
+};
+
+const closedStatuses = new Set(["verzonden", "geannuleerd"]);
 
 const actionLabels: Record<OrderAction, string> = {
   "process": "Order verwerken",
@@ -14,9 +23,9 @@ const actionLabels: Record<OrderAction, string> = {
   "create-accounting-sale": "Verkoopboeking maken",
 };
 
-export function OrderActions({ orderId, accountingSale }: { orderId: number; accountingSale?: AccountingSale | null }) {
+export function OrderActions({ orderId, accountingSale, orderStatus }: { orderId: number; accountingSale?: AccountingSale | null; orderStatus?: string | null }) {
   const router = useRouter();
-  const [busyAction, setBusyAction] = useState<OrderAction | "all" | null>(null);
+  const [busyAction, setBusyAction] = useState<OrderAction | FulfillmentAction | "all" | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -56,6 +65,30 @@ export function OrderActions({ orderId, accountingSale }: { orderId: number; acc
     }
   }
 
+  async function runFulfillment(action: FulfillmentAction) {
+    if (busyAction !== null) return;
+    if (action === "cancel" && !window.confirm("Order annuleren? Reserveringen worden vrijgegeven en printwerk dat nog niet gestart is, wordt geannuleerd.")) return;
+    setBusyAction(action);
+    setMessage(null);
+    setError(null);
+    try {
+      const response = await fetch(`/api/orders/${orderId}/action`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action }),
+      });
+      const data = await response.json().catch(() => null);
+      if (!response.ok) throw new Error(data?.detail || `${fulfillmentLabels[action]} is mislukt`);
+      const warnings: string[] = Array.isArray(data?.warnings) ? data.warnings : [];
+      setMessage([data?.message || "Order bijgewerkt.", ...warnings].join(" "));
+      router.refresh();
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Orderactie is mislukt");
+    } finally {
+      setBusyAction(null);
+    }
+  }
+
   async function processOrder() {
     if (busyAction !== null) return;
     setBusyAction("all");
@@ -86,6 +119,22 @@ export function OrderActions({ orderId, accountingSale }: { orderId: number; acc
       <button className="w-full rounded-md bg-brand px-4 py-3 text-sm font-black text-slate-950 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto" disabled={busyAction !== null} onClick={processOrder} type="button">
         {busyAction === "all" ? "Order verwerken..." : "Order verwerken"}
       </button>
+      {orderStatus && !closedStatuses.has(orderStatus) ? (
+        <div className="flex flex-wrap gap-2">
+          {orderStatus !== "ingepakt" ? (
+            <button className="rounded-md border border-line px-3 py-2 text-sm font-bold text-slate-200 hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-60" disabled={busyAction !== null} onClick={() => runFulfillment("pack")} type="button">
+              {busyAction === "pack" ? "Bezig..." : fulfillmentLabels.pack}
+            </button>
+          ) : null}
+          <button className="rounded-md border border-line px-3 py-2 text-sm font-bold text-slate-200 hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-60" disabled={busyAction !== null} onClick={() => runFulfillment("ship")} type="button">
+            {busyAction === "ship" ? "Bezig..." : fulfillmentLabels.ship}
+          </button>
+          <button className="rounded-md border border-red-400/30 px-3 py-2 text-sm font-bold text-red-300 hover:bg-red-400/10 disabled:cursor-not-allowed disabled:opacity-60" disabled={busyAction !== null} onClick={() => runFulfillment("cancel")} type="button">
+            {busyAction === "cancel" ? "Bezig..." : fulfillmentLabels.cancel}
+          </button>
+        </div>
+      ) : null}
+      <p className="text-sm leading-6 text-muted">Verzonden boekt de gereserveerde voorraad af. Annuleren geeft reserveringen vrij en annuleert printwerk dat nog niet gestart is.</p>
       <p className="text-sm leading-6 text-muted">Deze actie koppelt productregels, reserveert beschikbare voorraad, maakt alleen voor tekorten printtaken en legt de verkoop administratief vast. Opnieuw uitvoeren veroorzaakt geen dubbele reserveringen.</p>
       <details className="rounded-md border border-line bg-slate-950/20 p-3">
         <summary className="cursor-pointer text-sm font-bold text-slate-300">Afzonderlijke herstelacties</summary>
