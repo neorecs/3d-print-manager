@@ -230,17 +230,17 @@ export function BambuPrinterManager({ printers }: { printers: BambuPrinter[] }) 
 
   return (
     <div className="space-y-5">
-      {message ? <div className="rounded-md border border-emerald-400/25 bg-emerald-400/10 px-3 py-2 text-sm font-semibold text-emerald-300">{message}</div> : null}
-      {error ? <div className="rounded-md border border-red-400/25 bg-red-400/10 px-3 py-2 text-sm font-semibold text-red-300">{error}</div> : null}
+      {message ? <div className="rounded-md border border-emerald-400/25 bg-emerald-400/10 px-3 py-2 text-sm font-semibold text-emerald-700">{message}</div> : null}
+      {error ? <div className="rounded-md border border-red-400/25 bg-red-400/10 px-3 py-2 text-sm font-semibold text-red-700">{error}</div> : null}
 
-      <form className="rounded-lg border border-line bg-slate-950/25 p-4" onSubmit={createPrinter}>
-        <h3 className="font-bold text-ink">Bambu-printer toevoegen</h3>
+      <form className="rounded-lg border border-line bg-surfaceSoft p-4" onSubmit={createPrinter}>
+        <h3 className="font-semibold text-ink">Bambu-printer toevoegen</h3>
         <p className="mt-1 text-sm text-muted">
           Gebruik het lokale IP-adres van de printer. De access code wordt versleuteld opgeslagen en niet teruggetoond. De site gebruikt LAN-bediening voor status en handmatige printstart; Bambu Studio blijft daarnaast gewoon bruikbaar.
         </p>
         <PrinterFields draft={newDraft} onChange={updateNew} />
         <div className="mt-4 flex justify-end">
-          <button className="rounded-md bg-brand px-4 py-2 text-sm font-black text-slate-950 disabled:opacity-60" disabled={busyKey === "new"} type="submit">
+          <button className="rounded-md bg-brand px-4 py-2 text-sm font-semibold text-onBrand disabled:opacity-60" disabled={busyKey === "new"} type="submit">
             {busyKey === "new" ? "Aanmaken..." : "Printer aanmaken"}
           </button>
         </div>
@@ -254,7 +254,7 @@ export function BambuPrinterManager({ printers }: { printers: BambuPrinter[] }) 
               <summary className="cursor-pointer list-none">
                 <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                   <div>
-                    <div className="font-bold text-ink">{printer.name}</div>
+                    <div className="font-semibold text-ink">{printer.name}</div>
                     <p className="mt-1 text-sm text-muted">
                       {printer.model || "model onbekend"} - {printer.host}:{printer.mqtt_port} - {printer.location || "geen locatie"}
                     </p>
@@ -277,13 +277,13 @@ export function BambuPrinterManager({ printers }: { printers: BambuPrinter[] }) 
               <div className="mt-4 border-t border-line pt-4">
                 <PrinterFields draft={draft} onChange={(field, value) => updateDraft(printer.id, field, value)} />
                 <div className="mt-4 flex flex-wrap justify-end gap-3">
-                  <button className="rounded-md border border-line bg-slate-950/35 px-4 py-2 text-sm font-bold text-slate-300 hover:bg-white/5 disabled:opacity-60" disabled={busyKey !== null} onClick={() => testConnection(printer.id)} type="button">
+                  <button className="rounded-md border border-line bg-surfaceSoft px-4 py-2 text-sm font-semibold text-inkSoft hover:bg-hover disabled:opacity-60" disabled={busyKey !== null} onClick={() => testConnection(printer.id)} type="button">
                     {busyKey === `test-${printer.id}` ? "Testen..." : "Verbinding testen"}
                   </button>
-                  <button className="rounded-md border border-line bg-slate-950/35 px-4 py-2 text-sm font-bold text-slate-300 hover:bg-white/5 disabled:opacity-60" disabled={busyKey !== null} onClick={() => refreshStatus(printer.id)} type="button">
+                  <button className="rounded-md border border-line bg-surfaceSoft px-4 py-2 text-sm font-semibold text-inkSoft hover:bg-hover disabled:opacity-60" disabled={busyKey !== null} onClick={() => refreshStatus(printer.id)} type="button">
                     {busyKey === `status-${printer.id}` ? "Ophalen..." : "Status ophalen"}
                   </button>
-                  <button className="rounded-md bg-brand px-4 py-2 text-sm font-black text-slate-950 disabled:opacity-60" disabled={busyKey !== null} onClick={() => savePrinter(printer.id)} type="button">
+                  <button className="rounded-md bg-brand px-4 py-2 text-sm font-semibold text-onBrand disabled:opacity-60" disabled={busyKey !== null} onClick={() => savePrinter(printer.id)} type="button">
                     {busyKey === `save-${printer.id}` ? "Opslaan..." : "Printer opslaan"}
                   </button>
                 </div>
@@ -413,7 +413,7 @@ function BambuPrintStartPanel({ printer, onRefresh }: { printer: BambuPrinter; o
     <div className="mt-5 rounded-xl border border-amber-400/25 bg-amber-400/5 p-4">
       <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
         <div>
-          <h4 className="font-black text-ink">Printbestand op afstand starten</h4>
+          <h4 className="font-semibold text-ink">Printbestand op afstand starten</h4>
           <p className="mt-1 text-sm leading-6 text-muted">
             Gebruik dit voor printfarm-opdrachten die al door Bambu Studio zijn voorbereid. Voor losse of persoonlijke prints kun je Bambu Studio gewoon blijven gebruiken.
           </p>
@@ -425,16 +425,16 @@ function BambuPrintStartPanel({ printer, onRefresh }: { printer: BambuPrinter; o
         <TextField label="Plate/gcode-pad in 3MF" value={draft.plate} onChange={(value) => update("plate", value)} placeholder="Metadata/plate_1.gcode" />
       </div>
 
-      <div className="mt-4 rounded-lg border border-line bg-slate-950/25 p-4">
+      <div className="mt-4 rounded-lg border border-line bg-surfaceSoft p-4">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <h5 className="font-black text-ink">3MF-bestand via de site gebruiken</h5>
+            <h5 className="font-semibold text-ink">3MF-bestand via de site gebruiken</h5>
             <p className="mt-1 text-sm leading-6 text-muted">
               Upload hier een door Bambu Studio voorbereid .gcode.3mf bestand. Bij printstart stuurt de site dit bestand eerst via FTPS naar de printer en start daarna de print via LAN/MQTT.
             </p>
-            {draft.local_upload_path ? <p className="mt-2 text-xs font-bold text-emerald-300">Bestand klaar in de app: {draft.local_upload_path}</p> : null}
+            {draft.local_upload_path ? <p className="mt-2 text-xs font-semibold text-emerald-700">Bestand klaar in de app: {draft.local_upload_path}</p> : null}
           </div>
-          <label className="inline-flex cursor-pointer items-center justify-center rounded-md border border-line bg-slate-950/35 px-4 py-2 text-sm font-black text-slate-200 hover:bg-white/5">
+          <label className="inline-flex cursor-pointer items-center justify-center rounded-md border border-line bg-surfaceSoft px-4 py-2 text-sm font-semibold text-ink hover:bg-hover">
             {busy === "upload" ? "Uploaden..." : "Printbestand kiezen"}
             <input accept=".gcode.3mf" className="sr-only" disabled={busy !== null} onChange={uploadPrintFile} type="file" />
           </label>
@@ -451,7 +451,7 @@ function BambuPrintStartPanel({ printer, onRefresh }: { printer: BambuPrinter; o
       </div>
 
       <div className="mt-4 flex flex-wrap gap-3">
-        <button className="rounded-md border border-line bg-slate-950/35 px-4 py-2 text-sm font-bold text-slate-300 hover:bg-white/5 disabled:opacity-60" disabled={busy !== null} onClick={runPreflight} type="button">
+        <button className="rounded-md border border-line bg-surfaceSoft px-4 py-2 text-sm font-semibold text-inkSoft hover:bg-hover disabled:opacity-60" disabled={busy !== null} onClick={runPreflight} type="button">
           {busy === "preflight" ? "Controleren..." : "Preflight controleren"}
         </button>
       </div>
@@ -459,8 +459,8 @@ function BambuPrintStartPanel({ printer, onRefresh }: { printer: BambuPrinter; o
       {preflight ? (
         <div className="mt-4 space-y-2">
           {preflight.checks.map((check) => (
-            <div className={`rounded-lg border px-3 py-2 text-sm ${check.ok ? "border-emerald-400/20 bg-emerald-400/10 text-emerald-100" : check.level === "warning" ? "border-amber-400/25 bg-amber-400/10 text-amber-100" : "border-red-400/25 bg-red-400/10 text-red-100"}`} key={check.name}>
-              <span className="font-black">{check.ok ? "OK" : check.level === "warning" ? "Let op" : "Blokkeert"} - {check.name}:</span> {check.message}
+            <div className={`rounded-lg border px-3 py-2 text-sm ${check.ok ? "border-emerald-400/20 bg-emerald-400/10 text-emerald-800" : check.level === "warning" ? "border-amber-400/25 bg-amber-400/10 text-amber-800" : "border-red-400/25 bg-red-400/10 text-red-800"}`} key={check.name}>
+              <span className="font-semibold">{check.ok ? "OK" : check.level === "warning" ? "Let op" : "Blokkeert"} - {check.name}:</span> {check.message}
             </div>
           ))}
         </div>
@@ -468,28 +468,28 @@ function BambuPrintStartPanel({ printer, onRefresh }: { printer: BambuPrinter; o
 
       <div className="mt-4 grid gap-3 md:grid-cols-[1fr_auto] md:items-end">
         <label className="space-y-2">
-          <span className="text-sm font-bold text-slate-300">Bevestigingstekst</span>
+          <span className="text-sm font-semibold text-inkSoft">Bevestigingstekst</span>
           <input
-            className="w-full rounded-md border border-line bg-slate-950/35 px-3 py-2 text-sm text-ink outline-none focus:border-brand"
+            className="w-full rounded-md border border-line bg-surfaceSoft px-3 py-2 text-sm text-ink outline-none focus:border-brand"
             onChange={(event) => update("confirmation_text", event.target.value)}
             placeholder="Typ START PRINT"
             value={draft.confirmation_text}
           />
         </label>
-        <button className="rounded-md bg-brand px-4 py-2 text-sm font-black text-slate-950 disabled:opacity-50" disabled={busy !== null || !canStart} onClick={startPrint} type="button">
+        <button className="rounded-md bg-brand px-4 py-2 text-sm font-semibold text-onBrand disabled:opacity-50" disabled={busy !== null || !canStart} onClick={startPrint} type="button">
           {busy === "start" ? "Start verzenden..." : "Print starten"}
         </button>
       </div>
 
-      {message ? <div className="mt-4 rounded-md border border-emerald-400/25 bg-emerald-400/10 px-3 py-2 text-sm font-semibold text-emerald-200">{message}</div> : null}
-      {error ? <div className="mt-4 rounded-md border border-red-400/25 bg-red-400/10 px-3 py-2 text-sm font-semibold text-red-200">{error}</div> : null}
+      {message ? <div className="mt-4 rounded-md border border-emerald-400/25 bg-emerald-400/10 px-3 py-2 text-sm font-semibold text-emerald-700">{message}</div> : null}
+      {error ? <div className="mt-4 rounded-md border border-red-400/25 bg-red-400/10 px-3 py-2 text-sm font-semibold text-red-700">{error}</div> : null}
     </div>
   );
 }
 
 function Option({ label, checked, onChange }: { label: string; checked: boolean; onChange: (checked: boolean) => void }) {
   return (
-    <label className="flex items-center gap-3 rounded-md border border-line bg-slate-950/35 px-3 py-2 text-sm font-semibold text-ink">
+    <label className="flex items-center gap-3 rounded-md border border-line bg-surfaceSoft px-3 py-2 text-sm font-semibold text-ink">
       <input checked={checked} onChange={(event) => onChange(event.target.checked)} type="checkbox" />
       {label}
     </label>
@@ -506,7 +506,7 @@ function PrinterFields({ draft, onChange }: { draft: PrinterDraft; onChange: (fi
       <TextField label="Serienummer voor status en printstart" value={draft.serial_number} onChange={(value) => onChange("serial_number", value)} placeholder="Nodig voor status en printstart" />
       <TextField label="Locatie" value={draft.location} onChange={(value) => onChange("location", value)} placeholder="Bijv. Rek printerfarm" />
       <TextField label="Access code" value={draft.access_code} onChange={(value) => onChange("access_code", value)} placeholder="Leeg laten om bestaande code te behouden" type="password" />
-      <label className="flex items-center gap-3 rounded-md border border-line bg-slate-950/35 px-3 py-2 text-sm text-ink font-semibold">
+      <label className="flex items-center gap-3 rounded-md border border-line bg-surfaceSoft px-3 py-2 text-sm text-ink font-semibold">
         <input checked={draft.active} onChange={(event) => onChange("active", event.target.checked)} type="checkbox" />
         Printer actief
       </label>
@@ -517,7 +517,7 @@ function PrinterFields({ draft, onChange }: { draft: PrinterDraft; onChange: (fi
 function StatusValue({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-md border border-line bg-panelSoft px-3 py-2">
-      <div className="text-[11px] font-bold uppercase tracking-wide text-muted">{label}</div>
+      <div className="text-[11px] font-semibold tracking-wide text-muted">{label}</div>
       <div className="mt-1 truncate font-semibold text-ink">{value}</div>
     </div>
   );
@@ -542,9 +542,9 @@ function TextField({
 }) {
   return (
     <label className="space-y-2">
-      <span className="text-sm font-bold text-slate-300">{label}</span>
+      <span className="text-sm font-semibold text-inkSoft">{label}</span>
       <input
-        className="w-full rounded-md border border-line bg-slate-950/35 px-3 py-2 text-sm text-ink outline-none focus:border-brand"
+        className="w-full rounded-md border border-line bg-surfaceSoft px-3 py-2 text-sm text-ink outline-none focus:border-brand"
         inputMode={inputMode}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}

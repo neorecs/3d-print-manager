@@ -62,6 +62,12 @@ jobs:
         env:
           AUTH_ENABLED: "false"
           BACKEND_INTERNAL_TOKEN: "ci-internal-token-at-least-32-characters"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ui-screenshots
+          path: app/frontend_next/.next/audit-screenshots
+          retention-days: 14
       - run: npm start &
         env:
           AUTH_ENABLED: "true"

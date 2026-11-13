@@ -31,10 +31,10 @@ export default async function CatalogPage({ searchParams }: { searchParams: Prom
         description="Professionele catalogus voor verkoop, voorraad, printbestanden, kosten en platformpublicaties."
         actions={
           <div className="flex flex-wrap gap-2">
-            <a className="rounded-xl border border-line px-4 py-2 text-sm font-black text-slate-200 hover:bg-white/5" href="/catalogus/ai-assistent">
+            <a className="rounded-xl border border-line px-4 py-2 text-sm font-semibold text-ink hover:bg-hover" href="/catalogus/ai-assistent">
               AI product assistent
             </a>
-            <a className="rounded-xl bg-brand px-4 py-2 text-sm font-black text-slate-950" href="/catalogus/nieuw">
+            <a className="rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-onBrand" href="/catalogus/nieuw">
               Nieuw product
             </a>
           </div>
@@ -56,7 +56,7 @@ function CatalogContent({ data, view }: { data: ProductCatalogData; view: string
 
   return (
     <div className="space-y-6">
-      <nav aria-label="Catalogusfilter" className="flex gap-2">{[["actief", "Actief"], ["archief", "Archief"], ["alle", "Alle producten"]].map(([key, label]) => <a key={key} aria-current={view === key ? "page" : undefined} className={`rounded-md px-3 py-2 text-sm font-bold ${view === key ? "bg-brand text-slate-950" : "border border-line text-muted"}`} href={`/catalogus?view=${key}`}>{label}</a>)}</nav>
+      <nav aria-label="Catalogusfilter" className="flex gap-2">{[["actief", "Actief"], ["archief", "Archief"], ["alle", "Alle producten"]].map(([key, label]) => <a key={key} aria-current={view === key ? "page" : undefined} className={`rounded-md px-3 py-2 text-sm font-semibold ${view === key ? "bg-brand text-onBrand" : "border border-line text-muted"}`} href={`/catalogus?view=${key}`}>{label}</a>)}</nav>
       {data.printerLoadError ? <ErrorState title="Printeradvies kon niet worden geladen" message={data.printerLoadError} retryHref={`?view=${view}&page=${page}`} /> : null}
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
         <MetricCard label="Producten" value={data.metrics.products} note={`selectie: ${view}`} />
@@ -77,7 +77,7 @@ function CatalogContent({ data, view }: { data: ProductCatalogData; view: string
           <EmptyState title="Geen producten in deze selectie" description="Kies een andere selectie of maak een product aan." actionHref="/catalogus/nieuw" actionLabel="Product maken" />
         )}
         {pageCount > 1 ? (
-          <div className="mt-5 flex items-center justify-between border-t border-line pt-4 text-sm font-bold">
+          <div className="mt-5 flex items-center justify-between border-t border-line pt-4 text-sm font-semibold">
             <a className={`rounded-md border border-line px-3 py-2 ${page === 1 ? "pointer-events-none opacity-40" : "hover:border-brand"}`} href={`/catalogus?view=${view}&page=${page - 1}`}>Vorige</a>
             <span className="text-muted">Pagina {page} van {pageCount}</span>
             <a className={`rounded-md border border-line px-3 py-2 ${page === pageCount ? "pointer-events-none opacity-40" : "hover:border-brand"}`} href={`/catalogus?view=${view}&page=${page + 1}`}>Volgende</a>
@@ -104,14 +104,14 @@ function ProductCard({ row, printers, platforms }: { row: ProductCatalogRow; pri
   const channels = row.publications.length ? row.publications.map((publication) => platformNames.get(publication.platform_id) || "Onbekend kanaal").join(", ") : "Nog niet gekoppeld";
 
   return (
-    <article className="rounded-2xl border border-line bg-panelSoft p-4 shadow-card">
+    <article className="rounded-xl border border-line bg-panelSoft p-4 shadow-card">
       <div className="flex flex-col gap-4 sm:flex-row">
-        <div className="flex h-32 w-full shrink-0 items-center justify-center rounded-2xl border border-line bg-gradient-to-br from-brand/25 via-sky-500/10 to-slate-900 text-3xl font-black text-brand sm:w-32">
+        <div className="flex h-32 w-full shrink-0 items-center justify-center rounded-xl border border-line bg-brandSoft text-3xl font-semibold text-brand sm:w-32">
           {(row.product.internal_title || row.product.name || "P").slice(0, 2).toUpperCase()}
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <a className="text-xl font-black text-ink hover:text-brand" href={`/catalogus/${row.product.id}`}>
+            <a className="text-xl font-semibold text-ink hover:text-brand" href={`/catalogus/${row.product.id}`}>
               {row.product.internal_title || row.product.name}
             </a>
             <span className="text-xs text-muted">Ingestelde status: {(row.product.status || "concept").replace(/_/g, " ")}</span>
@@ -119,10 +119,10 @@ function ProductCard({ row, printers, platforms }: { row: ProductCatalogRow; pri
           <p className="mt-2 line-clamp-2 text-sm leading-6 text-muted">
             {row.product.short_description || row.product.sales_description || "Nog geen verkoopomschrijving ingevuld."}
           </p>
-          <div className="mt-3 flex flex-wrap gap-2 text-xs font-black text-slate-300">
-            <span className="rounded-full bg-slate-800 px-2.5 py-1">{sku}</span>
-            <span className="rounded-full bg-slate-800 px-2.5 py-1">{row.product.internal_category || "geen categorie"}</span>
-            <span className="rounded-full bg-slate-800 px-2.5 py-1">{row.product.product_type || "3D print"}</span>
+          <div className="mt-3 flex flex-wrap gap-2 text-xs font-semibold text-inkSoft">
+            <span className="rounded-full bg-track px-2.5 py-1">{sku}</span>
+            <span className="rounded-full bg-track px-2.5 py-1">{row.product.internal_category || "geen categorie"}</span>
+            <span className="rounded-full bg-track px-2.5 py-1">{row.product.product_type || "3D print"}</span>
           </div>
         </div>
       </div>
@@ -137,13 +137,13 @@ function ProductCard({ row, printers, platforms }: { row: ProductCatalogRow; pri
         <Small label="Printbestand" value={row.product.print_file_path ? "Gekoppeld" : "Ontbreekt"} />
         <Small label="Kanalen" value={channels} />
       </div>
-      <a className="mt-3 block text-sm text-amber-200" href={`/catalogus/${row.product.id}?tab=verkoopkanalen`}>Publicatiecontrole: {missing.length ? `nog aanvullen: ${missing.join(", ")}` : "basis ingevuld; controleer foto's en kanaaleisen"}</a>
+      <a className="mt-3 block text-sm text-amber-800" href={`/catalogus/${row.product.id}?tab=verkoopkanalen`}>Publicatiecontrole: {missing.length ? `nog aanvullen: ${missing.join(", ")}` : "basis ingevuld; controleer foto's en kanaaleisen"}</a>
 
       <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-4">
         <div className="text-sm text-muted">{row.variants.length} variant(en), {row.publications.length} publicatie(s)</div>
         <div className="flex min-w-[15rem] flex-col gap-2 sm:flex-row">
           <BambuStudioOpenAction compact printers={printers} product={row.product} variants={row.variants} />
-          <a className="rounded-md border border-line px-3 py-2 text-center text-sm font-black text-slate-200 hover:bg-white/5" href={`/catalogus/${row.product.id}`}>
+          <a className="rounded-md border border-line px-3 py-2 text-center text-sm font-semibold text-ink hover:bg-hover" href={`/catalogus/${row.product.id}`}>
             Productdetail
           </a>
         </div>
@@ -154,9 +154,9 @@ function ProductCard({ row, printers, platforms }: { row: ProductCatalogRow; pri
 
 function Small({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="rounded-xl border border-line bg-slate-950/25 p-3">
-      <div className="text-[11px] font-black uppercase tracking-[.12em] text-muted">{label}</div>
-      <div className="mt-1 truncate font-black text-ink" title={String(value)}>{value}</div>
+    <div className="rounded-xl border border-line bg-surfaceSoft p-3">
+      <div className="text-[11px] font-semibold text-muted">{label}</div>
+      <div className="mt-1 truncate font-semibold text-ink" title={String(value)}>{value}</div>
     </div>
   );
 }

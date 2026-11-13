@@ -24,7 +24,7 @@ export function TestNotificationButton() {
 
   return (
     <div className="flex flex-wrap items-center gap-3">
-      <button className="rounded-md border border-line px-3 py-2 text-sm font-bold text-slate-200 hover:bg-white/5 disabled:opacity-60" disabled={busy} onClick={sendTest} type="button">
+      <button className="rounded-md border border-line px-3 py-2 text-sm font-semibold text-ink hover:bg-hover disabled:opacity-60" disabled={busy} onClick={sendTest} type="button">
         {busy ? "Versturen..." : "Testmelding sturen"}
       </button>
       {result ? <span className="text-sm text-muted">{result}</span> : null}

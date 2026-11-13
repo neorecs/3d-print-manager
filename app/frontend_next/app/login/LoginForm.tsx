@@ -95,14 +95,14 @@ export function LoginForm({ nextPath }: { nextPath: string }) {
     <div className="mt-8 space-y-6">
     <form className="space-y-5" onSubmit={handleSubmit}>
       <div>
-        <label className="text-xs font-black uppercase tracking-[.14em] text-muted" htmlFor="email">
+        <label className="text-xs font-semibold text-muted" htmlFor="email">
           E-mailadres
         </label>
         <div className="relative mt-2">
         <input
           autoComplete="email"
           autoFocus
-          className="w-full rounded-md border border-line bg-[#111b2d] px-4 py-3 pr-12 text-sm font-semibold text-white transition focus:border-brand"
+          className="w-full rounded-md border border-line bg-panel px-4 py-3 pr-12 text-sm font-semibold text-ink transition focus:border-brand"
           id="email"
           name="email"
           onChange={(event) => setEmail(event.target.value)}
@@ -112,12 +112,12 @@ export function LoginForm({ nextPath }: { nextPath: string }) {
         />
       </div>
       <div>
-        <label className="text-xs font-black uppercase tracking-[.14em] text-muted" htmlFor="password">
+        <label className="text-xs font-semibold text-muted" htmlFor="password">
           Wachtwoord
         </label>
         <input
           autoComplete="current-password"
-          className="mt-2 w-full rounded-xl border border-line bg-[#111b2d] px-4 py-3 text-sm font-semibold text-white outline-none transition focus:border-brand"
+          className="mt-2 w-full rounded-xl border border-line bg-panel px-4 py-3 text-sm font-semibold text-ink outline-none transition focus:border-brand"
           id="password"
           name="password"
           onChange={(event) => setPassword(event.target.value)}
@@ -125,23 +125,23 @@ export function LoginForm({ nextPath }: { nextPath: string }) {
           type={showPassword ? "text" : "password"}
           value={password}
         />
-        <button aria-label={showPassword ? "Wachtwoord verbergen" : "Wachtwoord tonen"} className="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-muted hover:text-white" onClick={() => setShowPassword((value) => !value)} type="button">
+        <button aria-label={showPassword ? "Wachtwoord verbergen" : "Wachtwoord tonen"} className="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-muted hover:text-ink" onClick={() => setShowPassword((value) => !value)} type="button">
           {showPassword ? <EyeOff aria-hidden="true" className="h-5 w-5" /> : <Eye aria-hidden="true" className="h-5 w-5" />}
         </button>
         </div>
         <details className="mt-2 text-sm text-muted">
-          <summary className="cursor-pointer font-bold text-brand">Wachtwoord vergeten?</summary>
+          <summary className="cursor-pointer font-semibold text-brand">Wachtwoord vergeten?</summary>
           <p className="mt-2 leading-5">Een andere beheerder kan onder Instellingen → Gebruikers een tijdelijk wachtwoord instellen. Ben je de enige beheerder, gebruik dan de herstelprocedure op de NAS; wachtwoorden worden nooit per e-mail verstuurd.</p>
         </details>
       </div>
       {mfaRequired ? (
         <div>
-          <label className="text-xs font-black uppercase tracking-[.14em] text-muted" htmlFor="mfaCode">
+          <label className="text-xs font-semibold text-muted" htmlFor="mfaCode">
             MFA-code
           </label>
           <input
             autoComplete="one-time-code"
-            className="mt-2 w-full rounded-xl border border-line bg-[#111b2d] px-4 py-3 text-sm font-semibold text-white outline-none transition focus:border-brand"
+            className="mt-2 w-full rounded-xl border border-line bg-panel px-4 py-3 text-sm font-semibold text-ink outline-none transition focus:border-brand"
             id="mfaCode"
             inputMode="numeric"
             maxLength={6}
@@ -156,12 +156,12 @@ export function LoginForm({ nextPath }: { nextPath: string }) {
         </div>
       ) : null}
       {error ? (
-        <div className="rounded-xl border border-red-400/30 bg-red-500/10 px-4 py-3 text-sm font-bold text-red-100">
+        <div className="rounded-xl border border-red-400/30 bg-red-500/10 px-4 py-3 text-sm font-semibold text-red-800">
           {error}
         </div>
       ) : null}
       <button
-        className="w-full rounded-xl bg-brand px-4 py-3 text-sm font-black text-slate-950 shadow-card transition hover:bg-teal-300 disabled:cursor-not-allowed disabled:opacity-60"
+        className="w-full rounded-xl bg-brand px-4 py-3 text-sm font-semibold text-onBrand shadow-card transition hover:bg-teal-300 disabled:cursor-not-allowed disabled:opacity-60"
         disabled={isSubmitting}
         type="submit"
       >
@@ -170,24 +170,24 @@ export function LoginForm({ nextPath }: { nextPath: string }) {
     </form>
       {bootstrapAvailable ? <div className="border-t border-line pt-5">
         <button
-          className="text-sm font-bold text-brand hover:text-teal-200"
+          className="text-sm font-semibold text-brand hover:text-teal-200"
           onClick={() => setShowSetup((value) => !value)}
           type="button"
         >
           Eerste adminaccount aanmaken
         </button>
         {showSetup ? (
-          <form className="mt-4 space-y-4 rounded-xl border border-line bg-slate-950/35 p-4" onSubmit={handleSetupSubmit}>
+          <form className="mt-4 space-y-4 rounded-xl border border-line bg-surfaceSoft p-4" onSubmit={handleSetupSubmit}>
             <p className="text-sm font-semibold text-muted">
               Alleen gebruiken bij eerste installatie. Je hebt de tijdelijke bootstrap-secret nodig.
             </p>
             <div>
-              <label className="text-xs font-black uppercase tracking-[.14em] text-muted" htmlFor="setupSecret">
+              <label className="text-xs font-semibold text-muted" htmlFor="setupSecret">
                 Bootstrap-secret
               </label>
               <input
                 autoComplete="off"
-                className="mt-2 w-full rounded-xl border border-line bg-[#111b2d] px-4 py-3 text-sm font-semibold text-white outline-none transition focus:border-brand"
+                className="mt-2 w-full rounded-xl border border-line bg-panel px-4 py-3 text-sm font-semibold text-ink outline-none transition focus:border-brand"
                 id="setupSecret"
                 onChange={(event) => setSetupSecret(event.target.value)}
                 required
@@ -196,12 +196,12 @@ export function LoginForm({ nextPath }: { nextPath: string }) {
               />
             </div>
             <div>
-              <label className="text-xs font-black uppercase tracking-[.14em] text-muted" htmlFor="setupEmail">
+              <label className="text-xs font-semibold text-muted" htmlFor="setupEmail">
                 Admin e-mailadres
               </label>
               <input
                 autoComplete="email"
-                className="mt-2 w-full rounded-xl border border-line bg-[#111b2d] px-4 py-3 text-sm font-semibold text-white outline-none transition focus:border-brand"
+                className="mt-2 w-full rounded-xl border border-line bg-panel px-4 py-3 text-sm font-semibold text-ink outline-none transition focus:border-brand"
                 id="setupEmail"
                 onChange={(event) => setSetupEmail(event.target.value)}
                 required
@@ -210,11 +210,11 @@ export function LoginForm({ nextPath }: { nextPath: string }) {
               />
             </div>
             <div>
-              <label className="text-xs font-black uppercase tracking-[.14em] text-muted" htmlFor="setupName">
+              <label className="text-xs font-semibold text-muted" htmlFor="setupName">
                 Naam
               </label>
               <input
-                className="mt-2 w-full rounded-xl border border-line bg-[#111b2d] px-4 py-3 text-sm font-semibold text-white outline-none transition focus:border-brand"
+                className="mt-2 w-full rounded-xl border border-line bg-panel px-4 py-3 text-sm font-semibold text-ink outline-none transition focus:border-brand"
                 id="setupName"
                 onChange={(event) => setSetupName(event.target.value)}
                 required
@@ -223,12 +223,12 @@ export function LoginForm({ nextPath }: { nextPath: string }) {
               />
             </div>
             <div>
-              <label className="text-xs font-black uppercase tracking-[.14em] text-muted" htmlFor="setupPassword">
+              <label className="text-xs font-semibold text-muted" htmlFor="setupPassword">
                 Tijdelijk wachtwoord
               </label>
               <input
                 autoComplete="new-password"
-                className="mt-2 w-full rounded-xl border border-line bg-[#111b2d] px-4 py-3 text-sm font-semibold text-white outline-none transition focus:border-brand"
+                className="mt-2 w-full rounded-xl border border-line bg-panel px-4 py-3 text-sm font-semibold text-ink outline-none transition focus:border-brand"
                 id="setupPassword"
                 minLength={12}
                 onChange={(event) => setSetupPassword(event.target.value)}
@@ -238,17 +238,17 @@ export function LoginForm({ nextPath }: { nextPath: string }) {
               />
             </div>
             {setupError ? (
-              <div className="rounded-xl border border-red-400/30 bg-red-500/10 px-4 py-3 text-sm font-bold text-red-100">
+              <div className="rounded-xl border border-red-400/30 bg-red-500/10 px-4 py-3 text-sm font-semibold text-red-800">
                 {setupError}
               </div>
             ) : null}
             {setupMessage ? (
-              <div className="rounded-xl border border-teal-300/30 bg-teal-300/10 px-4 py-3 text-sm font-bold text-teal-100">
+              <div className="rounded-xl border border-teal-300/30 bg-teal-300/10 px-4 py-3 text-sm font-semibold text-teal-100">
                 {setupMessage}
               </div>
             ) : null}
             <button
-              className="w-full rounded-xl border border-line bg-slate-950/60 px-4 py-3 text-sm font-black text-white transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60"
+              className="w-full rounded-xl border border-line bg-surfaceSoft px-4 py-3 text-sm font-semibold text-ink transition hover:bg-hover disabled:cursor-not-allowed disabled:opacity-60"
               disabled={isCreatingAccount}
               type="submit"
             >

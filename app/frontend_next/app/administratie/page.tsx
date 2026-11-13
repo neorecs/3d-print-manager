@@ -70,18 +70,18 @@ function AccountingContent({ data, filters }: { data: AccountingData; filters: {
       <SectionCard title="Periode bekijken" description="Filter verkoopboek, inkoopboek, btw-cijfers en CSV-exports op factuurdatum. Laat leeg om alles te tonen.">
         <form className="grid gap-4 md:grid-cols-[1fr_1fr_auto_auto]" action="/administratie">
           <label className="space-y-2">
-            <span className="text-sm font-bold text-slate-300">Vanaf</span>
-            <input className="w-full rounded-md border border-line bg-slate-950/35 px-3 py-2 text-sm text-ink outline-none focus:border-brand" defaultValue={filters.startDate || ""} name="start_date" type="date" />
+            <span className="text-sm font-semibold text-inkSoft">Vanaf</span>
+            <input className="w-full rounded-md border border-line bg-surfaceSoft px-3 py-2 text-sm text-ink outline-none focus:border-brand" defaultValue={filters.startDate || ""} name="start_date" type="date" />
           </label>
           <label className="space-y-2">
-            <span className="text-sm font-bold text-slate-300">Tot en met</span>
-            <input className="w-full rounded-md border border-line bg-slate-950/35 px-3 py-2 text-sm text-ink outline-none focus:border-brand" defaultValue={filters.endDate || ""} name="end_date" type="date" />
+            <span className="text-sm font-semibold text-inkSoft">Tot en met</span>
+            <input className="w-full rounded-md border border-line bg-surfaceSoft px-3 py-2 text-sm text-ink outline-none focus:border-brand" defaultValue={filters.endDate || ""} name="end_date" type="date" />
           </label>
           <div className="flex items-end">
-            <button className="w-full rounded-md bg-brand px-4 py-2 text-sm font-black text-slate-950" type="submit">Filter toepassen</button>
+            <button className="w-full rounded-md bg-brand px-4 py-2 text-sm font-semibold text-onBrand" type="submit">Filter toepassen</button>
           </div>
           <div className="flex items-end">
-            <a className="w-full rounded-md border border-line bg-slate-950/35 px-4 py-2 text-center text-sm font-bold text-slate-300 hover:bg-white/5" href="/administratie">Alles tonen</a>
+            <a className="w-full rounded-md border border-line bg-surfaceSoft px-4 py-2 text-center text-sm font-semibold text-inkSoft hover:bg-hover" href="/administratie">Alles tonen</a>
           </div>
         </form>
       </SectionCard>
@@ -96,7 +96,7 @@ function AccountingContent({ data, filters }: { data: AccountingData; filters: {
 
       <SectionCard title="Fiscale instellingen" description="Leg expliciet vast welke fiscale aannames de app gebruikt. Controleer dit met je boekhouder of fiscalist.">
         <details className="rounded-lg border border-line bg-panelSoft p-4">
-          <summary className="cursor-pointer list-none font-bold text-ink">Fiscale instellingen wijzigen</summary>
+          <summary className="cursor-pointer list-none font-semibold text-ink">Fiscale instellingen wijzigen</summary>
           <div className="mt-4 border-t border-line pt-4"><FiscalSettingsForm settings={data.fiscalSettings} /></div>
         </details>
       </SectionCard>
@@ -139,14 +139,14 @@ function AccountingContent({ data, filters }: { data: AccountingData; filters: {
           </div>
         ) : null}
         <details className="mt-4 rounded-lg border border-line bg-panelSoft p-4">
-          <summary className="cursor-pointer list-none font-bold text-ink">Nieuwe btw-periode afsluiten</summary>
+          <summary className="cursor-pointer list-none font-semibold text-ink">Nieuwe btw-periode afsluiten</summary>
           <div className="mt-4 border-t border-line pt-4"><VatPeriodCloseForm endDate={filters.endDate} startDate={filters.startDate} /></div>
         </details>
       </SectionCard>
 
       <SectionCard title="Verkoopboeking toevoegen" description="Gebruik dit alleen voor handmatige verkopen of correcties buiten de automatische orderflow. Orders boek je bij voorkeur vanuit orderdetail.">
         <details className="rounded-lg border border-line bg-panelSoft p-4">
-          <summary className="cursor-pointer list-none font-bold text-ink">Handmatige verkoop toevoegen</summary>
+          <summary className="cursor-pointer list-none font-semibold text-ink">Handmatige verkoop toevoegen</summary>
           <div className="mt-4 border-t border-line pt-4"><AccountingSaleForm /></div>
         </details>
       </SectionCard>
@@ -178,7 +178,7 @@ function AccountingContent({ data, filters }: { data: AccountingData; filters: {
                       <td>{purchase ? `Inkoop: ${purchase.supplier_name}` : sale ? `Verkoop: ${sale.invoice_number || sale.customer_name || sale.id}` : "-"}</td>
                       <td><StatusBadge status={document.status} /></td>
                       <td>
-                        <a className="font-bold text-brand hover:text-white" href={document.file_path} target="_blank" rel="noreferrer">
+                        <a className="font-semibold text-brand hover:text-ink" href={document.file_path} target="_blank" rel="noreferrer">
                           Openen
                         </a>
                       </td>
@@ -223,7 +223,7 @@ function AccountingContent({ data, filters }: { data: AccountingData; filters: {
                     <td><StatusBadge status={item.status} /></td>
                     <td>
                       {item.order_id ? (
-                        <a className="font-bold text-brand hover:text-white" href={`/orders/${item.order_id}`}>
+                        <a className="font-semibold text-brand hover:text-ink" href={`/orders/${item.order_id}`}>
                           Order {item.order_id}
                         </a>
                       ) : (
@@ -286,7 +286,7 @@ function Check({ title, text, status }: { title: string; text: string; status: s
     <div className="rounded-xl border border-line bg-panelSoft p-4">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <div className="font-black text-ink">{title}</div>
+          <div className="font-semibold text-ink">{title}</div>
           <p className="mt-2 text-sm leading-6 text-muted">{text}</p>
         </div>
         <StatusBadge status={status} />
@@ -297,7 +297,7 @@ function Check({ title, text, status }: { title: string; text: string; status: s
 
 function ExportLink({ href, label }: { href: string; label: string }) {
   return (
-    <a className="rounded-md border border-line bg-slate-950/35 px-4 py-2 text-sm font-bold text-slate-300 hover:bg-white/5" download href={href}>
+    <a className="rounded-md border border-line bg-surfaceSoft px-4 py-2 text-sm font-semibold text-inkSoft hover:bg-hover" download href={href}>
       {label}
     </a>
   );

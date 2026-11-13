@@ -41,7 +41,7 @@ export default async function ProductDetailPage({ params, searchParams }: { para
         title={data?.product.internal_title || data?.product.name || "Productdetail"}
         description="Beheer de interne productbasis en controleer varianten, foto's, voorraad en platformpublicaties."
         actions={
-          <a className="rounded-md border border-line bg-slate-950/35 px-4 py-2 text-sm font-bold text-slate-300" href="/catalogus">
+          <a className="rounded-md border border-line bg-surfaceSoft px-4 py-2 text-sm font-semibold text-inkSoft" href="/catalogus">
             Terug naar catalogus
           </a>
         }
@@ -88,19 +88,19 @@ function DetailContent({ data, activeTab }: { data: ProductDetailData; activeTab
 
       <nav aria-label="Productonderdelen" className="flex gap-2 overflow-x-auto border-b border-line pb-2">
         {tabs.map(([value, label]) => (
-          <a aria-current={activeTab === value ? "page" : undefined} className={`shrink-0 rounded-md px-3 py-2 text-sm font-bold ${activeTab === value ? "bg-brand text-slate-950" : "border border-line text-slate-300 hover:border-brand"}`} href={`?tab=${value}`} key={value}>{label}</a>
+          <a aria-current={activeTab === value ? "page" : undefined} className={`shrink-0 rounded-md px-3 py-2 text-sm font-semibold ${activeTab === value ? "bg-brand text-onBrand" : "border border-line text-inkSoft hover:border-brand"}`} href={`?tab=${value}`} key={value}>{label}</a>
         ))}
       </nav>
 
       {activeTab === "overzicht" ? <SectionCard title="Verkoop voorbereiden" description={`${completed} van ${completeness.length} basisgegevens ingevuld. De definitieve publicatiecontrole gebeurt per verkoopkanaal.`}>
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-          {completeness.map((item) => <a className={`flex min-h-12 items-center gap-3 rounded-md border p-3 font-bold ${item.complete ? "border-emerald-400/25 bg-emerald-400/5" : "border-amber-400/30 bg-amber-400/5 hover:border-brand"}`} href={`?tab=${item.tab}`} key={item.label}>
-            {item.complete ? <CheckCircle2 aria-hidden="true" className="h-5 w-5 text-emerald-300" /> : <Circle aria-hidden="true" className="h-5 w-5 text-amber-200" />}
+          {completeness.map((item) => <a className={`flex min-h-12 items-center gap-3 rounded-md border p-3 font-semibold ${item.complete ? "border-emerald-400/25 bg-emerald-400/5" : "border-amber-400/30 bg-amber-400/5 hover:border-brand"}`} href={`?tab=${item.tab}`} key={item.label}>
+            {item.complete ? <CheckCircle2 aria-hidden="true" className="h-5 w-5 text-emerald-700" /> : <Circle aria-hidden="true" className="h-5 w-5 text-amber-800" />}
             <span>{item.label}<span className="mt-1 block text-xs font-normal text-muted">{item.complete === null ? "Onbekend: laden mislukt" : item.complete ? "Ingevuld" : "Nog invullen"}</span></span>
           </a>)}
         </div>
       </SectionCard> : null}
-      {activeTab === "overzicht" ? <SectionCard title="Printen voorbereiden" description="Los van verkoopprijs, foto's en publicatie."><a className="font-bold text-brand" href="?tab=printbestand">{data.product.print_file_path ? "Bestand gekoppeld: openen in Bambu Studio" : "Printbestand toevoegen"}</a></SectionCard> : null}
+      {activeTab === "overzicht" ? <SectionCard title="Printen voorbereiden" description="Los van verkoopprijs, foto's en publicatie."><a className="font-semibold text-brand" href="?tab=printbestand">{data.product.print_file_path ? "Bestand gekoppeld: openen in Bambu Studio" : "Printbestand toevoegen"}</a></SectionCard> : null}
       {Object.entries(data.loadErrors).map(([section, message]) => <ErrorState key={section} title={`${({ media: "Foto's", tags: "Tags", translations: "Vertalingen", publications: "Publicaties", printers: "Printeradvies" } as Record<string, string>)[section]} konden niet worden geladen`} message={message} retryHref={`?tab=${activeTab}`} />)}
       {activeTab === "informatie" ? <SectionCard title="Productinformatie" description="Wijzigingen markeren gekoppelde verkoopkanalen als synchronisatie nodig."><ProductEditForm product={data.product} /></SectionCard> : null}
       {activeTab === "printbestand" ? <SectionCard title="Productbestand" description="Koppel één bronmodel, Bambu Studio-project of geslicet bestand aan het product."><ProductPrintFileManager product={data.product} variants={data.variants} printers={data.printers} /></SectionCard> : null}

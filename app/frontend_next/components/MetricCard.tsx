@@ -1,3 +1,4 @@
+import Link from "next/link";
 type MetricCardProps = {
   label: string;
   value: string | number;
@@ -8,9 +9,9 @@ type MetricCardProps = {
 
 const tones = {
   neutral: "border-line bg-panel",
-  good: "border-emerald-400/25 bg-emerald-950/20",
-  warning: "border-amber-400/25 bg-amber-950/20",
-  danger: "border-red-400/25 bg-red-950/20",
+  good: "border-line bg-panel",
+  warning: "border-line bg-panel",
+  danger: "border-red-200 bg-panel",
 };
 
 const dots = {
@@ -24,21 +25,21 @@ export function MetricCard({ label, value, note, tone = "neutral", href }: Metri
   const content = (
     <>
       <div className="flex min-w-0 items-center justify-between gap-3">
-        <div className="min-w-0 text-balance break-words text-[11px] font-black uppercase tracking-[.12em] text-muted">{label}</div>
+        <div className="min-w-0 text-balance break-words text-[13px] font-medium text-muted">{label}</div>
         <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${dots[tone]}`} />
       </div>
-      <div className="mt-3 min-w-0 break-words text-2xl font-black tracking-normal text-ink sm:text-3xl">{value}</div>
-      {note ? <div className="mt-2 min-w-0 text-balance break-words text-sm font-semibold text-muted">{note}</div> : null}
+      <div className="mt-1.5 min-w-0 break-words text-2xl font-semibold tracking-tight text-ink tabular-nums sm:text-[28px]">{value}</div>
+      {note ? <div className="mt-1 min-w-0 text-balance break-words text-[13px] text-muted">{note}</div> : null}
     </>
   );
 
-  const className = `block h-full rounded-2xl border ${tones[tone]} p-4 shadow-card transition hover:-translate-y-0.5 hover:border-brand/50 hover:bg-white/5 focus:outline-none focus:ring-2 focus:ring-brand/50`;
+  const className = `block h-full rounded-xl border ${tones[tone]} px-5 py-4 shadow-card transition hover:border-brand/40 focus:outline-none focus:ring-2 focus:ring-brand/50`;
 
   if (href) {
     return (
-      <a aria-label={`Ga naar ${label}`} className={className} href={href}>
+      <Link aria-label={`Ga naar ${label}`} className={className} href={href}>
         {content}
-      </a>
+      </Link>
     );
   }
 

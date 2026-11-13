@@ -163,20 +163,20 @@ export function MediaManager({ productId, media }: { productId: number; media: P
 
   return (
     <div className="space-y-5">
-      {message ? <div className="rounded-md border border-emerald-400/25 bg-emerald-400/10 px-3 py-2 text-sm font-semibold text-emerald-300">{message}</div> : null}
-      {error ? <div className="rounded-md border border-red-400/25 bg-red-400/10 px-3 py-2 text-sm font-semibold text-red-300">{error}</div> : null}
+      {message ? <div className="rounded-md border border-emerald-400/25 bg-emerald-400/10 px-3 py-2 text-sm font-semibold text-emerald-700">{message}</div> : null}
+      {error ? <div className="rounded-md border border-red-400/25 bg-red-400/10 px-3 py-2 text-sm font-semibold text-red-700">{error}</div> : null}
 
-      <form className="rounded-lg border border-line bg-slate-950/25 p-4" onSubmit={uploadMedia}>
+      <form className="rounded-lg border border-line bg-surfaceSoft p-4" onSubmit={uploadMedia}>
         <div className="mb-4">
-          <h3 className="font-bold text-ink">Foto uploaden</h3>
+          <h3 className="font-semibold text-ink">Foto uploaden</h3>
           <p className="mt-1 text-sm text-muted">Gebruik JPG, PNG, WEBP of GIF. Kies direct of dit de hoofdfoto is.</p>
         </div>
         <div className="grid gap-4 md:grid-cols-2">
           <label className="space-y-2">
-            <span className="text-sm font-bold text-slate-300">Afbeelding</span>
+            <span className="text-sm font-semibold text-inkSoft">Afbeelding</span>
             <input
               accept="image/jpeg,image/png,image/webp,image/gif"
-              className="w-full rounded-md border border-line bg-slate-950/35 px-3 py-2 text-sm text-ink"
+              className="w-full rounded-md border border-line bg-surfaceSoft px-3 py-2 text-sm text-ink"
               name="file"
               required
               type="file"
@@ -184,14 +184,14 @@ export function MediaManager({ productId, media }: { productId: number; media: P
           </label>
           <TextField label="Alt-tekst" value={altText} onChange={setAltText} placeholder="Beschrijf wat op de foto staat" />
           <TextField label="Volgorde" value={sortOrder} onChange={setSortOrder} inputMode="numeric" />
-          <label className="flex items-center gap-3 rounded-md border border-line bg-slate-950/35 px-3 py-2 text-sm text-ink font-semibold">
+          <label className="flex items-center gap-3 rounded-md border border-line bg-surfaceSoft px-3 py-2 text-sm text-ink font-semibold">
             <input checked={primary} onChange={(event) => setPrimary(event.target.checked)} type="checkbox" />
             Instellen als hoofdfoto
           </label>
         </div>
         <div className="mt-4 flex justify-end">
           <button
-            className="rounded-md bg-brand px-4 py-2 text-sm font-black text-slate-950 disabled:cursor-not-allowed disabled:opacity-60"
+            className="rounded-md bg-brand px-4 py-2 text-sm font-semibold text-onBrand disabled:cursor-not-allowed disabled:opacity-60"
             disabled={uploading}
             type="submit"
           >
@@ -211,7 +211,7 @@ export function MediaManager({ productId, media }: { productId: number; media: P
             const src = mediaUrl(item.file_path);
             return (
               <article className="rounded-lg border border-line bg-panelSoft p-3" key={item.id}>
-                <div className="overflow-hidden rounded-md border border-line bg-slate-800">
+                <div className="overflow-hidden rounded-md border border-line bg-track">
                   {src ? (
                     <img alt={draft.alt_text || "Productfoto"} className="h-56 w-full object-cover" src={src} />
                   ) : (
@@ -219,8 +219,8 @@ export function MediaManager({ productId, media }: { productId: number; media: P
                   )}
                 </div>
                 <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
-                  <div className="font-bold text-ink">Foto {item.sort_order ?? item.id}</div>
-                  {item.is_primary ? <span className="rounded-full bg-emerald-400/10 px-2.5 py-1 text-xs font-bold text-emerald-300 ring-1 ring-emerald-200">Hoofdfoto</span> : null}
+                  <div className="font-semibold text-ink">Foto {item.sort_order ?? item.id}</div>
+                  {item.is_primary ? <span className="rounded-full bg-emerald-400/10 px-2.5 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200">Hoofdfoto</span> : null}
                 </div>
                 <div className="mt-3 grid gap-3">
                   <TextField label="Alt-tekst" value={draft.alt_text} onChange={(value) => updateDraft(item.id, "alt_text", value)} />
@@ -232,7 +232,7 @@ export function MediaManager({ productId, media }: { productId: number; media: P
                 </div>
                 <div className="mt-3 flex flex-wrap justify-end gap-2">
                   <button
-                    className="rounded-md border border-red-400/25 bg-slate-950/35 px-3 py-2 text-sm text-ink font-bold text-red-300"
+                    className="rounded-md border border-red-400/25 bg-surfaceSoft px-3 py-2 text-sm text-ink font-semibold text-red-700"
                     disabled={savingId === item.id}
                     onClick={() => deleteMedia(item.id)}
                     type="button"
@@ -240,7 +240,7 @@ export function MediaManager({ productId, media }: { productId: number; media: P
                     Verwijderen
                   </button>
                   <button
-                    className="rounded-md bg-brand px-3 py-2 text-sm font-black text-slate-950 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="rounded-md bg-brand px-3 py-2 text-sm font-semibold text-onBrand disabled:cursor-not-allowed disabled:opacity-60"
                     disabled={savingId === item.id}
                     onClick={() => saveMedia(item)}
                     type="button"
@@ -276,9 +276,9 @@ function TextField({
 }) {
   return (
     <label className="space-y-2">
-      <span className="text-sm font-bold text-slate-300">{label}</span>
+      <span className="text-sm font-semibold text-inkSoft">{label}</span>
       <input
-        className="w-full rounded-md border border-line bg-slate-950/35 px-3 py-2 text-sm text-ink outline-none focus:border-brand"
+        className="w-full rounded-md border border-line bg-surfaceSoft px-3 py-2 text-sm text-ink outline-none focus:border-brand"
         inputMode={inputMode}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}

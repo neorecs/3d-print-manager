@@ -39,33 +39,33 @@ export function ShopifyImportButton() {
     <div className="space-y-4">
       <div className="grid gap-3 md:grid-cols-[minmax(180px,260px)_auto] md:items-end">
         <label className="space-y-2">
-          <span className="text-sm font-bold text-slate-300">Importeer vanaf</span>
-          <input className="w-full rounded-md border border-line bg-slate-950/35 px-3 py-2 text-sm text-ink outline-none focus:border-brand" onChange={(event) => setSince(event.target.value)} type="date" value={since} />
+          <span className="text-sm font-semibold text-inkSoft">Importeer vanaf</span>
+          <input className="w-full rounded-md border border-line bg-surfaceSoft px-3 py-2 text-sm text-ink outline-none focus:border-brand" onChange={(event) => setSince(event.target.value)} type="date" value={since} />
         </label>
         <div className="flex flex-wrap gap-2">
-          <button className="rounded-md bg-brand px-4 py-2 text-sm font-black text-slate-950 disabled:opacity-60" disabled={Boolean(busy)} onClick={() => importOrders("shopify")} type="button">
+          <button className="rounded-md bg-brand px-4 py-2 text-sm font-semibold text-onBrand disabled:opacity-60" disabled={Boolean(busy)} onClick={() => importOrders("shopify")} type="button">
             {busy === "shopify" ? "Shopify importeren..." : "Shopify orders importeren"}
           </button>
-          <button className="rounded-md border border-line bg-slate-950/35 px-4 py-2 text-sm font-bold text-slate-300 disabled:opacity-60" disabled={Boolean(busy)} onClick={() => importOrders("etsy")} type="button">
+          <button className="rounded-md border border-line bg-surfaceSoft px-4 py-2 text-sm font-semibold text-inkSoft disabled:opacity-60" disabled={Boolean(busy)} onClick={() => importOrders("etsy")} type="button">
             {busy === "etsy" ? "Etsy importeren..." : "Etsy orders importeren"}
           </button>
         </div>
       </div>
-      <details className="rounded-md border border-line bg-slate-950/25 px-3 py-2">
-        <summary className="cursor-pointer text-sm font-bold text-slate-300">Geavanceerde importinstellingen</summary>
+      <details className="rounded-md border border-line bg-surfaceSoft px-3 py-2">
+        <summary className="cursor-pointer text-sm font-semibold text-inkSoft">Geavanceerde importinstellingen</summary>
         <div className="mt-3 grid gap-3 border-t border-line pt-3 md:grid-cols-2">
           <label className="space-y-2">
-            <span className="text-sm font-bold text-slate-300">Maximaal aantal orders</span>
-            <input className="w-full rounded-md border border-line bg-slate-950/35 px-3 py-2 text-sm text-ink outline-none focus:border-brand" max="250" min="1" onChange={(event) => setLimit(event.target.value)} type="number" value={limit} />
+            <span className="text-sm font-semibold text-inkSoft">Maximaal aantal orders</span>
+            <input className="w-full rounded-md border border-line bg-surfaceSoft px-3 py-2 text-sm text-ink outline-none focus:border-brand" max="250" min="1" onChange={(event) => setLimit(event.target.value)} type="number" value={limit} />
           </label>
           <label className="space-y-2">
-            <span className="text-sm font-bold text-slate-300">Aantal per ophaalronde</span>
-            <input className="w-full rounded-md border border-line bg-slate-950/35 px-3 py-2 text-sm text-ink outline-none focus:border-brand" max="50" min="1" onChange={(event) => setPageSize(event.target.value)} type="number" value={pageSize} />
+            <span className="text-sm font-semibold text-inkSoft">Aantal per ophaalronde</span>
+            <input className="w-full rounded-md border border-line bg-surfaceSoft px-3 py-2 text-sm text-ink outline-none focus:border-brand" max="50" min="1" onChange={(event) => setPageSize(event.target.value)} type="number" value={pageSize} />
           </label>
         </div>
       </details>
-      {message ? <div className="rounded-md border border-emerald-400/25 bg-emerald-400/10 px-3 py-2 text-sm font-semibold text-emerald-300">{message}</div> : null}
-      {error ? <div className="rounded-md border border-red-400/25 bg-red-400/10 px-3 py-2 text-sm font-semibold text-red-300">{error}</div> : null}
+      {message ? <div className="rounded-md border border-emerald-400/25 bg-emerald-400/10 px-3 py-2 text-sm font-semibold text-emerald-700">{message}</div> : null}
+      {error ? <div className="rounded-md border border-red-400/25 bg-red-400/10 px-3 py-2 text-sm font-semibold text-red-700">{error}</div> : null}
     </div>
   );
 }

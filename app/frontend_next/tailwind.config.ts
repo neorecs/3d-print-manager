@@ -1,5 +1,8 @@
 import type { Config } from "tailwindcss";
 
+// Colours come from CSS variables (see app/globals.css) so the theme lives in one place.
+const token = (name: string) => `rgb(var(--${name}) / <alpha-value>)`;
+
 const config: Config = {
   content: [
     "./app/**/*.{ts,tsx}",
@@ -8,20 +11,29 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ["var(--font-inter)", "ui-sans-serif", "system-ui", "-apple-system", "Segoe UI", "Arial", "sans-serif"],
+      },
       colors: {
-        ink: "#eef6ff",
-        muted: "#8ea0b6",
-        line: "#223047",
-        canvas: "#070b12",
-        panel: "#0d1422",
-        panelSoft: "#111b2d",
-        brand: "#2dd4bf",
-        brandSoft: "#123c3b",
-        warning: "#b45309",
+        ink: token("ink"),
+        inkSoft: token("ink-soft"),
+        muted: token("muted"),
+        line: token("line"),
+        canvas: token("canvas"),
+        panel: token("panel"),
+        panelSoft: token("panel-soft"),
+        surfaceSoft: token("surface-soft"),
+        hover: token("hover"),
+        track: token("track"),
+        brand: token("brand"),
+        brandStrong: token("brand-strong"),
+        brandSoft: token("brand-soft"),
+        onBrand: token("on-brand"),
+        warning: "#b54708",
         danger: "#b42318",
       },
       boxShadow: {
-        card: "0 18px 60px rgba(0, 0, 0, .28)",
+        card: "0 1px 2px rgba(16, 24, 40, .05)",
       },
     },
   },

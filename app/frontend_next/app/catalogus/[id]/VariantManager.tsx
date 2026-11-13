@@ -193,12 +193,12 @@ export function VariantManager({ product, variants }: { product: Product; varian
 
   return (
     <div className="space-y-5">
-      {message ? <div className="rounded-md border border-emerald-400/25 bg-emerald-400/10 px-3 py-2 text-sm font-semibold text-emerald-300">{message}</div> : null}
-      {error ? <div className="rounded-md border border-red-400/25 bg-red-400/10 px-3 py-2 text-sm font-semibold text-red-300">{error}</div> : null}
+      {message ? <div className="rounded-md border border-emerald-400/25 bg-emerald-400/10 px-3 py-2 text-sm font-semibold text-emerald-700">{message}</div> : null}
+      {error ? <div className="rounded-md border border-red-400/25 bg-red-400/10 px-3 py-2 text-sm font-semibold text-red-700">{error}</div> : null}
 
-      <form className="rounded-lg border border-line bg-slate-950/25 p-4" onSubmit={createVariant}>
+      <form className="rounded-lg border border-line bg-surfaceSoft p-4" onSubmit={createVariant}>
         <div className="mb-4">
-          <h3 className="font-bold text-ink">Nieuwe variant toevoegen</h3>
+          <h3 className="font-semibold text-ink">Nieuwe variant toevoegen</h3>
           <p className="mt-1 text-sm text-muted">Maak per kleur, materiaal of uitvoering een eigen SKU aan. Het printbestand koppel je eenmalig aan het product.</p>
         </div>
         <VariantFields
@@ -208,7 +208,7 @@ export function VariantManager({ product, variants }: { product: Product; varian
         />
         <div className="mt-4 flex justify-end">
           <button
-            className="rounded-md bg-brand px-4 py-2 text-sm font-black text-slate-950 disabled:cursor-not-allowed disabled:opacity-60"
+            className="rounded-md bg-brand px-4 py-2 text-sm font-semibold text-onBrand disabled:cursor-not-allowed disabled:opacity-60"
             disabled={savingKey === "new"}
             type="submit"
           >
@@ -226,10 +226,10 @@ export function VariantManager({ product, variants }: { product: Product; varian
                 <summary className="cursor-pointer list-none">
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
-                      <div className="font-bold text-ink">{variant.variant_name || `Variant ${variant.id}`}</div>
+                      <div className="font-semibold text-ink">{variant.variant_name || `Variant ${variant.id}`}</div>
                       <div className="mt-1 text-sm text-muted">{variant.sku || "Geen SKU"} · {variant.material || "-"} · {variant.color || "-"}</div>
                     </div>
-                    <span className="rounded-full bg-slate-800 px-2.5 py-1 text-xs font-bold text-slate-300">
+                    <span className="rounded-full bg-track px-2.5 py-1 text-xs font-semibold text-inkSoft">
                       {variant.active === false ? "inactief" : "actief"}
                     </span>
                   </div>
@@ -242,7 +242,7 @@ export function VariantManager({ product, variants }: { product: Product; varian
                   />
                   <div className="mt-4 flex justify-end">
                     <button
-                      className="rounded-md bg-brand px-4 py-2 text-sm font-black text-slate-950 disabled:cursor-not-allowed disabled:opacity-60"
+                      className="rounded-md bg-brand px-4 py-2 text-sm font-semibold text-onBrand disabled:cursor-not-allowed disabled:opacity-60"
                       disabled={savingKey === String(variant.id)}
                       onClick={() => updateVariant(variant.id)}
                       type="button"
@@ -290,7 +290,7 @@ function VariantFields({
       <TextField label="Verkoopprijs" value={draft.default_sale_price} onChange={(value) => onChange("default_sale_price", value)} inputMode="decimal" />
       <TextField label="Actieprijs" value={draft.action_sale_price} onChange={(value) => onChange("action_sale_price", value)} inputMode="decimal" />
       <TextField label="Kostprijs" value={draft.cost_price} onChange={(value) => onChange("cost_price", value)} inputMode="decimal" />
-      <label className="flex items-center gap-3 rounded-md border border-line bg-slate-950/35 px-3 py-2 text-sm text-ink font-semibold">
+      <label className="flex items-center gap-3 rounded-md border border-line bg-surfaceSoft px-3 py-2 text-sm text-ink font-semibold">
         <input checked={draft.active} onChange={(event) => onChange("active", event.target.checked)} type="checkbox" />
         Variant actief
       </label>
@@ -313,9 +313,9 @@ function TextField({
 }) {
   return (
     <label className="space-y-2">
-      <span className="text-sm font-bold text-slate-300">{label}</span>
+      <span className="text-sm font-semibold text-inkSoft">{label}</span>
       <input
-        className="w-full rounded-md border border-line bg-slate-950/35 px-3 py-2 text-sm text-ink outline-none focus:border-brand"
+        className="w-full rounded-md border border-line bg-surfaceSoft px-3 py-2 text-sm text-ink outline-none focus:border-brand"
         inputMode={inputMode}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}

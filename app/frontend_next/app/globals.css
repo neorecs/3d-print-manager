@@ -3,12 +3,22 @@
 @tailwind utilities;
 
 :root {
-  --background: #070b12;
-  --foreground: #eef6ff;
-  --muted: #8ea0b6;
-  --line: #223047;
-  --panel: #0d1422;
-  --brand: #2dd4bf;
+  /* Light theme. RGB triplets so Tailwind opacity modifiers keep working. */
+  --canvas: 246 247 249;
+  --panel: 255 255 255;
+  --panel-soft: 249 250 251;
+  --surface-soft: 249 250 251;
+  --hover: 242 244 247;
+  --track: 234 236 240;
+  --ink: 16 24 40;
+  --ink-soft: 52 64 84;
+  --muted: 91 100 116;
+  --line: 228 231 236;
+  --brand: 15 118 110;
+  --brand-strong: 17 94 89;
+  --brand-soft: 230 244 242;
+  --on-brand: 255 255 255;
+  color-scheme: light;
 }
 
 * {
@@ -23,9 +33,10 @@ body {
 
 body {
   margin: 0;
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, Helvetica, sans-serif;
+  background: rgb(var(--canvas));
+  color: rgb(var(--ink));
+  font-family: var(--font-inter), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, Helvetica, sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
 
 button,
@@ -41,7 +52,7 @@ a {
 }
 
 :where(a, button, input, select, textarea, summary):focus-visible {
-  outline: 3px solid rgba(45, 212, 191, .72);
+  outline: 2px solid rgb(var(--brand) / .55);
   outline-offset: 2px;
 }
 
@@ -59,7 +70,7 @@ a {
   }
 
   .data-table-responsive tr {
-    border-bottom: 1px solid var(--line);
+    border-bottom: 1px solid rgb(var(--line));
     padding: .5rem 0;
   }
 
@@ -73,12 +84,11 @@ a {
   }
 
   .data-table-responsive td::before {
-    color: var(--muted);
+    color: rgb(var(--muted));
     content: attr(data-label);
     font-size: .75rem;
-    font-weight: 800;
+    font-weight: 500;
     text-align: left;
-    text-transform: uppercase;
   }
 }
 
@@ -93,29 +103,28 @@ a {
 }
 
 .data-table th {
-  background: rgba(17, 27, 45, .72);
-  border-bottom: 1px solid var(--line);
-  color: var(--muted);
+  background: rgb(var(--panel-soft));
+  border-bottom: 1px solid rgb(var(--line));
+  color: rgb(var(--muted));
   font-size: 12px;
-  font-weight: 700;
-  padding: 11px 12px;
+  font-weight: 500;
+  padding: 10px 12px;
   text-align: left;
-  text-transform: uppercase;
 }
 
 .data-table td {
-  border-bottom: 1px solid rgba(34, 48, 71, .9);
-  color: var(--foreground);
+  border-bottom: 1px solid rgb(var(--hover));
+  color: rgb(var(--ink));
   padding: 12px;
   vertical-align: middle;
 }
 
 .data-table tr:hover td {
-  background: rgba(17, 27, 45, .42);
+  background: rgb(var(--panel-soft));
 }
 
 .professional-scrollbar {
-  scrollbar-color: #334155 transparent;
+  scrollbar-color: rgb(var(--line)) transparent;
 }
 
 .data-table tr:last-child td {

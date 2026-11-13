@@ -120,25 +120,25 @@ export function ProductCreateForm() {
   return (
     <form className="space-y-5" onSubmit={handleSubmit}>
       {error ? (
-        <div className="rounded-md border border-red-400/25 bg-red-400/10 px-4 py-3 text-sm font-semibold text-red-300">
+        <div className="rounded-md border border-red-400/25 bg-red-400/10 px-4 py-3 text-sm font-semibold text-red-700">
           {error}
         </div>
       ) : null}
 
-      {createdId ? <p role="status" className="text-sm text-amber-200">Product opgeslagen. <a className="underline" href={`/catalogus/${createdId}?tab=printbestand`}>Verder zonder bestand</a></p> : null}
+      {createdId ? <p role="status" className="text-sm text-amber-800">Product opgeslagen. <a className="underline" href={`/catalogus/${createdId}?tab=printbestand`}>Verder zonder bestand</a></p> : null}
       <fieldset disabled={saving || createdId !== null} className="space-y-5">
       <FormBlock title="Product" description="Nieuw concept">
         <TextField label="Productnaam" value={name} onChange={setName} required placeholder="Bijv. Telefoonhouder" />
         <details className="mt-4">
-        <summary className="cursor-pointer text-sm font-bold text-muted">Extra productgegevens</summary>
+        <summary className="cursor-pointer text-sm font-semibold text-muted">Extra productgegevens</summary>
         <div className="grid gap-4 md:grid-cols-2">
           <TextField label="Producttitel" value={title} onChange={setTitle} placeholder="Titel die je later kunt gebruiken voor verkoop" />
           <TextField label="Categorie" value={category} onChange={setCategory} placeholder="Bijv. Decoratie" />
           <TextField label="Producttype" value={productType} onChange={setProductType} placeholder="Bijv. Sleutelhanger, beeldje, houder" />
           <label className="space-y-2">
-            <span className="text-sm font-bold text-slate-300">Status</span>
+            <span className="text-sm font-semibold text-inkSoft">Status</span>
             <select
-              className="w-full rounded-md border border-line bg-slate-950/35 px-3 py-2 text-sm text-ink outline-none focus:border-brand"
+              className="w-full rounded-md border border-line bg-surfaceSoft px-3 py-2 text-sm text-ink outline-none focus:border-brand"
               value={status}
               onChange={(event) => setStatus(event.target.value)}
             >
@@ -151,7 +151,7 @@ export function ProductCreateForm() {
         </details>
       </FormBlock>
 
-      <details><summary className="cursor-pointer text-sm font-bold text-muted">Verkoopteksten en vindbaarheid</summary>
+      <details><summary className="cursor-pointer text-sm font-semibold text-muted">Verkoopteksten en vindbaarheid</summary>
       <FormBlock title="Tekst en SEO" description="Optioneel">
         <div className="grid gap-4 lg:grid-cols-2">
           <TextArea label="Korte omschrijving" value={shortDescription} onChange={setShortDescription} placeholder="Een korte uitleg voor overzicht en publicatiecontrole." />
@@ -183,8 +183,8 @@ export function ProductCreateForm() {
       </fieldset>
 
       <div className="space-y-2">
-        <p className="text-sm font-bold text-slate-300">Productbestand (optioneel)</p>
-        <label className="inline-flex cursor-pointer rounded-md border border-line px-3 py-2 text-sm font-bold focus-within:ring-2 focus-within:ring-brand">
+        <p className="text-sm font-semibold text-inkSoft">Productbestand (optioneel)</p>
+        <label className="inline-flex cursor-pointer rounded-md border border-line px-3 py-2 text-sm font-semibold focus-within:ring-2 focus-within:ring-brand">
           {file ? "Ander bestand kiezen" : "Bestand kiezen"}
           <input aria-label="Productbestand (optioneel)" className="sr-only" type="file" accept=".3mf,.gcode.3mf,.stl,.stp,.step,.svg,.amf,.obj,.gltf,.glb,.fbx,.oltp,.gcode" disabled={saving} onChange={(event) => setFile(event.target.files?.[0] || null)} />
         </label>
@@ -192,11 +192,11 @@ export function ProductCreateForm() {
       </div>
 
       <div className="flex flex-wrap justify-end gap-3">
-        <a className="rounded-md border border-line bg-slate-950/35 px-4 py-2 text-sm font-bold text-slate-300" href="/catalogus">
+        <a className="rounded-md border border-line bg-surfaceSoft px-4 py-2 text-sm font-semibold text-inkSoft" href="/catalogus">
           Annuleren
         </a>
         <button
-          className="rounded-md bg-brand px-4 py-2 text-sm font-black text-slate-950 disabled:cursor-not-allowed disabled:opacity-60"
+          className="rounded-md bg-brand px-4 py-2 text-sm font-semibold text-onBrand disabled:cursor-not-allowed disabled:opacity-60"
           disabled={saving || !name.trim()}
           type="submit"
         >
@@ -211,7 +211,7 @@ function FormBlock({ title, description, children }: { title: string; descriptio
   return (
     <section className="border-b border-line pb-4">
       <div className="border-b border-line px-4 py-4">
-        <h2 className="text-base font-bold text-ink">{title}</h2>
+        <h2 className="text-base font-semibold text-ink">{title}</h2>
         <p className="mt-1 text-sm leading-6 text-muted">{description}</p>
       </div>
       <div className="p-4">{children}</div>
@@ -236,9 +236,9 @@ function TextField({
 }) {
   return (
     <label className="space-y-2">
-      <span className="text-sm font-bold text-slate-300">{label}</span>
+      <span className="text-sm font-semibold text-inkSoft">{label}</span>
       <input
-        className="w-full rounded-md border border-line bg-slate-950/35 px-3 py-2 text-sm text-ink outline-none focus:border-brand"
+        className="w-full rounded-md border border-line bg-surfaceSoft px-3 py-2 text-sm text-ink outline-none focus:border-brand"
         inputMode={inputMode}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
@@ -262,9 +262,9 @@ function TextArea({
 }) {
   return (
     <label className="space-y-2">
-      <span className="text-sm font-bold text-slate-300">{label}</span>
+      <span className="text-sm font-semibold text-inkSoft">{label}</span>
       <textarea
-        className="min-h-28 w-full resize-y rounded-md border border-line bg-slate-950/35 px-3 py-2 text-sm text-ink leading-6 outline-none focus:border-brand"
+        className="min-h-28 w-full resize-y rounded-md border border-line bg-surfaceSoft px-3 py-2 text-sm text-ink leading-6 outline-none focus:border-brand"
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
         value={value}

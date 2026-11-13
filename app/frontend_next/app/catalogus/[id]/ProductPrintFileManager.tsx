@@ -169,22 +169,22 @@ export function ProductPrintFileManager({ product, variants, printers }: { produ
 
   return (
     <div className="space-y-4">
-      {message ? <div className="rounded-md border border-emerald-400/25 bg-emerald-400/10 px-3 py-2 text-sm font-semibold text-emerald-300">{message}</div> : null}
-      {error ? <div className="rounded-md border border-red-400/25 bg-red-400/10 px-3 py-2 text-sm font-semibold text-red-300">{error}</div> : null}
+      {message ? <div className="rounded-md border border-emerald-400/25 bg-emerald-400/10 px-3 py-2 text-sm font-semibold text-emerald-700">{message}</div> : null}
+      {error ? <div className="rounded-md border border-red-400/25 bg-red-400/10 px-3 py-2 text-sm font-semibold text-red-700">{error}</div> : null}
 
-      <div className="rounded-lg border border-line bg-slate-950/25 p-4">
+      <div className="rounded-lg border border-line bg-surfaceSoft p-4">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <h3 className="font-bold text-ink">Standaard productbestand</h3>
+            <h3 className="font-semibold text-ink">Standaard productbestand</h3>
             <p className="mt-1 text-sm leading-6 text-muted">
               Koppel hier het bronmodel of Bambu Studio-project voor dit product. Varianten gebruiken hetzelfde bestand; printer, kleur, materiaal en slicing stel je daarna in Bambu Studio in.
             </p>
-            <p className="mt-2 break-all text-sm font-semibold text-slate-300">
+            <p className="mt-2 break-all text-sm font-semibold text-inkSoft">
               {filename ? `Gekoppeld: ${filename}` : "Nog geen printbestand gekoppeld."}
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <label className="inline-flex cursor-pointer items-center justify-center rounded-md border border-line bg-slate-950/35 px-4 py-2 text-sm font-black text-slate-200 hover:bg-white/5">
+            <label className="inline-flex cursor-pointer items-center justify-center rounded-md border border-line bg-surfaceSoft px-4 py-2 text-sm font-semibold text-ink hover:bg-hover">
               {uploading ? "Uploaden..." : filename ? "Bestand vervangen" : "Printbestand kiezen"}
               <input accept={BAMBU_STUDIO_ACCEPT} className="sr-only" disabled={uploading} onChange={uploadPrintFile} type="file" />
             </label>
@@ -195,8 +195,8 @@ export function ProductPrintFileManager({ product, variants, printers }: { produ
       <div className="rounded-lg border border-brand/30 bg-brand/5 p-4">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
           <div>
-            <p className="text-xs font-black uppercase tracking-wide text-brand">Aanbevolen cloudworkflow</p>
-            <h3 className="mt-1 text-lg font-bold text-ink">Printen via Bambu Studio</h3>
+            <p className="text-xs font-semibold tracking-wide text-brand">Aanbevolen cloudworkflow</p>
+            <h3 className="mt-1 text-lg font-semibold text-ink">Printen via Bambu Studio</h3>
             <p className="mt-1 max-w-3xl text-sm leading-6 text-muted">
               Hiermee blijven Bambu Studio, Bambu Handy en Bambu Cloud normaal beschikbaar. De manager opent het originele printbestand ongewijzigd; Bambu Studio verstuurt de print.
             </p>
@@ -204,19 +204,19 @@ export function ProductPrintFileManager({ product, variants, printers }: { produ
           <StatusBadge status={product.print_file_path ? "klaar" : "bestand ontbreekt"} />
         </div>
         <details className="mt-4">
-        <summary className="cursor-pointer text-sm font-bold text-muted">Installatiehulp</summary>
+        <summary className="cursor-pointer text-sm font-semibold text-muted">Installatiehulp</summary>
         <div className="mt-3 grid gap-3 md:grid-cols-3">
           <WorkflowStep number="1" title="Installeer eenmalig" description="Installeer op deze Windows-computer de veilige koppeling met Bambu Studio." />
           <WorkflowStep number="2" title="Open het bestand" description="De koppeling haalt het beveiligde bestand op en opent het lokaal in Bambu Studio, zonder websitewaarschuwing." />
           <WorkflowStep number="3" title="Voorbereiden en printen" description="Kies in Bambu Studio de printer en het filament, slice het model indien nodig en start daarna de print." />
         </div>
-        <a className="mt-3 inline-block rounded-md border border-line px-3 py-2 text-sm font-bold text-brand" download href="/downloads/Installeer-Bambu-koppeling.cmd">Windows-koppeling installeren</a>
+        <a className="mt-3 inline-block rounded-md border border-line px-3 py-2 text-sm font-semibold text-brand" download href="/downloads/Installeer-Bambu-koppeling.cmd">Windows-koppeling installeren</a>
         </details>
-        {isSlicedFile ? <div className="mt-4 grid gap-4 rounded-md border border-line bg-slate-950/35 p-4 lg:grid-cols-2">
+        {isSlicedFile ? <div className="mt-4 grid gap-4 rounded-md border border-line bg-surfaceSoft p-4 lg:grid-cols-2">
           <label className="space-y-2">
-            <span className="text-sm font-bold text-slate-300">Productvariant</span>
+            <span className="text-sm font-semibold text-inkSoft">Productvariant</span>
             <select
-              className="w-full rounded-md border border-line bg-slate-950 px-3 py-2 text-sm text-ink outline-none focus:border-brand"
+              className="w-full rounded-md border border-line bg-surfaceSoft px-3 py-2 text-sm text-ink outline-none focus:border-brand"
               onChange={(event) => setSelectedVariantId(event.target.value)}
               value={selectedVariantId}
             >
@@ -229,9 +229,9 @@ export function ProductPrintFileManager({ product, variants, printers }: { produ
             </select>
           </label>
           <label className="space-y-2">
-            <span className="text-sm font-bold text-slate-300">Voorkeursprinter</span>
+            <span className="text-sm font-semibold text-inkSoft">Voorkeursprinter</span>
             <select
-              className="w-full rounded-md border border-line bg-slate-950 px-3 py-2 text-sm text-ink outline-none focus:border-brand"
+              className="w-full rounded-md border border-line bg-surfaceSoft px-3 py-2 text-sm text-ink outline-none focus:border-brand"
               onChange={(event) => setSelectedPrinterId(event.target.value)}
               value={selectedPrinterId}
             >
@@ -242,32 +242,32 @@ export function ProductPrintFileManager({ product, variants, printers }: { produ
             </select>
           </label>
           <div className="lg:col-span-2">
-            <div className="text-xs font-black uppercase tracking-wide text-slate-400">Laatst bekende AMS-inhoud</div>
+            <div className="text-xs font-semibold tracking-wide text-muted">Laatst bekende AMS-inhoud</div>
             <p className="mt-1 text-xs text-muted">Laatste printermeting: {selectedPrinter?.last_seen_at && Number.isFinite(Date.parse(selectedPrinter.last_seen_at)) ? new Date(selectedPrinter.last_seen_at).toLocaleString("nl-NL") : "onbekend"}</p>
             <div className="mt-2 flex flex-wrap gap-2">
               {selectedPrinter?.ams_slots?.length ? selectedPrinter.ams_slots.map((slot) => {
                 const materialMatch = selectedVariant?.material?.trim().toLowerCase() === slot.material.trim().toLowerCase();
                 return (
-                  <span className={`inline-flex items-center gap-2 rounded-md border px-3 py-2 text-xs font-bold ${materialMatch ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-100" : "border-line bg-slate-950 text-slate-400"}`} key={`${slot.ams_id}-${slot.tray_id}`}>
-                    <span className="h-3 w-3 rounded-full border border-white/30" style={{ backgroundColor: slot.color_hex || "#64748b" }} />
+                  <span className={`inline-flex items-center gap-2 rounded-md border px-3 py-2 text-xs font-semibold ${materialMatch ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-800" : "border-line bg-surfaceSoft text-muted"}`} key={`${slot.ams_id}-${slot.tray_id}`}>
+                    <span className="h-3 w-3 rounded-full border border-line" style={{ backgroundColor: slot.color_hex || "#64748b" }} />
                     {slot.label}: {slot.material} ({amsRemainingLabel(slot.remaining_percent)})
                   </span>
                 );
-              }) : <span className="text-sm text-amber-200">AMS-inhoud onbekend</span>}
+              }) : <span className="text-sm text-amber-800">AMS-inhoud onbekend</span>}
             </div>
           </div>
-          <div className="lg:col-span-2 rounded-md border border-amber-400/25 bg-amber-400/10 px-3 py-2 text-sm text-amber-100">
+          <div className="lg:col-span-2 rounded-md border border-amber-400/25 bg-amber-400/10 px-3 py-2 text-sm text-amber-800">
             Dit bestand is al geslicet. De manager controleert het printermodel en adviseert een passende printer en AMS-sleuf. Het bestand blijft intact.
           </div>
         </div> : (
-          <div className="mt-4 rounded-md border border-line bg-slate-950/35 p-4 text-sm leading-6 text-muted">
+          <div className="mt-4 rounded-md border border-line bg-surfaceSoft p-4 text-sm leading-6 text-muted">
             Dit is een bronmodel of gewoon Bambu Studio-project. Het opent zonder vooraf een printer te kiezen; printer, filament, kleur en slice-instellingen kies je in Bambu Studio.
           </div>
         )}
         <div className="mt-4 flex flex-wrap gap-3">
           {product.print_file_path ? (
             <button
-              className="rounded-md bg-brand px-4 py-2 text-sm font-black text-slate-950 hover:bg-brand/90 disabled:opacity-60"
+              className="rounded-md bg-brand px-4 py-2 text-sm font-semibold text-onBrand hover:bg-brand/90 disabled:opacity-60"
               disabled={busy !== null || uploading}
               onClick={openInBambuStudio}
               type="button"
@@ -275,46 +275,46 @@ export function ProductPrintFileManager({ product, variants, printers }: { produ
               {busy === "studio" ? "Bestand aanbieden..." : "Open in Bambu Studio"}
             </button>
           ) : (
-            <span className="rounded-md border border-amber-400/25 bg-amber-400/10 px-4 py-2 text-sm font-bold text-amber-100">Upload eerst een printbestand</span>
+            <span className="rounded-md border border-amber-400/25 bg-amber-400/10 px-4 py-2 text-sm font-semibold text-amber-800">Upload eerst een printbestand</span>
           )}
-          <a className="rounded-md border border-line bg-slate-950/35 px-4 py-2 text-sm font-bold text-slate-300 hover:bg-white/5" href="/printplanning">
+          <a className="rounded-md border border-line bg-surfaceSoft px-4 py-2 text-sm font-semibold text-inkSoft hover:bg-hover" href="/printplanning">
             Naar printplanning
           </a>
           {product.print_file_path ? (
-            <a className="rounded-md border border-line bg-slate-950/35 px-4 py-2 text-sm font-bold text-slate-300 hover:bg-white/5" download href={`/api/products/${product.id}/print-file/download`}>
+            <a className="rounded-md border border-line bg-surfaceSoft px-4 py-2 text-sm font-semibold text-inkSoft hover:bg-hover" download href={`/api/products/${product.id}/print-file/download`}>
               Alleen downloaden
             </a>
           ) : null}
         </div>
       </div>
 
-      {isSlicedFile ? <details className="rounded-lg border border-line bg-slate-950/25">
+      {isSlicedFile ? <details className="rounded-lg border border-line bg-surfaceSoft">
         <summary className="cursor-pointer list-none p-4">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h3 className="font-bold text-ink">Directe LAN-printstart (geavanceerd)</h3>
+              <h3 className="font-semibold text-ink">Directe LAN-printstart (geavanceerd)</h3>
               <p className="mt-1 text-sm text-muted">Alleen gebruiken bij een printer die bewust voor directe LAN-bediening is ingericht.</p>
             </div>
-            <span className="text-sm font-bold text-slate-400">Instellingen tonen</span>
+            <span className="text-sm font-semibold text-muted">Instellingen tonen</span>
           </div>
         </summary>
         <div className="border-t border-line p-4">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
           <div>
-            <h3 className="font-bold text-ink">Direct naar printer sturen</h3>
+            <h3 className="font-semibold text-ink">Direct naar printer sturen</h3>
             <p className="mt-1 text-sm leading-6 text-muted">
               De app controleert de printer, uploadt het bestand en stuurt het LAN/MQTT-startcommando. Dit is niet de aanbevolen route zolang je Bambu Cloud en Handy wilt behouden.
             </p>
-            {selectedPrinter ? <p className="mt-2 text-xs font-bold text-slate-400">Gekozen printer: {selectedPrinter.name} ({selectedPrinter.host})</p> : null}
+            {selectedPrinter ? <p className="mt-2 text-xs font-semibold text-muted">Gekozen printer: {selectedPrinter.name} ({selectedPrinter.host})</p> : null}
           </div>
           <StatusBadge status={product.print_file_path ? "bestand gekoppeld" : "bestand ontbreekt"} />
         </div>
 
         <div className="mt-4 grid gap-4 md:grid-cols-2">
           <label className="space-y-2">
-            <span className="text-sm font-bold text-slate-300">Printer</span>
+            <span className="text-sm font-semibold text-inkSoft">Printer</span>
             <select
-              className="w-full rounded-md border border-line bg-slate-950/35 px-3 py-2 text-sm text-ink outline-none focus:border-brand"
+              className="w-full rounded-md border border-line bg-surfaceSoft px-3 py-2 text-sm text-ink outline-none focus:border-brand"
               disabled={!printers.length}
               onChange={(event) => {
                 setSelectedPrinterId(event.target.value);
@@ -338,14 +338,14 @@ export function ProductPrintFileManager({ product, variants, printers }: { produ
 
         <div className="mt-4 flex flex-wrap gap-3">
           <button
-            className="rounded-md border border-line bg-slate-950/35 px-4 py-2 text-sm font-bold text-slate-300 hover:bg-white/5 disabled:opacity-60"
+            className="rounded-md border border-line bg-surfaceSoft px-4 py-2 text-sm font-semibold text-inkSoft hover:bg-hover disabled:opacity-60"
             disabled={busy !== null || !selectedPrinterId || !product.print_file_path}
             onClick={runPreflight}
             type="button"
           >
             {busy === "preflight" ? "Controleren..." : "Alleen controleren"}
           </button>
-          <a className="rounded-md border border-line bg-slate-950/35 px-4 py-2 text-sm font-bold text-slate-300 hover:bg-white/5" href="/bambu-printers">
+          <a className="rounded-md border border-line bg-surfaceSoft px-4 py-2 text-sm font-semibold text-inkSoft hover:bg-hover" href="/bambu-printers">
             Printers beheren
           </a>
         </div>
@@ -353,19 +353,19 @@ export function ProductPrintFileManager({ product, variants, printers }: { produ
         {preflight ? (
           <div className="mt-4 space-y-2">
             {preflight.checks.map((check) => (
-              <div className={`rounded-lg border px-3 py-2 text-sm ${check.ok ? "border-emerald-400/20 bg-emerald-400/10 text-emerald-100" : check.level === "warning" ? "border-amber-400/25 bg-amber-400/10 text-amber-100" : "border-red-400/25 bg-red-400/10 text-red-100"}`} key={check.name}>
-                <span className="font-black">{check.ok ? "OK" : check.level === "warning" ? "Let op" : "Blokkeert"} - {check.name}:</span> {check.message}
+              <div className={`rounded-lg border px-3 py-2 text-sm ${check.ok ? "border-emerald-400/20 bg-emerald-400/10 text-emerald-800" : check.level === "warning" ? "border-amber-400/25 bg-amber-400/10 text-amber-800" : "border-red-400/25 bg-red-400/10 text-red-800"}`} key={check.name}>
+                <span className="font-semibold">{check.ok ? "OK" : check.level === "warning" ? "Let op" : "Blokkeert"} - {check.name}:</span> {check.message}
               </div>
             ))}
           </div>
         ) : null}
 
         <div className="mt-4 grid gap-3 md:grid-cols-[1fr_auto] md:items-end">
-          <div className="rounded-lg border border-line bg-slate-950/35 px-3 py-2 text-sm leading-6 text-muted">
-            <span className="font-black text-ink">Veilige start:</span> bij klikken op Print starten voert de app automatisch eerst de controle uit.
+          <div className="rounded-lg border border-line bg-surfaceSoft px-3 py-2 text-sm leading-6 text-muted">
+            <span className="font-semibold text-ink">Veilige start:</span> bij klikken op Print starten voert de app automatisch eerst de controle uit.
           </div>
           <button
-            className="rounded-md bg-brand px-4 py-2 text-sm font-black text-slate-950 hover:bg-brand/90 disabled:cursor-not-allowed disabled:bg-slate-800 disabled:text-slate-500"
+            className="rounded-md bg-brand px-4 py-2 text-sm font-semibold text-onBrand hover:bg-brand/90 disabled:cursor-not-allowed disabled:bg-track disabled:text-muted"
             disabled={busy !== null || !canStart}
             onClick={startPrint}
             type="button"
@@ -377,8 +377,8 @@ export function ProductPrintFileManager({ product, variants, printers }: { produ
         <div
           className={`mt-3 rounded-lg border px-3 py-2 text-sm font-semibold ${
             startBlockedReason
-              ? "border-amber-400/25 bg-amber-400/10 text-amber-100"
-              : "border-emerald-400/25 bg-emerald-400/10 text-emerald-100"
+              ? "border-amber-400/25 bg-amber-400/10 text-amber-800"
+              : "border-emerald-400/25 bg-emerald-400/10 text-emerald-800"
           }`}
         >
           {startBlockedReason || "Klaar voor printstart. De controle draait automatisch zodra je op Print starten klikt."}
@@ -391,10 +391,10 @@ export function ProductPrintFileManager({ product, variants, printers }: { produ
 
 function WorkflowStep({ number, title, description }: { number: string; title: string; description: string }) {
   return (
-    <div className="rounded-md border border-line bg-slate-950/35 p-3">
+    <div className="rounded-md border border-line bg-surfaceSoft p-3">
       <div className="flex items-center gap-2">
-        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand text-xs font-black text-slate-950">{number}</span>
-        <span className="font-bold text-ink">{title}</span>
+        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand text-xs font-semibold text-onBrand">{number}</span>
+        <span className="font-semibold text-ink">{title}</span>
       </div>
       <p className="mt-2 text-sm leading-6 text-muted">{description}</p>
     </div>
@@ -403,7 +403,7 @@ function WorkflowStep({ number, title, description }: { number: string; title: s
 
 function Option({ label, checked, onChange }: { label: string; checked: boolean; onChange: (checked: boolean) => void }) {
   return (
-    <label className="flex items-center gap-3 rounded-md border border-line bg-slate-950/35 px-3 py-2 text-sm font-semibold text-ink">
+    <label className="flex items-center gap-3 rounded-md border border-line bg-surfaceSoft px-3 py-2 text-sm font-semibold text-ink">
       <input checked={checked} onChange={(event) => onChange(event.target.checked)} type="checkbox" />
       {label}
     </label>
@@ -423,9 +423,9 @@ function TextField({
 }) {
   return (
     <label className="space-y-2">
-      <span className="text-sm font-bold text-slate-300">{label}</span>
+      <span className="text-sm font-semibold text-inkSoft">{label}</span>
       <input
-        className="w-full rounded-md border border-line bg-slate-950/35 px-3 py-2 text-sm text-ink outline-none focus:border-brand"
+        className="w-full rounded-md border border-line bg-surfaceSoft px-3 py-2 text-sm text-ink outline-none focus:border-brand"
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
         value={value}

@@ -109,38 +109,38 @@ export function OrderActions({ orderId, accountingSale, orderStatus }: { orderId
 
   return (
     <div className="space-y-3">
-      {message ? <div className="rounded-md border border-emerald-400/25 bg-emerald-400/10 px-3 py-2 text-sm font-semibold text-emerald-300">{message}</div> : null}
-      {error ? <div className="rounded-md border border-red-400/25 bg-red-400/10 px-3 py-2 text-sm font-semibold text-red-300">{error}</div> : null}
+      {message ? <div className="rounded-md border border-emerald-400/25 bg-emerald-400/10 px-3 py-2 text-sm font-semibold text-emerald-700">{message}</div> : null}
+      {error ? <div className="rounded-md border border-red-400/25 bg-red-400/10 px-3 py-2 text-sm font-semibold text-red-700">{error}</div> : null}
       {accountingSale ? (
         <div className="rounded-md border border-sky-200 bg-sky-50 px-3 py-2 text-sm font-semibold text-sky-800">
           Verkoopboeking #{accountingSale.id} bestaat al: {accountingSale.invoice_number || "zonder factuurnummer"}.
         </div>
       ) : null}
-      <button className="w-full rounded-md bg-brand px-4 py-3 text-sm font-black text-slate-950 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto" disabled={busyAction !== null} onClick={processOrder} type="button">
+      <button className="w-full rounded-md bg-brand px-4 py-3 text-sm font-semibold text-onBrand disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto" disabled={busyAction !== null} onClick={processOrder} type="button">
         {busyAction === "all" ? "Order verwerken..." : "Order verwerken"}
       </button>
       {orderStatus && !closedStatuses.has(orderStatus) ? (
         <div className="flex flex-wrap gap-2">
           {orderStatus !== "ingepakt" ? (
-            <button className="rounded-md border border-line px-3 py-2 text-sm font-bold text-slate-200 hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-60" disabled={busyAction !== null} onClick={() => runFulfillment("pack")} type="button">
+            <button className="rounded-md border border-line px-3 py-2 text-sm font-semibold text-ink hover:bg-hover disabled:cursor-not-allowed disabled:opacity-60" disabled={busyAction !== null} onClick={() => runFulfillment("pack")} type="button">
               {busyAction === "pack" ? "Bezig..." : fulfillmentLabels.pack}
             </button>
           ) : null}
-          <button className="rounded-md border border-line px-3 py-2 text-sm font-bold text-slate-200 hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-60" disabled={busyAction !== null} onClick={() => runFulfillment("ship")} type="button">
+          <button className="rounded-md border border-line px-3 py-2 text-sm font-semibold text-ink hover:bg-hover disabled:cursor-not-allowed disabled:opacity-60" disabled={busyAction !== null} onClick={() => runFulfillment("ship")} type="button">
             {busyAction === "ship" ? "Bezig..." : fulfillmentLabels.ship}
           </button>
-          <button className="rounded-md border border-red-400/30 px-3 py-2 text-sm font-bold text-red-300 hover:bg-red-400/10 disabled:cursor-not-allowed disabled:opacity-60" disabled={busyAction !== null} onClick={() => runFulfillment("cancel")} type="button">
+          <button className="rounded-md border border-red-400/30 px-3 py-2 text-sm font-semibold text-red-700 hover:bg-red-400/10 disabled:cursor-not-allowed disabled:opacity-60" disabled={busyAction !== null} onClick={() => runFulfillment("cancel")} type="button">
             {busyAction === "cancel" ? "Bezig..." : fulfillmentLabels.cancel}
           </button>
         </div>
       ) : null}
       <p className="text-sm leading-6 text-muted">Verzonden boekt de gereserveerde voorraad af. Annuleren geeft reserveringen vrij en annuleert printwerk dat nog niet gestart is.</p>
       <p className="text-sm leading-6 text-muted">Deze actie koppelt productregels, reserveert beschikbare voorraad, maakt alleen voor tekorten printtaken en legt de verkoop administratief vast. Opnieuw uitvoeren veroorzaakt geen dubbele reserveringen.</p>
-      <details className="rounded-md border border-line bg-slate-950/20 p-3">
-        <summary className="cursor-pointer text-sm font-bold text-slate-300">Afzonderlijke herstelacties</summary>
+      <details className="rounded-md border border-line bg-surfaceSoft p-3">
+        <summary className="cursor-pointer text-sm font-semibold text-inkSoft">Afzonderlijke herstelacties</summary>
         <div className="mt-3 flex flex-wrap gap-2">
           {(Object.keys(actionLabels) as OrderAction[]).filter((action) => action !== "process").map((action) => (
-            <button className="rounded-md border border-line bg-slate-950/35 px-3 py-2 text-sm font-bold text-slate-300 hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-60" disabled={busyAction !== null || (action === "create-accounting-sale" && Boolean(accountingSale))} key={action} onClick={() => runAction(action)} type="button">
+            <button className="rounded-md border border-line bg-surfaceSoft px-3 py-2 text-sm font-semibold text-inkSoft hover:bg-hover disabled:cursor-not-allowed disabled:opacity-60" disabled={busyAction !== null || (action === "create-accounting-sale" && Boolean(accountingSale))} key={action} onClick={() => runAction(action)} type="button">
               {busyAction === action ? "Bezig..." : actionLabels[action]}
             </button>
           ))}

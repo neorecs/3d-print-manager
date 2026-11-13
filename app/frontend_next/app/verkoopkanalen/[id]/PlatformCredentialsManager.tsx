@@ -130,19 +130,19 @@ export function PlatformCredentialsManager({ platform, status, credentials }: Pr
 
   return (
     <div className="space-y-4">
-      {message ? <div className="rounded-md border border-emerald-400/25 bg-emerald-400/10 px-3 py-2 text-sm font-semibold text-emerald-300">{message}</div> : null}
-      {error ? <div className="rounded-md border border-red-400/25 bg-red-400/10 px-3 py-2 text-sm font-semibold text-red-300">{error}</div> : null}
+      {message ? <div className="rounded-md border border-emerald-400/25 bg-emerald-400/10 px-3 py-2 text-sm font-semibold text-emerald-700">{message}</div> : null}
+      {error ? <div className="rounded-md border border-red-400/25 bg-red-400/10 px-3 py-2 text-sm font-semibold text-red-700">{error}</div> : null}
 
       {isEtsy ? (
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-line bg-slate-950/25 p-4">
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-line bg-surfaceSoft p-4">
           <div>
             <div className="flex flex-wrap items-center gap-2">
-              <span className="font-black text-ink">Koppeling met je Etsy-winkel</span>
+              <span className="font-semibold text-ink">Koppeling met je Etsy-winkel</span>
               <StatusBadge status={etsyConnected ? "verbonden" : "niet verbonden"} />
             </div>
             <p className="mt-2 text-sm text-muted">Je logt in bij Etsy en geeft toestemming. Daarna ververst de app het toegangstoken zelf; opnieuw verbinden is alleen nodig als de koppeling 90 dagen niet gebruikt is.</p>
           </div>
-          <button className="rounded-md bg-brand px-4 py-2 text-sm font-black text-slate-950 disabled:opacity-60" disabled={busyKey !== null} onClick={connectEtsy} type="button">
+          <button className="rounded-md bg-brand px-4 py-2 text-sm font-semibold text-onBrand disabled:opacity-60" disabled={busyKey !== null} onClick={connectEtsy} type="button">
             {busyKey === "etsy-oauth" ? "Doorsturen..." : etsyConnected ? "Opnieuw verbinden" : "Verbinden met Etsy"}
           </button>
         </div>
@@ -153,21 +153,21 @@ export function PlatformCredentialsManager({ platform, status, credentials }: Pr
           const credential = credentialFor(field.key);
           const busy = busyKey === field.key || busyKey === `delete-${credential?.id}`;
           return (
-            <form className="rounded-md border border-line bg-slate-950/25 p-4" key={field.key} onSubmit={(event) => saveCredential(event, field)}>
+            <form className="rounded-md border border-line bg-surfaceSoft p-4" key={field.key} onSubmit={(event) => saveCredential(event, field)}>
               <div className="grid gap-4 xl:grid-cols-[minmax(220px,1fr)_minmax(260px,1.3fr)_auto] xl:items-end">
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="font-black text-ink">{field.label}</span>
-                    {field.optional ? <span className="text-xs font-bold text-muted">optioneel</span> : null}
+                    <span className="font-semibold text-ink">{field.label}</span>
+                    {field.optional ? <span className="text-xs font-semibold text-muted">optioneel</span> : null}
                     <StatusBadge status={credential?.has_value ? "ingevuld" : "ontbreekt"} />
                   </div>
                   <p className="mt-2 text-sm text-muted">{field.description}</p>
                 </div>
                 <label className="space-y-2">
-                  <span className="text-sm font-bold text-slate-300">{credential?.has_value ? "Nieuwe waarde om te vervangen" : field.label}</span>
+                  <span className="text-sm font-semibold text-inkSoft">{credential?.has_value ? "Nieuwe waarde om te vervangen" : field.label}</span>
                   <input
                     autoComplete="off"
-                    className="w-full rounded-md border border-line bg-slate-950/35 px-3 py-2 text-sm text-ink outline-none focus:border-brand"
+                    className="w-full rounded-md border border-line bg-surfaceSoft px-3 py-2 text-sm text-ink outline-none focus:border-brand"
                     onChange={(event) => setValues((current) => ({ ...current, [field.key]: event.target.value }))}
                     placeholder={credential?.has_value ? "Huidige waarde blijft verborgen" : field.placeholder}
                     type={field.secret ? "password" : "text"}
@@ -175,11 +175,11 @@ export function PlatformCredentialsManager({ platform, status, credentials }: Pr
                   />
                 </label>
                 <div className="flex flex-wrap gap-2">
-                  <button className="rounded-md bg-brand px-4 py-2 text-sm font-black text-slate-950 disabled:opacity-60" disabled={busy} type="submit">
+                  <button className="rounded-md bg-brand px-4 py-2 text-sm font-semibold text-onBrand disabled:opacity-60" disabled={busy} type="submit">
                     {busyKey === field.key ? "Opslaan..." : credential?.has_value ? "Vervangen" : "Opslaan"}
                   </button>
                   {credential ? (
-                    <button className="rounded-md border border-red-400/25 px-3 py-2 text-sm font-bold text-red-300 hover:bg-red-400/10 disabled:opacity-60" disabled={busy} onClick={() => deleteCredential(credential, field.label)} type="button">
+                    <button className="rounded-md border border-red-400/25 px-3 py-2 text-sm font-semibold text-red-700 hover:bg-red-400/10 disabled:opacity-60" disabled={busy} onClick={() => deleteCredential(credential, field.label)} type="button">
                       {busyKey === `delete-${credential.id}` ? "Verwijderen..." : "Verwijderen"}
                     </button>
                   ) : null}

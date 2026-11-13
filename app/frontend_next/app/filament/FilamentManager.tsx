@@ -174,8 +174,8 @@ export function FilamentManager({ filament }: { filament: FilamentSpool[] }) {
 
   return (
     <div className="space-y-5">
-      {message ? <div className="rounded-md border border-emerald-400/25 bg-emerald-400/10 px-3 py-2 text-sm font-semibold text-emerald-300">{message}</div> : null}
-      {error ? <div className="rounded-md border border-red-400/25 bg-red-400/10 px-3 py-2 text-sm font-semibold text-red-300">{error}</div> : null}
+      {message ? <div className="rounded-md border border-emerald-400/25 bg-emerald-400/10 px-3 py-2 text-sm font-semibold text-emerald-700">{message}</div> : null}
+      {error ? <div className="rounded-md border border-red-400/25 bg-red-400/10 px-3 py-2 text-sm font-semibold text-red-700">{error}</div> : null}
 
       <div className="space-y-3">
         {filament.length ? (
@@ -191,16 +191,16 @@ export function FilamentManager({ filament }: { filament: FilamentSpool[] }) {
                 <summary className="cursor-pointer list-none">
                   <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                     <div>
-                      <div className="font-bold text-ink">{spool.brand} - {spool.material} - {spool.color}</div>
+                      <div className="font-semibold text-ink">{spool.brand} - {spool.material} - {spool.color}</div>
                       <p className="mt-1 text-sm text-muted">
                         {remaining}g resterend, {used}g gebruikt, {spool.location || "geen locatie"}
                       </p>
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${lowStock ? "bg-amber-400/10 text-amber-200" : "bg-emerald-400/10 text-emerald-300"}`}>
+                      <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${lowStock ? "bg-amber-400/10 text-amber-800" : "bg-emerald-400/10 text-emerald-700"}`}>
                         {lowStock ? "lage voorraad" : "voldoende"}
                       </span>
-                      <span className="rounded-full bg-slate-800 px-2.5 py-1 text-xs font-bold text-slate-300">
+                      <span className="rounded-full bg-track px-2.5 py-1 text-xs font-semibold text-inkSoft">
                         {formatCurrency(spool.price_per_gram || 0)} / g
                       </span>
                     </div>
@@ -210,7 +210,7 @@ export function FilamentManager({ filament }: { filament: FilamentSpool[] }) {
                   <FilamentFields draft={draft} onChange={(field, value) => updateDraft(spool.id, field, value)} />
                   <div className="mt-4 flex justify-end">
                     <button
-                      className="rounded-md bg-brand px-4 py-2 text-sm font-black text-slate-950 disabled:cursor-not-allowed disabled:opacity-60"
+                      className="rounded-md bg-brand px-4 py-2 text-sm font-semibold text-onBrand disabled:cursor-not-allowed disabled:opacity-60"
                       disabled={busyKey !== null}
                       onClick={() => saveSpool(spool.id)}
                       type="button"
@@ -219,8 +219,8 @@ export function FilamentManager({ filament }: { filament: FilamentSpool[] }) {
                     </button>
                   </div>
 
-                  <div className="mt-5 rounded-lg border border-line bg-slate-950/25 p-4">
-                    <h4 className="font-bold text-ink">Resterend gewicht snel bijwerken</h4>
+                  <div className="mt-5 rounded-lg border border-line bg-surfaceSoft p-4">
+                    <h4 className="font-semibold text-ink">Resterend gewicht snel bijwerken</h4>
                     <p className="mt-1 text-sm text-muted">Gebruik dit na een print of bij een weegcorrectie.</p>
                     <div className="mt-4 grid gap-4 md:grid-cols-[1fr_auto] md:items-end">
                       <TextField
@@ -230,7 +230,7 @@ export function FilamentManager({ filament }: { filament: FilamentSpool[] }) {
                         value={adjustments[spool.id] || ""}
                       />
                       <button
-                        className="rounded-md border border-line bg-slate-950/35 px-4 py-2 text-sm font-bold text-slate-300 hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-60"
+                        className="rounded-md border border-line bg-surfaceSoft px-4 py-2 text-sm font-semibold text-inkSoft hover:bg-hover disabled:cursor-not-allowed disabled:opacity-60"
                         disabled={busyKey !== null}
                         onClick={() => adjustSpool(spool.id)}
                         type="button"
@@ -244,20 +244,20 @@ export function FilamentManager({ filament }: { filament: FilamentSpool[] }) {
             );
           })
         ) : (
-          <div className="rounded-md border border-amber-400/25 bg-amber-400/10 px-4 py-3 text-sm font-semibold text-amber-200">
+          <div className="rounded-md border border-amber-400/25 bg-amber-400/10 px-4 py-3 text-sm font-semibold text-amber-800">
             Nog geen filamentrollen. Open hieronder <strong>Nieuwe filamentrol toevoegen</strong> om je eerste rol vast te leggen.
           </div>
         )}
       </div>
 
-      <details className="rounded-lg border border-line bg-slate-950/25 p-4" id="filament-toevoegen">
-        <summary className="cursor-pointer list-none font-bold text-ink">Nieuwe filamentrol toevoegen</summary>
+      <details className="rounded-lg border border-line bg-surfaceSoft p-4" id="filament-toevoegen">
+        <summary className="cursor-pointer list-none font-semibold text-ink">Nieuwe filamentrol toevoegen</summary>
         <form className="mt-4 border-t border-line pt-4" onSubmit={createSpool}>
           <p className="mb-4 text-sm text-muted">Leg merk, materiaal, kleur, gewicht en aankoopprijs vast. De prijs per gram wordt automatisch berekend.</p>
           <FilamentFields draft={newDraft} onChange={updateNew} />
           <div className="mt-4 flex justify-end">
             <button
-              className="rounded-md bg-brand px-4 py-2 text-sm font-black text-slate-950 disabled:cursor-not-allowed disabled:opacity-60"
+              className="rounded-md bg-brand px-4 py-2 text-sm font-semibold text-onBrand disabled:cursor-not-allowed disabled:opacity-60"
               disabled={busyKey === "new"}
               type="submit"
             >
@@ -289,11 +289,11 @@ function FilamentFields({
       <TextField inputMode="decimal" label="Resterend gram" value={draft.remaining_weight_grams} onChange={(value) => onChange("remaining_weight_grams", value)} />
       <TextField inputMode="decimal" label="Aankoopprijs" value={draft.purchase_price} onChange={(value) => onChange("purchase_price", value)} />
       <TextField inputMode="decimal" label="Minimum gram" value={draft.minimum_remaining_grams} onChange={(value) => onChange("minimum_remaining_grams", value)} />
-      <div className="rounded-md border border-line bg-slate-950/35 px-3 py-2 text-ink">
-        <div className="text-sm font-bold text-slate-300">Berekende prijs per gram</div>
-        <div className="mt-1 text-lg font-bold text-ink">{formatCurrency(pricePerGram)}</div>
+      <div className="rounded-md border border-line bg-surfaceSoft px-3 py-2 text-ink">
+        <div className="text-sm font-semibold text-inkSoft">Berekende prijs per gram</div>
+        <div className="mt-1 text-lg font-semibold text-ink">{formatCurrency(pricePerGram)}</div>
       </div>
-      <label className="flex items-center gap-3 rounded-md border border-line bg-slate-950/35 px-3 py-2 text-sm text-ink font-semibold">
+      <label className="flex items-center gap-3 rounded-md border border-line bg-surfaceSoft px-3 py-2 text-sm text-ink font-semibold">
         <input checked={draft.active} onChange={(event) => onChange("active", event.target.checked)} type="checkbox" />
         Rol actief
       </label>
@@ -316,9 +316,9 @@ function TextField({
 }) {
   return (
     <label className="space-y-2">
-      <span className="text-sm font-bold text-slate-300">{label}</span>
+      <span className="text-sm font-semibold text-inkSoft">{label}</span>
       <input
-        className="w-full rounded-md border border-line bg-slate-950/35 px-3 py-2 text-sm text-ink outline-none focus:border-brand"
+        className="w-full rounded-md border border-line bg-surfaceSoft px-3 py-2 text-sm text-ink outline-none focus:border-brand"
         inputMode={inputMode}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}

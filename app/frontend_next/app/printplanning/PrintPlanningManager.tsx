@@ -283,19 +283,19 @@ export function PrintPlanningManager({
 
   return (
     <div className="space-y-6">
-      {message ? <div className="rounded-md border border-emerald-400/25 bg-emerald-400/10 px-3 py-2 text-sm font-semibold text-emerald-300">{message}</div> : null}
-      {error ? <div className="rounded-md border border-red-400/25 bg-red-400/10 px-3 py-2 text-sm font-semibold text-red-300">{error}</div> : null}
+      {message ? <div className="rounded-md border border-emerald-400/25 bg-emerald-400/10 px-3 py-2 text-sm font-semibold text-emerald-700">{message}</div> : null}
+      {error ? <div className="rounded-md border border-red-400/25 bg-red-400/10 px-3 py-2 text-sm font-semibold text-red-700">{error}</div> : null}
       {exportResult ? (
         <div className="rounded-md border border-brand/30 bg-brand/10 px-3 py-3 text-sm text-brand">
-          <div className="font-bold">Bambu Studio-pakket staat klaar</div>
+          <div className="font-semibold">Bambu Studio-pakket staat klaar</div>
           <div className="mt-1">{exportResult.row_count ?? 0} productieregels en {exportResult.print_file_count ?? 0} unieke printbestanden.</div>
           {exportResult.missing_print_files?.length ? (
-            <div className="mt-2 rounded-md border border-amber-400/25 bg-amber-400/10 px-3 py-2 text-amber-100">
+            <div className="mt-2 rounded-md border border-amber-400/25 bg-amber-400/10 px-3 py-2 text-amber-800">
               Printbestand ontbreekt voor: {exportResult.missing_print_files.join(", ")}.
             </div>
           ) : null}
           {exportResult.download_url ? (
-            <a className="mt-3 inline-flex rounded-md bg-brand px-4 py-2 font-black text-slate-950" download href={`/api${exportResult.download_url}`}>
+            <a className="mt-3 inline-flex rounded-md bg-brand px-4 py-2 font-semibold text-onBrand" download href={`/api${exportResult.download_url}`}>
               ZIP-pakket downloaden
             </a>
           ) : null}
@@ -304,7 +304,7 @@ export function PrintPlanningManager({
 
       <section className="space-y-3">
         <div>
-          <h3 className="text-lg font-bold text-ink">Batchadvies op kleur en materiaal</h3>
+          <h3 className="text-lg font-semibold text-ink">Batchadvies op kleur en materiaal</h3>
           <p className="mt-1 text-sm text-muted">Maak batches van open printtaken met dezelfde kleur en hetzelfde materiaal.</p>
         </div>
         {groups.length ? (
@@ -313,13 +313,13 @@ export function PrintPlanningManager({
               <div className="rounded-lg border border-line bg-panelSoft p-4" key={`${group.material}-${group.color}`}>
                 <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                   <div>
-                    <div className="font-bold text-ink">{group.material} - {group.color}</div>
+                    <div className="font-semibold text-ink">{group.material} - {group.color}</div>
                     <p className="mt-1 text-sm text-muted">
                       {group.jobs.length} taken, {group.quantity} stuks, {group.minutes ? formatMinutes(group.minutes) : "printtijd onbekend"}, {group.filament || 0}g filament.
                     </p>
                   </div>
                   <button
-                    className="rounded-md bg-brand px-3 py-2 text-sm font-black text-slate-950 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="rounded-md bg-brand px-3 py-2 text-sm font-semibold text-onBrand disabled:cursor-not-allowed disabled:opacity-60"
                     disabled={busyKey !== null}
                     onClick={() => createBatch(group)}
                     type="button"
@@ -339,7 +339,7 @@ export function PrintPlanningManager({
 
       <section className="space-y-3">
         <div>
-          <h3 className="text-lg font-bold text-ink">Printtaken beheren</h3>
+          <h3 className="text-lg font-semibold text-ink">Printtaken beheren</h3>
           <p className="mt-1 text-sm text-muted">Wijzig planning/status of verwerk het resultaat na het printen.</p>
         </div>
         {printJobs.length ? (
@@ -362,7 +362,7 @@ export function PrintPlanningManager({
                   <summary className="cursor-pointer list-none">
                     <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                       <div>
-                        <div className="font-bold text-ink">Printtaak #{job.id}</div>
+                        <div className="font-semibold text-ink">Printtaak #{job.id}</div>
                         <p className="mt-1 text-sm text-muted">
                           {product?.internal_title || product?.name || `Product ${job.product_id}`} - {variantLabel(variant)}
                         </p>
@@ -372,7 +372,7 @@ export function PrintPlanningManager({
                       </div>
                       <div className="flex flex-wrap items-center gap-2">
                         <StatusBadge status={job.status} />
-                        <span className="rounded-full bg-slate-800 px-2.5 py-1 text-xs font-bold text-slate-300">
+                        <span className="rounded-full bg-track px-2.5 py-1 text-xs font-semibold text-inkSoft">
                           {job.quantity_planned || job.quantity_needed} stuks
                         </span>
                       </div>
@@ -385,8 +385,8 @@ export function PrintPlanningManager({
                       <NumberField label="Printtijd minuten" value={draft.estimated_print_time_minutes} onChange={(value) => updateDraft(job.id, "estimated_print_time_minutes", value)} />
                       <NumberField label="Filament gram" value={draft.estimated_filament_grams} onChange={(value) => updateDraft(job.id, "estimated_filament_grams", value)} />
                       <label className="space-y-2">
-                        <span className="text-sm font-bold text-slate-300">Status</span>
-                        <select className="w-full rounded-md border border-line bg-slate-950/35 px-3 py-2 text-sm text-ink outline-none focus:border-brand" value={draft.status} onChange={(event) => updateDraft(job.id, "status", event.target.value)}>
+                        <span className="text-sm font-semibold text-inkSoft">Status</span>
+                        <select className="w-full rounded-md border border-line bg-surfaceSoft px-3 py-2 text-sm text-ink outline-none focus:border-brand" value={draft.status} onChange={(event) => updateDraft(job.id, "status", event.target.value)}>
                           {printJobStatuses.map((status) => (
                             <option key={status} value={status}>{status.replace(/_/g, " ")}</option>
                           ))}
@@ -409,7 +409,7 @@ export function PrintPlanningManager({
                         </div>
                       ) : null}
                       <button
-                        className="rounded-md bg-brand px-4 py-2 text-sm font-black text-slate-950 disabled:cursor-not-allowed disabled:opacity-60"
+                        className="rounded-md bg-brand px-4 py-2 text-sm font-semibold text-onBrand disabled:cursor-not-allowed disabled:opacity-60"
                         disabled={busyKey !== null}
                         onClick={() => saveJob(job)}
                         type="button"
@@ -418,8 +418,8 @@ export function PrintPlanningManager({
                       </button>
                     </div>
 
-                    <div className="mt-5 rounded-lg border border-line bg-slate-950/25 p-4">
-                      <h4 className="font-bold text-ink">Printresultaat verwerken</h4>
+                    <div className="mt-5 rounded-lg border border-line bg-surfaceSoft p-4">
+                      <h4 className="font-semibold text-ink">Printresultaat verwerken</h4>
                       <p className="mt-1 text-sm text-muted">Gelukte extra prints gaan naar vrije voorraad. Mislukte prints worden traceerbaar geregistreerd.</p>
                       <div className="mt-4 grid gap-4 md:grid-cols-3">
                         <NumberField label="Gelukt" value={completion.quantity_succeeded} onChange={(value) => updateCompleteDraft(job.id, "quantity_succeeded", value)} />
@@ -428,7 +428,7 @@ export function PrintPlanningManager({
                       </div>
                       <div className="mt-4 flex justify-end">
                         <button
-                          className="rounded-md border border-line bg-slate-950/35 px-4 py-2 text-sm font-bold text-slate-300 hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-60"
+                          className="rounded-md border border-line bg-surfaceSoft px-4 py-2 text-sm font-semibold text-inkSoft hover:bg-hover disabled:cursor-not-allowed disabled:opacity-60"
                           disabled={busyKey !== null}
                           onClick={() => completeJob(job)}
                           type="button"
@@ -451,7 +451,7 @@ export function PrintPlanningManager({
 
       <section className="space-y-3">
         <div>
-          <h3 className="text-lg font-bold text-ink">Printbatches</h3>
+          <h3 className="text-lg font-semibold text-ink">Printbatches</h3>
           <p className="mt-1 text-sm text-muted">Maak een downloadbaar ZIP-pakket met productielijsten, uitleg en de gekoppelde Bambu Studio-productbestanden.</p>
         </div>
         {printBatches.length ? (
@@ -479,7 +479,7 @@ export function PrintPlanningManager({
                     <td className="text-right" data-label="Filament">{batch.estimated_total_filament_grams || 0}g</td>
                     <td className="text-right" data-label="Actie">
                       <button
-                        className="rounded-md border border-line bg-slate-950/35 px-3 py-2 text-sm font-bold text-slate-300 hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-60"
+                        className="rounded-md border border-line bg-surfaceSoft px-3 py-2 text-sm font-semibold text-inkSoft hover:bg-hover disabled:cursor-not-allowed disabled:opacity-60"
                         disabled={busyKey !== null}
                         onClick={() => exportBatch(batch)}
                         type="button"
@@ -505,9 +505,9 @@ export function PrintPlanningManager({
 function NumberField({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
   return (
     <label className="space-y-2">
-      <span className="text-sm font-bold text-slate-300">{label}</span>
+      <span className="text-sm font-semibold text-inkSoft">{label}</span>
       <input
-        className="w-full rounded-md border border-line bg-slate-950/35 px-3 py-2 text-sm text-ink outline-none focus:border-brand"
+        className="w-full rounded-md border border-line bg-surfaceSoft px-3 py-2 text-sm text-ink outline-none focus:border-brand"
         inputMode="numeric"
         onChange={(event) => onChange(event.target.value)}
         value={value}

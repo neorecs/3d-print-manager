@@ -96,8 +96,8 @@ export function SalesChannelsManager({ platforms }: { platforms: Platform[] }) {
 
   return (
     <div className="space-y-5">
-      {message ? <div className="rounded-md border border-emerald-400/25 bg-emerald-400/10 px-3 py-2 text-sm font-semibold text-emerald-300">{message}</div> : null}
-      {error ? <div className="rounded-md border border-red-400/25 bg-red-400/10 px-3 py-2 text-sm font-semibold text-red-300">{error}</div> : null}
+      {message ? <div className="rounded-md border border-emerald-400/25 bg-emerald-400/10 px-3 py-2 text-sm font-semibold text-emerald-700">{message}</div> : null}
+      {error ? <div className="rounded-md border border-red-400/25 bg-red-400/10 px-3 py-2 text-sm font-semibold text-red-700">{error}</div> : null}
       <div className="space-y-3">
         {platforms.map((platform) => {
           const draft = drafts[platform.id] || draftFromPlatform(platform);
@@ -106,10 +106,10 @@ export function SalesChannelsManager({ platforms }: { platforms: Platform[] }) {
               <summary className="cursor-pointer list-none">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
-                    <div className="font-bold text-ink">{platform.name}</div>
+                    <div className="font-semibold text-ink">{platform.name}</div>
                     <div className="mt-1 text-sm text-muted">{platform.type} - {platform.active ? "actief" : "inactief"}</div>
                   </div>
-                  <Link className="rounded-md border border-line px-3 py-2 text-sm font-bold text-ink hover:border-brand hover:text-brand" href={`/verkoopkanalen/${platform.id}`}>
+                  <Link className="rounded-md border border-line px-3 py-2 text-sm font-semibold text-ink hover:border-brand hover:text-brand" href={`/verkoopkanalen/${platform.id}`}>
                     Koppeling instellen
                   </Link>
                 </div>
@@ -117,19 +117,19 @@ export function SalesChannelsManager({ platforms }: { platforms: Platform[] }) {
               <div className="mt-4 grid gap-4 border-t border-line pt-4 md:grid-cols-2">
                 <TextField label="Naam" value={draft.name} onChange={(value) => updateExisting(platform.id, "name", value)} />
                 <TextField label="Type" value={draft.type} onChange={(value) => updateExisting(platform.id, "type", value)} />
-                <label className="flex items-center gap-3 rounded-md border border-line bg-slate-950/35 px-3 py-2 text-sm text-ink font-semibold">
+                <label className="flex items-center gap-3 rounded-md border border-line bg-surfaceSoft px-3 py-2 text-sm text-ink font-semibold">
                   <input checked={draft.active} onChange={(event) => updateExisting(platform.id, "active", event.target.checked)} type="checkbox" />
                   Actief
                 </label>
               </div>
-              <details className="mt-4 rounded-md border border-line bg-slate-950/25 px-3 py-2">
-                <summary className="cursor-pointer text-sm font-bold text-slate-300">Geavanceerde instellingen</summary>
+              <details className="mt-4 rounded-md border border-line bg-surfaceSoft px-3 py-2">
+                <summary className="cursor-pointer text-sm font-semibold text-inkSoft">Geavanceerde instellingen</summary>
                 <div className="mt-3 border-t border-line pt-3">
                   <TextField label="Technisch API-adres" value={draft.api_base_url} onChange={(value) => updateExisting(platform.id, "api_base_url", value)} />
                 </div>
               </details>
               <div className="mt-4 flex justify-end">
-                <button className="rounded-md bg-brand px-4 py-2 text-sm font-black text-slate-950 disabled:opacity-60" disabled={busyKey === String(platform.id)} onClick={() => savePlatform(platform.id)} type="button">
+                <button className="rounded-md bg-brand px-4 py-2 text-sm font-semibold text-onBrand disabled:opacity-60" disabled={busyKey === String(platform.id)} onClick={() => savePlatform(platform.id)} type="button">
                   {busyKey === String(platform.id) ? "Opslaan..." : "Kanaal opslaan"}
                 </button>
               </div>
@@ -138,25 +138,25 @@ export function SalesChannelsManager({ platforms }: { platforms: Platform[] }) {
         })}
       </div>
 
-      <details className="rounded-lg border border-line bg-slate-950/25 p-4">
-        <summary className="cursor-pointer list-none font-bold text-ink">Nieuw verkoopkanaal toevoegen</summary>
+      <details className="rounded-lg border border-line bg-surfaceSoft p-4">
+        <summary className="cursor-pointer list-none font-semibold text-ink">Nieuw verkoopkanaal toevoegen</summary>
         <form className="mt-4 border-t border-line pt-4" onSubmit={createPlatform}>
           <div className="grid gap-4 md:grid-cols-2">
             <TextField label="Naam" value={newDraft.name} onChange={(value) => updateNew("name", value)} placeholder="Bijv. Mijn Shopify" />
             <TextField label="Soort verkoopkanaal" value={newDraft.type} onChange={(value) => updateNew("type", value)} placeholder="Bijv. Shopify of Etsy" />
-            <label className="flex items-center gap-3 rounded-md border border-line bg-slate-950/35 px-3 py-2 text-sm text-ink font-semibold">
+            <label className="flex items-center gap-3 rounded-md border border-line bg-surfaceSoft px-3 py-2 text-sm text-ink font-semibold">
               <input checked={newDraft.active} onChange={(event) => updateNew("active", event.target.checked)} type="checkbox" />
               Kanaal actief
             </label>
           </div>
-          <details className="mt-4 rounded-md border border-line bg-slate-950/25 px-3 py-2">
-            <summary className="cursor-pointer text-sm font-bold text-slate-300">Geavanceerde instellingen</summary>
+          <details className="mt-4 rounded-md border border-line bg-surfaceSoft px-3 py-2">
+            <summary className="cursor-pointer text-sm font-semibold text-inkSoft">Geavanceerde instellingen</summary>
             <div className="mt-3 border-t border-line pt-3">
               <TextField label="Technisch API-adres" value={newDraft.api_base_url} onChange={(value) => updateNew("api_base_url", value)} placeholder="Alleen invullen als het kanaal dit vereist" />
             </div>
           </details>
           <div className="mt-4 flex justify-end">
-            <button className="rounded-md bg-brand px-4 py-2 text-sm font-black text-slate-950 disabled:opacity-60" disabled={busyKey === "new"} type="submit">
+            <button className="rounded-md bg-brand px-4 py-2 text-sm font-semibold text-onBrand disabled:opacity-60" disabled={busyKey === "new"} type="submit">
               {busyKey === "new" ? "Aanmaken..." : "Kanaal aanmaken"}
             </button>
           </div>
@@ -169,8 +169,8 @@ export function SalesChannelsManager({ platforms }: { platforms: Platform[] }) {
 function TextField({ label, value, onChange, placeholder }: { label: string; value: string; onChange: (value: string) => void; placeholder?: string }) {
   return (
     <label className="space-y-2">
-      <span className="text-sm font-bold text-slate-300">{label}</span>
-      <input className="w-full rounded-md border border-line bg-slate-950/35 px-3 py-2 text-sm text-ink outline-none focus:border-brand" onChange={(event) => onChange(event.target.value)} placeholder={placeholder} value={value} />
+      <span className="text-sm font-semibold text-inkSoft">{label}</span>
+      <input className="w-full rounded-md border border-line bg-surfaceSoft px-3 py-2 text-sm text-ink outline-none focus:border-brand" onChange={(event) => onChange(event.target.value)} placeholder={placeholder} value={value} />
     </label>
   );
 }

@@ -75,7 +75,7 @@ function AnalyticsContent({ data }: { data: AnalyticsData }) {
                 <SoftPanel key={item.id}>
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
-                      <div className="font-black text-ink">{item.product || `Product ${item.product_id}`}</div>
+                      <div className="font-semibold text-ink">{item.product || `Product ${item.product_id}`}</div>
                       <div className="mt-1 text-sm text-muted">{item.variant || item.sku || `Variant ${item.product_variant_id}`}</div>
                     </div>
                     <StatusBadge status={item.status} />
@@ -86,7 +86,7 @@ function AnalyticsContent({ data }: { data: AnalyticsData }) {
                     <Small label="Veilig" value={item.safety_stock || 0} />
                     <Small label="Print" value={item.recommended_print_quantity} />
                   </div>
-                  <p className="mt-3 text-sm leading-6 text-slate-300">{item.reason || "Geen berekeningsuitleg beschikbaar."}</p>
+                  <p className="mt-3 text-sm leading-6 text-inkSoft">{item.reason || "Geen berekeningsuitleg beschikbaar."}</p>
                   <p className="mt-2 text-xs font-semibold text-muted">Berekend: {formatDateTime(item.updated_at || item.created_at)}</p>
                   <div className="mt-3"><RecommendationActions quantity={item.recommended_print_quantity} recommendationId={item.id} safetyStock={Number(item.safety_stock || 0)} status={item.status} /></div>
                 </SoftPanel>
@@ -101,7 +101,7 @@ function AnalyticsContent({ data }: { data: AnalyticsData }) {
       {recommendationHistory.length ? (
         <SectionCard title="Historie voorraadadviezen" description="Afgehandelde en vervallen adviezen blijven controleerbaar zonder actieve knoppen.">
           <details>
-            <summary className="cursor-pointer font-black text-slate-200">Toon {recommendationHistory.length} afgehandelde adviezen</summary>
+            <summary className="cursor-pointer font-semibold text-ink">Toon {recommendationHistory.length} afgehandelde adviezen</summary>
             <div className="mt-4 space-y-3">
               {recommendationHistory.map((item) => (
                 <div className="rounded-xl border border-line bg-panelSoft p-4" key={item.id}>
@@ -134,13 +134,13 @@ function formatDateTime(value?: string | null) {
 
 function AnalyticsTable({ title, rows, labelKey }: { title: string; rows: AnalyticsRow[]; labelKey: keyof AnalyticsRow }) {
   return (
-    <div className="rounded-xl border border-line bg-slate-950/20 p-3">
-      <div className="mb-3 font-black text-ink">{title}</div>
+    <div className="rounded-xl border border-line bg-surfaceSoft p-3">
+      <div className="mb-3 font-semibold text-ink">{title}</div>
       {rows.length ? (
         <div className="space-y-2">
           {rows.slice(0, 6).map((row, index) => (
             <div className="flex items-center justify-between gap-3 text-sm" key={`${String(row[labelKey])}-${index}`}>
-              <span className="font-bold text-slate-200">{String(row[labelKey] || "onbekend")}</span>
+              <span className="font-semibold text-ink">{String(row[labelKey] || "onbekend")}</span>
               <span className="text-muted">{row.quantity_sold} stuks</span>
             </div>
           ))}
@@ -154,9 +154,9 @@ function AnalyticsTable({ title, rows, labelKey }: { title: string; rows: Analyt
 
 function Small({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="rounded-lg border border-line bg-slate-950/30 p-2">
-      <div className="text-[10px] font-black uppercase tracking-[.12em] text-muted">{label}</div>
-      <div className="mt-1 font-black text-ink">{value}</div>
+    <div className="rounded-lg border border-line bg-surfaceSoft p-2">
+      <div className="text-[10px] font-semibold text-muted">{label}</div>
+      <div className="mt-1 font-semibold text-ink">{value}</div>
     </div>
   );
 }

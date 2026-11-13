@@ -1,8 +1,11 @@
 import type { Metadata } from "next";
+import { Inter } from "next/font/google";
 import "./globals.css";
 
+const inter = Inter({ subsets: ["latin"], display: "swap", variable: "--font-inter" });
+
 export const metadata: Metadata = {
-  title: "3D Print Manager",
+  title: { default: "3D Print Manager", template: "%s · 3D Print Manager" },
   description: "Centrale beheerlaag voor 3D-printactiviteiten",
 };
 
@@ -12,7 +15,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="nl">
+    <html className={inter.variable} lang="nl">
       <body>{children}</body>
     </html>
   );
