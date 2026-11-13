@@ -1,6 +1,7 @@
 import json
 import logging
 import mimetypes
+import time
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
@@ -9,6 +10,8 @@ from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
 from connectors.base import ConnectorResult, PlatformConnector
+from connectors.etsy import oauth
+from connectors.retry import MAX_ATTEMPTS, RETRYABLE_STATUS_CODES, retry_delay
 
 
 ETSY_API_BASE = "https://openapi.etsy.com/v3/application"
@@ -20,6 +23,9 @@ class EtsyConnector(PlatformConnector):
     platform_type = "etsy"
     required_credentials = ["api_key", "shared_secret", "access_token", "shop_id", "taxonomy_id", "readiness_state_id"]
     order_import_credentials = ["api_key", "shared_secret", "access_token", "shop_id"]
+    # Set by the connector factory: persists refreshed OAuth tokens (dict of credential values).
+    token_saver = None
+    sleep = staticmethod(time.sleep)
 
     def publish_product(self, payload: dict) -> ConnectorResult:
         if not self.live_mode:
@@ -231,20 +237,49 @@ class EtsyConnector(PlatformConnector):
         return self._urlopen_request(method, path, data, "application/json")
 
     def _urlopen_request(self, method: str, path: str, data: bytes | None, content_type: str) -> dict:
-        request = Request(f"{ETSY_API_BASE}{path}", data=data, headers=self._headers(content_type), method=method)
+        if oauth.needs_refresh(self.credentials):
+            self._refresh_access_token()
+        refreshed_after_401 = False
+        for attempt in range(MAX_ATTEMPTS):
+            request = Request(f"{ETSY_API_BASE}{path}", data=data, headers=self._headers(content_type), method=method)
+            try:
+                with urlopen(request, timeout=30) as response:
+                    return json.loads(response.read().decode("utf-8"))
+            except HTTPError as exc:
+                body = exc.read().decode("utf-8", errors="replace")
+                logger.warning("Etsy HTTP error: %s", exc.code)
+                if exc.code == 401 and not refreshed_after_401 and self.credentials.get("refresh_token"):
+                    refreshed_after_401 = True
+                    if self._refresh_access_token():
+                        continue
+                if exc.code in RETRYABLE_STATUS_CODES and attempt < MAX_ATTEMPTS - 1:
+                    self.sleep(retry_delay(exc.headers.get("Retry-After") if exc.headers else None, attempt))
+                    continue
+                return {"errors": [{"message": f"Etsy HTTP {exc.code}: {body}"}]}
+            except URLError as exc:
+                logger.warning("Etsy connection error: %s", exc.reason)
+                if attempt < MAX_ATTEMPTS - 1:
+                    self.sleep(retry_delay(None, attempt))
+                    continue
+                return {"errors": [{"message": f"Etsy verbinding mislukt: {exc.reason}"}]}
+            except (json.JSONDecodeError, OSError) as exc:
+                logger.warning("Etsy request failed: %s", exc)
+                return {"errors": [{"message": f"Etsy request mislukt: {exc}"}]}
+        return {"errors": [{"message": "Etsy request mislukt na herhaalde pogingen."}]}
+
+    def _refresh_access_token(self) -> bool:
+        """Get a new access token with the refresh token and persist both new tokens."""
+        if not self.live_mode or not self.credentials.get("api_key") or not self.credentials.get("refresh_token"):
+            return False
         try:
-            with urlopen(request, timeout=30) as response:
-                return json.loads(response.read().decode("utf-8"))
-        except HTTPError as exc:
-            body = exc.read().decode("utf-8", errors="replace")
-            logger.warning("Etsy HTTP error: %s", exc.code)
-            return {"errors": [{"message": f"Etsy HTTP {exc.code}: {body}"}]}
-        except URLError as exc:
-            logger.warning("Etsy connection error: %s", exc.reason)
-            return {"errors": [{"message": f"Etsy verbinding mislukt: {exc.reason}"}]}
-        except (json.JSONDecodeError, OSError) as exc:
-            logger.warning("Etsy request failed: %s", exc)
-            return {"errors": [{"message": f"Etsy request mislukt: {exc}"}]}
+            values = oauth.refresh_tokens(self.credentials["api_key"], self.credentials["refresh_token"])
+        except oauth.EtsyOAuthError as exc:
+            logger.warning("Etsy token refresh failed: %s", exc)
+            return False
+        self.credentials.update(values)
+        if self.token_saver:
+            self.token_saver(values)
+        return True
 
     def _request_multipart(self, path: str, source: Path, fields: dict[str, str]) -> dict:
         boundary = f"----3d-print-manager-{uuid.uuid4().hex}"

@@ -1,5 +1,14 @@
+import hmac
+import secrets
+import time
+
 from fastapi import APIRouter
+from pydantic import BaseModel
+from sqlalchemy import func
+
 from api.routes_shared import *
+from connectors.etsy import oauth as etsy_oauth
+from connectors.factory import load_platform_credentials, store_platform_credentials
 from services.platform_service import connector_status_payload, normalize_language_list, sync_platform_inventory_payload
 from services.auth_service import record_audit_log
 
@@ -136,3 +145,67 @@ def sync_platform_inventory(platform_id: int, db: Session = Depends(get_db)):
     return sync_platform_inventory_payload(db, platform)
 
 
+
+
+ETSY_OAUTH_MAX_AGE_SECONDS = 15 * 60
+ETSY_OAUTH_KEYS = ("oauth_state", "oauth_code_verifier", "oauth_started_at")
+
+
+class EtsyOAuthCallback(BaseModel):
+    code: str
+    state: str
+
+
+def _etsy_redirect_uri() -> str:
+    redirect_uri = (get_settings().etsy_redirect_uri or "").strip()
+    if not redirect_uri:
+        raise HTTPException(status_code=409, detail="ETSY_REDIRECT_URI is niet ingesteld. Zet het terugkeeradres van de Etsy-app in de configuratie.")
+    return redirect_uri
+
+
+@router.post("/platform-credentials/etsy/{platform_id}/oauth/start")
+def start_etsy_oauth(platform_id: int, request: Request, db: Session = Depends(get_db)):
+    platform = get_or_404(db, Platform, platform_id)
+    if (platform.type or "").lower() != "etsy":
+        raise HTTPException(status_code=400, detail="Dit verkoopkanaal is geen Etsy-kanaal.")
+    credentials = load_platform_credentials(db, platform)
+    if not credentials.get("api_key"):
+        raise HTTPException(status_code=409, detail="Sla eerst de Etsy API-key op.")
+    redirect_uri = _etsy_redirect_uri()
+    state = secrets.token_urlsafe(32)
+    verifier, challenge = etsy_oauth.new_pkce_pair()
+    store_platform_credentials(db, platform.id, {
+        "oauth_state": state,
+        "oauth_code_verifier": verifier,
+        "oauth_started_at": str(int(time.time())),
+    })
+    db.commit()
+    record_audit_log(db, None, "platform.etsy_oauth_started", "platform", str(platform.id), f"Etsy-koppeling gestart door {getattr(request.state, 'user_email', 'onbekend')}.")
+    return {"authorize_url": etsy_oauth.authorize_url(credentials["api_key"].split(":", 1)[0], redirect_uri, state, challenge)}
+
+
+@router.post("/platform-credentials/etsy/oauth/callback")
+def finish_etsy_oauth(payload: EtsyOAuthCallback, request: Request, db: Session = Depends(get_db)):
+    match = None
+    for platform in db.scalars(select(Platform).where(func.lower(Platform.type) == "etsy")).all():
+        credentials = load_platform_credentials(db, platform)
+        stored_state = credentials.get("oauth_state") or ""
+        if stored_state and hmac.compare_digest(stored_state, payload.state):
+            match = (platform, credentials)
+            break
+    if not match:
+        raise HTTPException(status_code=400, detail="Onbekende of verlopen Etsy-koppeling. Start het verbinden opnieuw.")
+    platform, credentials = match
+    started_at = int(credentials.get("oauth_started_at") or 0)
+    if time.time() - started_at > ETSY_OAUTH_MAX_AGE_SECONDS:
+        store_platform_credentials(db, platform.id, {key: "" for key in ETSY_OAUTH_KEYS})
+        db.commit()
+        raise HTTPException(status_code=400, detail="De Etsy-koppeling is verlopen. Start het verbinden opnieuw.")
+    try:
+        tokens = etsy_oauth.exchange_code(credentials["api_key"], _etsy_redirect_uri(), payload.code, credentials["oauth_code_verifier"])
+    except etsy_oauth.EtsyOAuthError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+    store_platform_credentials(db, platform.id, {**tokens, **{key: "" for key in ETSY_OAUTH_KEYS}})
+    db.commit()
+    record_audit_log(db, None, "platform.etsy_oauth_connected", "platform", str(platform.id), f"Etsy verbonden door {getattr(request.state, 'user_email', 'onbekend')}.")
+    return {"status": "connected", "platform_id": platform.id}

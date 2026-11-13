@@ -24,7 +24,10 @@ export function formatStatus(status?: string | null) {
 
 function statusTone(status: string) {
   const normalized = status.toLowerCase();
-  if (["klaar", "gepubliceerd", "verwerkt", "afgerond", "online"].some((item) => normalized.includes(item))) {
+  if (normalized.startsWith("niet ") || normalized.startsWith("niet_")) {
+    return "bg-amber-400/10 text-amber-200 ring-amber-400/25";
+  }
+  if (["klaar", "gepubliceerd", "verwerkt", "afgerond", "online", "verbonden"].some((item) => normalized.includes(item))) {
     return "bg-emerald-400/10 text-emerald-300 ring-emerald-400/25";
   }
   if (["fout", "mislukt", "tekort", "offline"].some((item) => normalized.includes(item))) {
