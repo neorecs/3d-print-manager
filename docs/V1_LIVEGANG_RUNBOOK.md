@@ -140,6 +140,8 @@ Sinds 2026-09-12 voert GitHub Actions een verse PostgreSQL-installatie en een ge
 
 Een eerder bijgehouden NAS-composebackup bevatte configuratiewaarden en is uit de huidige branch verwijderd en genegeerd. Omdat de repository publiek is geweest, moeten alle waarden uit dat bestand als bekend worden beschouwd. Roteer minimaal het databasewachtwoord, de credential-encryptiesleutel en alle sessie-, interne en bootstrapsecrets. Controleer ook printeraccesscodes en platformtokens als die ooit in dezelfde configuratie stonden. Git-historie opschonen is een afzonderlijke, verstorende actie en vervangt rotatie niet.
 
+De stappen staan in `SECRETROTATIE.md`. Nieuwe waarden maak je met `scripts/generate_rotated_secrets.py`; opgeslagen tokens, MFA-geheimen en printercodes zet je over met `app/backend/tools/reencrypt_credentials.py`.
+
 ## Go/no-go voor Etsy/Shopify
 
 Go alleen als:
