@@ -5,18 +5,14 @@ from sqlalchemy.orm import Session
 
 from api.utils import to_dict
 from domain.statuses import (
-    ACCOUNTING_CANCELLED,
-    ACCOUNTING_CONCEPT,
     INVENTORY_NONE,
     ORDER_CANCELLED,
     ORDER_NEW,
     ORDER_SHIPPED,
-    PRINT_JOB_CANCELLED,
-    PRINT_JOB_NEW,
-    PRINT_JOB_PLANNED,
 )
-from inventory.service import add_inventory_movement, inventory_snapshot, link_order_item_by_sku
-from models import AccountingSale, Order, OrderItem, Platform, PrintJob, ProductInventory
+from inventory.service import link_order_item_by_sku
+from models import Order, OrderItem, Platform
+from services.order_fulfillment import cancel_order, ship_order
 
 
 CANCELLED_EXTERNAL_STATUSES = {"cancelled", "canceled", "voided"}
@@ -80,8 +76,9 @@ def upsert_imported_order(db: Session, platform: Platform, payload: dict) -> dic
     external_status = str(payload.get("external_status") or "").strip().lower()
     if external_status in CANCELLED_EXTERNAL_STATUSES:
         warnings.extend(cancel_imported_order(db, order))
-    elif external_status in SHIPPED_EXTERNAL_STATUSES and order.status != ORDER_CANCELLED:
-        order.status = ORDER_SHIPPED
+    elif external_status in SHIPPED_EXTERNAL_STATUSES and order.status not in {ORDER_CANCELLED, ORDER_SHIPPED}:
+        # The platform already shipped it: book reserved stock out, report gaps instead of blocking.
+        warnings.extend(ship_order(db, order.id, strict=False, commit=False, performed_by="platform_import")["warnings"])
 
     existing_item_ids = {
         str(item.external_order_item_id)
@@ -95,50 +92,10 @@ def upsert_imported_order(db: Session, platform: Platform, payload: dict) -> dic
 
 
 def cancel_imported_order(db: Session, order: Order) -> list[str]:
-    warnings = []
-    items = db.scalars(select(OrderItem).where(OrderItem.order_id == order.id).order_by(OrderItem.id).with_for_update()).all()
-    for item in items:
-        if item.quantity_from_inventory:
-            inventory = db.scalar(
-                select(ProductInventory).where(
-                    ProductInventory.product_variant_id == item.product_variant_id
-                ).with_for_update()
-            )
-            if not inventory or inventory.quantity_reserved < item.quantity_from_inventory:
-                warnings.append(f"Reservering van orderregel {item.id} kon niet automatisch worden vrijgegeven.")
-            else:
-                before = inventory_snapshot(inventory)
-                released = item.quantity_from_inventory
-                inventory.quantity_reserved -= released
-                add_inventory_movement(
-                    db,
-                    inventory,
-                    "reservering_vrijgegeven",
-                    released,
-                    before=before,
-                    order_id=order.id,
-                    order_item_id=item.id,
-                    note="Platformorder geannuleerd",
-                    source="platform_order_cancellation",
-                )
-                item.quantity_from_inventory = 0
-        item.quantity_to_print = 0
-        item.inventory_status = INVENTORY_NONE
-        jobs = db.scalars(select(PrintJob).where(PrintJob.order_item_id == item.id).with_for_update()).all()
-        for job in jobs:
-            if job.status in {PRINT_JOB_NEW, PRINT_JOB_PLANNED}:
-                job.status = PRINT_JOB_CANCELLED
-            elif job.status != PRINT_JOB_CANCELLED:
-                warnings.append(f"Printtaak {job.id} was al gestart of verwerkt en vereist handmatige controle.")
-
-    sale = db.scalar(select(AccountingSale).where(AccountingSale.order_id == order.id).with_for_update())
-    if sale and sale.status == ACCOUNTING_CONCEPT:
-        sale.status = ACCOUNTING_CANCELLED
-        sale.note = append_note(sale.note, "Platformorder geannuleerd; conceptboeking automatisch geannuleerd.")
-    elif sale and sale.status != ACCOUNTING_CANCELLED:
-        warnings.append(f"Verkoopboeking {sale.id} is niet automatisch gecorrigeerd; maak een controleerbare correctieboeking.")
-    order.status = ORDER_CANCELLED
-    return warnings
+    if order.status == ORDER_SHIPPED:
+        return ["De platformorder is geannuleerd, maar staat hier al als verzonden. Controleer retour en voorraad handmatig."]
+    result = cancel_order(db, order.id, performed_by="platform_import", reason="Platformorder geannuleerd", commit=False)
+    return result["warnings"]
 
 
 def parse_optional_datetime(value: str | None):

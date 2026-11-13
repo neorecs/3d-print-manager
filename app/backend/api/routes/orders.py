@@ -4,6 +4,7 @@ from domain.statuses import INVENTORY_NONE, ORDER_NEW, ORDER_PLANNED, PRINT_JOB_
 from sqlalchemy.exc import IntegrityError
 from services.order_guards import require_reprocessable_order
 from services.order_processing import process_order
+from services.order_fulfillment import cancel_order, pack_order, ship_order
 from services.order_import_service import upsert_imported_order as upsert_imported_order_service
 
 router = APIRouter()
@@ -38,7 +39,10 @@ def get_order(item_id: int, db: Session = Depends(get_db)):
 @router.put("/orders/{item_id}")
 def update_order(item_id: int, payload: OrderCreate, db: Session = Depends(get_db)):
     item = get_or_404(db, Order, item_id)
-    for key, value in order_payload(payload).items():
+    values = order_payload(payload)
+    # Status changes only go through the pack/ship/cancel actions, which also book stock.
+    values.pop("status", None)
+    for key, value in values.items():
         setattr(item, key, value)
     try:
         db.commit()
@@ -358,3 +362,22 @@ def create_order_accounting_sale(item_id: int, db: Session = Depends(get_db)):
     return create_accounting_sale_from_order(db, order)
 
 
+
+
+def _actor(request: Request) -> str:
+    return getattr(request.state, "user_email", None) or "system"
+
+
+@router.post("/orders/{item_id}/pack")
+def pack_order_route(item_id: int, db: Session = Depends(get_db)):
+    return pack_order(db, item_id)
+
+
+@router.post("/orders/{item_id}/ship")
+def ship_order_route(item_id: int, request: Request, db: Session = Depends(get_db)):
+    return ship_order(db, item_id, performed_by=_actor(request))
+
+
+@router.post("/orders/{item_id}/cancel")
+def cancel_order_route(item_id: int, request: Request, db: Session = Depends(get_db)):
+    return cancel_order(db, item_id, performed_by=_actor(request))

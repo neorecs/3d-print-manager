@@ -8,6 +8,9 @@ const actionPaths = {
   "link-items": "link-items",
   "process-inventory": "process-inventory",
   "create-print-jobs": "create-print-jobs",
+  "pack": "pack",
+  "ship": "ship",
+  "cancel": "cancel",
 } as const;
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
