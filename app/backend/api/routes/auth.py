@@ -1,3 +1,5 @@
+import hmac
+
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 
@@ -71,7 +73,7 @@ def bootstrap_admin(payload: AuthBootstrapAdmin, db: Session = Depends(get_db)) 
     settings = get_settings()
     if not settings.auth_bootstrap_secret:
         raise HTTPException(status_code=403, detail="Admin-bootstrap staat niet aan.")
-    if payload.bootstrap_secret != settings.auth_bootstrap_secret:
+    if not hmac.compare_digest(payload.bootstrap_secret.encode(), settings.auth_bootstrap_secret.encode()):
         raise HTTPException(status_code=403, detail="Bootstrap-secret klopt niet.")
     if has_admin_user(db):
         raise HTTPException(status_code=409, detail="Er bestaat al een admingebruiker.")
