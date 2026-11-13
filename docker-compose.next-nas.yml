@@ -23,6 +23,7 @@ services:
       AUTH_BACKEND_LOGIN: ${AUTH_BACKEND_LOGIN:-true}
       AUTH_COOKIE_SECURE: ${AUTH_COOKIE_SECURE:-false}
       UPLOAD_BACKUP_ENABLED: ${UPLOAD_BACKUP_ENABLED:-true}
+      OFFSITE_BACKUP_ENABLED: ${OFFSITE_BACKUP_ENABLED:-false}
       BACKUP_STATUS_DIR: /backup-status/status
       BACKUP_MAX_AGE_HOURS: 48
     networks:
@@ -102,6 +103,24 @@ services:
       - ${BACKUP_TARGET_PATH:-postgres_backups}:/backups
     restart: unless-stopped
 
+  offsite_backup:
+    build: ./ops/offsite-backup
+    environment:
+      OFFSITE_SOURCE_DIR: /backups
+      BACKUP_STATUS_DIR: /backups/status
+      OFFSITE_INTERVAL_SECONDS: ${OFFSITE_INTERVAL_SECONDS:-86400}
+      BACKUP_RUN_ONCE: ${BACKUP_RUN_ONCE:-false}
+      RESTIC_REPOSITORY: ${RESTIC_REPOSITORY:-}
+      RESTIC_PASSWORD: ${RESTIC_PASSWORD:-}
+      AWS_ACCESS_KEY_ID: ${OFFSITE_AWS_ACCESS_KEY_ID:-}
+      AWS_SECRET_ACCESS_KEY: ${OFFSITE_AWS_SECRET_ACCESS_KEY:-}
+      B2_ACCOUNT_ID: ${OFFSITE_B2_ACCOUNT_ID:-}
+      B2_ACCOUNT_KEY: ${OFFSITE_B2_ACCOUNT_KEY:-}
+    volumes:
+      - ${BACKUP_TARGET_PATH:-postgres_backups}:/backups
+      - offsite_restic_cache:/root/.cache/restic
+    restart: unless-stopped
+
 networks:
   print_manager:
     external: true
@@ -110,3 +129,4 @@ networks:
 volumes:
   app_uploads:
   postgres_backups:
+  offsite_restic_cache:

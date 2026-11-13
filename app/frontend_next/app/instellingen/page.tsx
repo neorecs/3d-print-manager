@@ -101,6 +101,11 @@ export default async function SettingsPage() {
               detail={`${evidenceDate(readiness.upload_backup_last_success)}. Maximaal 48 uur oud.`}
             />
             <CheckRow
+              label="Backup buiten de NAS"
+              state={readiness.offsite_backup_configured && readiness.offsite_backup_recent ? "ready" : "attention"}
+              detail={readiness.offsite_backup_configured ? `${evidenceDate(readiness.offsite_backup_last_success)}. Versleuteld met restic; maximaal 48 uur oud.` : "Nog niet ingesteld. Nodig voordat echte platformtokens worden opgeslagen."}
+            />
+            <CheckRow
               label="Gezamenlijke hersteltest"
               state={readiness.restore_test_recent ? "ready" : "attention"}
               detail={`${evidenceDate(readiness.restore_test_last_success)}. Database en bestanden moeten samen zijn hersteld; maximaal 90 dagen oud.`}
