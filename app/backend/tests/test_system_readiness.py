@@ -19,7 +19,7 @@ class SystemReadinessTestCase(BackendTestCase):
             uploads.mkdir()
             status.mkdir()
             now = datetime.now(timezone.utc).isoformat()
-            for name in ("postgres-last-success", "uploads-last-success", "restore-test-last-success"):
+            for name in ("postgres-last-success", "uploads-last-success", "restore-test-last-success", "offsite-last-success"):
                 (status / name).write_text(now, encoding="utf-8")
 
             environment = {
@@ -31,6 +31,7 @@ class SystemReadinessTestCase(BackendTestCase):
                 "AUTH_COOKIE_SECURE": "false",
                 "CONNECTORS_LIVE_MODE": "false",
                 "CREDENTIAL_ENCRYPTION_KEY": "test-encryption-key",
+                "OFFSITE_BACKUP_ENABLED": "true",
                 "UPLOAD_BACKUP_ENABLED": "true",
                 "UPLOAD_STORAGE_PATH": str(uploads),
                 "BACKUP_STATUS_DIR": str(status),
@@ -49,6 +50,7 @@ class SystemReadinessTestCase(BackendTestCase):
             self.assertIsNotNone(result["database_backup_last_success"])
             self.assertIsNotNone(result["upload_backup_last_success"])
             self.assertIsNotNone(result["restore_test_last_success"])
+            self.assertIsNotNone(result["offsite_backup_last_success"])
             get_settings.cache_clear()
 
     def test_token_storage_reports_encryption_separately_from_internal_use(self) -> None:
@@ -110,4 +112,37 @@ class SystemReadinessTestCase(BackendTestCase):
 
             self.assertFalse(result["database_backup_recent"])
             self.assertIn("PostgreSQL-backup", " ".join(result["internal_blockers"]))
+            get_settings.cache_clear()
+
+    def test_missing_offsite_backup_blocks_real_tokens_but_not_internal_use(self) -> None:
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            uploads = root / "uploads"
+            status = root / "status"
+            uploads.mkdir()
+            status.mkdir()
+            now = datetime.now(timezone.utc).isoformat()
+            for name in ("postgres-last-success", "uploads-last-success", "restore-test-last-success"):
+                (status / name).write_text(now, encoding="utf-8")
+            environment = {
+                "DATABASE_URL": "sqlite+pysqlite:///:memory:",
+                "BACKEND_INTERNAL_TOKEN": "test-internal-token",
+                "AUTH_SECRET": "test-session-secret",
+                "AUTH_ENABLED": "true",
+                "AUTH_BACKEND_LOGIN": "true",
+                "CREDENTIAL_ENCRYPTION_KEY": "test-encryption-key",
+                "UPLOAD_BACKUP_ENABLED": "true",
+                "OFFSITE_BACKUP_ENABLED": "false",
+                "UPLOAD_STORAGE_PATH": str(uploads),
+                "BACKUP_STATUS_DIR": str(status),
+            }
+            with patch.dict(os.environ, environment, clear=False):
+                get_settings.cache_clear()
+                result = system_readiness_payload(self.db)
+
+            self.assertTrue(result["internal_use_ready"])
+            self.assertFalse(result["ready_for_real_tokens"])
+            self.assertFalse(result["offsite_backup_configured"])
+            self.assertIn("buiten de NAS", " ".join(result["platform_blockers"]))
+            self.assertNotIn("buiten de NAS", " ".join(result["internal_blockers"]))
             get_settings.cache_clear()

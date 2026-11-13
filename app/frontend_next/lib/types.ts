@@ -562,6 +562,9 @@ export type SystemReadiness = {
   database_backup_last_success?: string | null;
   upload_backup_last_success?: string | null;
   restore_test_last_success?: string | null;
+  offsite_backup_configured?: boolean;
+  offsite_backup_recent?: boolean;
+  offsite_backup_last_success?: string | null;
   auth_enabled: boolean;
   auth_backend_login: boolean;
   secure_cookie_enabled: boolean;

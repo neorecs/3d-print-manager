@@ -33,6 +33,9 @@ def system_readiness_payload(db: Session) -> dict:
     database_backup_last_success = _marker_timestamp(backup_status_dir / "postgres-last-success")
     upload_backup_last_success = _marker_timestamp(backup_status_dir / "uploads-last-success")
     restore_test_last_success = _marker_timestamp(backup_status_dir / "restore-test-last-success")
+    offsite_backup_configured = os.getenv("OFFSITE_BACKUP_ENABLED", "false").strip().lower() in {"1", "true", "yes", "on"}
+    offsite_backup_recent = _marker_is_recent(backup_status_dir / "offsite-last-success", backup_max_age_seconds)
+    offsite_backup_last_success = _marker_timestamp(backup_status_dir / "offsite-last-success")
     auth_enabled = os.getenv("AUTH_ENABLED", "false").strip().lower() in {"1", "true", "yes", "on"}
     auth_backend_login = os.getenv("AUTH_BACKEND_LOGIN", "false").strip().lower() in {"1", "true", "yes", "on"}
     connectors_live_mode = os.getenv("CONNECTORS_LIVE_MODE", "false").strip().lower() in {"1", "true", "yes", "on"}
@@ -63,7 +66,12 @@ def system_readiness_payload(db: Session) -> dict:
         internal_blockers
         + [blocker for blocker in data_protection_blockers if "CREDENTIAL_ENCRYPTION_KEY" not in blocker]
     ))
-    platform_blockers = list(dict.fromkeys(internal_blockers + data_protection_blockers))
+    # A copy outside the NAS is required before real platform data is stored, but does not
+    # block internal use: the local backups above already cover everyday mistakes.
+    offsite_blockers = []
+    if not offsite_backup_configured or not offsite_backup_recent:
+        offsite_blockers.append("Er is geen recente versleutelde backup buiten de NAS bevestigd. Bij een defecte of versleutelde NAS zijn data en lokale backups samen weg.")
+    platform_blockers = list(dict.fromkeys(internal_blockers + data_protection_blockers + offsite_blockers))
 
     external_access_blockers = []
     if not secure_cookie_enabled:
@@ -88,6 +96,9 @@ def system_readiness_payload(db: Session) -> dict:
         "database_backup_last_success": database_backup_last_success,
         "upload_backup_last_success": upload_backup_last_success,
         "restore_test_last_success": restore_test_last_success,
+        "offsite_backup_configured": offsite_backup_configured,
+        "offsite_backup_recent": offsite_backup_recent,
+        "offsite_backup_last_success": offsite_backup_last_success,
         "auth_enabled": auth_enabled,
         "auth_backend_login": auth_backend_login,
         "secure_cookie_enabled": secure_cookie_enabled,
