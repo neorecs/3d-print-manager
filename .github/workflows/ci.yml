@@ -68,6 +68,16 @@ jobs:
           name: ui-screenshots
           path: app/frontend_next/.next/audit-screenshots
           retention-days: 14
+      - name: Print screenshots to the log (only for commits with [screenshots] in the message)
+        if: always() && contains(github.event.head_commit.message, '[screenshots]')
+        run: |
+          for file in .next/audit-screenshots/desktop-*.png; do
+            [ -f "$file" ] || continue
+            echo "SCREENSHOT-BEGIN $(basename "$file")"
+            base64 -w0 "$file"
+            echo
+            echo "SCREENSHOT-END"
+          done
       - run: npm start &
         env:
           AUTH_ENABLED: "true"
