@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 
 from core.credentials import decrypt_credential, encrypt_credential
 from connectors.base import ConnectorResult, PlatformConnector
+from connectors.bol.connector import BolConnector
 from connectors.etsy.connector import EtsyConnector
 from connectors.shopify.connector import ShopifyConnector
 from models import Platform, PlatformCredential
@@ -23,6 +24,7 @@ class AssistedConnector(PlatformConnector):
 
 
 CONNECTOR_BY_TYPE = {
+    "bol": BolConnector,
     "etsy": EtsyConnector,
     "shopify": ShopifyConnector,
 }
@@ -50,6 +52,9 @@ def load_platform_credentials(db: Session, platform: Platform) -> dict[str, str]
         "TAXONOMY_ID",
         "READINESS_STATE_ID",
         "VARIATION_PROPERTY_ID",
+        "CLIENT_ID",
+        "CLIENT_SECRET",
+        "DELIVERY_CODE",
     ]:
         value = os.getenv(f"{prefix}_{key}")
         if key == "ACCESS_TOKEN" and credentials.get("refresh_token"):

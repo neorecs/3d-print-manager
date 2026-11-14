@@ -41,8 +41,8 @@ def connector_status_payload(db: Session, platform: Platform) -> dict:
 
 
 def sync_platform_inventory_payload(db: Session, platform: Platform) -> dict:
-    if (platform.type or "").lower() != "shopify":
-        raise HTTPException(status_code=400, detail="Voorraad-sync is nu alleen voor Shopify beschikbaar")
+    if (platform.type or "").lower() not in {"shopify", "bol"}:
+        raise HTTPException(status_code=400, detail="Voorraad-sync is beschikbaar voor Shopify en bol")
 
     connector = get_platform_connector(db, platform)
     links = {
