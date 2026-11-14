@@ -51,7 +51,7 @@ export function FiscalSettingsForm({ settings }: { settings: AccountingFiscalSet
         <BooleanChoice label="Verkoop aan andere EU-landen" value={values.eu_sales_enabled} onChange={(value) => setValues({ ...values, eu_sales_enabled: value })} />
         <Text label="Standaard btw %" value={values.default_vat_rate} onChange={(value) => setValues({ ...values, default_vat_rate: value })} />
       </div>
-      <button className="rounded-md bg-brand px-4 py-2 text-sm font-black text-slate-950" type="submit">Fiscale instellingen opslaan</button>
+      <button className="rounded-md bg-brand px-4 py-2 text-sm font-semibold text-onBrand" type="submit">Fiscale instellingen opslaan</button>
     </form>
   );
 }
@@ -91,7 +91,7 @@ export function VatPeriodCloseForm({ startDate, endDate }: { startDate?: string;
         <Text label="Periodenaam" value={periodName} onChange={setPeriodName} placeholder="Bijv. 2026-Q2" required />
         <Text label="Notitie" value={note} onChange={setNote} placeholder="Optioneel voor boekhouder" />
         <div className="flex items-end">
-          <button className="w-full rounded-md bg-brand px-4 py-2 text-sm font-black text-slate-950 disabled:opacity-60" disabled={disabled} type="submit">Periode afsluiten</button>
+          <button className="w-full rounded-md bg-brand px-4 py-2 text-sm font-semibold text-onBrand disabled:opacity-60" disabled={disabled} type="submit">Periode afsluiten</button>
         </div>
       </div>
       {disabled ? <p className="text-sm text-muted">Kies eerst een vanaf- en einddatum in het periodefilter.</p> : null}
@@ -121,7 +121,7 @@ export function CorrectionButton({ id, type, disabled = false }: { id: number; t
     router.refresh();
   }
   return (
-    <button className="font-bold text-brand hover:text-slate-950 disabled:text-muted" disabled={disabled || busy} onClick={run} type="button">
+    <button className="font-semibold text-brand hover:text-onBrand disabled:text-muted" disabled={disabled || busy} onClick={run} type="button">
       {busy ? "Bezig..." : type === "sale" ? "Credit" : "Correctie"}
     </button>
   );
@@ -139,14 +139,14 @@ export function ArchiveDocumentButton({ id, disabled = false }: { id: number; di
     }
     router.refresh();
   }
-  return <button className="font-bold text-brand hover:text-slate-950 disabled:text-muted" disabled={disabled} onClick={run} type="button">Archiveren</button>;
+  return <button className="font-semibold text-brand hover:text-onBrand disabled:text-muted" disabled={disabled} onClick={run} type="button">Archiveren</button>;
 }
 
 function Text({ label, value, onChange, placeholder, required = false }: { label: string; value: string; onChange: (value: string) => void; placeholder?: string; required?: boolean }) {
   return (
     <label className="space-y-2">
-      <span className="text-sm font-bold text-slate-300">{label}</span>
-      <input className="w-full rounded-md border border-line bg-slate-950/35 px-3 py-2 text-sm text-ink outline-none focus:border-brand" onChange={(event) => onChange(event.target.value)} placeholder={placeholder} required={required} value={value} />
+      <span className="text-sm font-semibold text-inkSoft">{label}</span>
+      <input className="w-full rounded-md border border-line bg-surfaceSoft px-3 py-2 text-sm text-ink outline-none focus:border-brand" onChange={(event) => onChange(event.target.value)} placeholder={placeholder} required={required} value={value} />
     </label>
   );
 }
@@ -154,8 +154,8 @@ function Text({ label, value, onChange, placeholder, required = false }: { label
 function Select({ label, value, onChange, options }: { label: string; value: string; onChange: (value: string) => void; options: string[] }) {
   return (
     <label className="space-y-2">
-      <span className="text-sm font-bold text-slate-300">{label}</span>
-      <select className="w-full rounded-md border border-line bg-slate-950/35 px-3 py-2 text-sm text-ink outline-none focus:border-brand" onChange={(event) => onChange(event.target.value)} value={value}>
+      <span className="text-sm font-semibold text-inkSoft">{label}</span>
+      <select className="w-full rounded-md border border-line bg-surfaceSoft px-3 py-2 text-sm text-ink outline-none focus:border-brand" onChange={(event) => onChange(event.target.value)} value={value}>
         {options.map((option) => <option key={option} value={option}>{option}</option>)}
       </select>
     </label>
@@ -165,8 +165,8 @@ function Select({ label, value, onChange, options }: { label: string; value: str
 function BooleanChoice({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
   return (
     <label className="space-y-2">
-      <span className="text-sm font-bold text-slate-300">{label}</span>
-      <select className="w-full rounded-md border border-line bg-slate-950/35 px-3 py-2 text-sm text-ink outline-none focus:border-brand" onChange={(event) => onChange(event.target.value)} value={value}>
+      <span className="text-sm font-semibold text-inkSoft">{label}</span>
+      <select className="w-full rounded-md border border-line bg-surfaceSoft px-3 py-2 text-sm text-ink outline-none focus:border-brand" onChange={(event) => onChange(event.target.value)} value={value}>
         <option value="false">Nee</option>
         <option value="true">Ja</option>
       </select>
@@ -175,5 +175,5 @@ function BooleanChoice({ label, value, onChange }: { label: string; value: strin
 }
 
 function Notice({ tone, text }: { tone: "good" | "bad"; text: string }) {
-  return <div className={`rounded-md border px-3 py-2 text-sm font-semibold ${tone === "good" ? "border-emerald-400/25 bg-emerald-400/10 text-emerald-300" : "border-red-400/25 bg-red-400/10 text-red-300"}`}>{text}</div>;
+  return <div className={`rounded-md border px-3 py-2 text-sm font-semibold ${tone === "good" ? "border-emerald-400/25 bg-emerald-400/10 text-emerald-700" : "border-red-400/25 bg-red-400/10 text-red-700"}`}>{text}</div>;
 }

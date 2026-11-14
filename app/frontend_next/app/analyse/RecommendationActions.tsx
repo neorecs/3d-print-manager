@@ -68,28 +68,28 @@ export function RecommendationActions({ recommendationId, status, safetyStock, q
 
   return (
     <div className="space-y-2">
-      {error ? <div className="text-sm font-semibold text-red-300">{error}</div> : null}
+      {error ? <div className="text-sm font-semibold text-red-700">{error}</div> : null}
       {adjusting ? (
-        <div className="grid gap-3 rounded-lg border border-line bg-slate-950/30 p-3 sm:grid-cols-2">
-          <label className="text-sm font-bold text-slate-200">Veiligheidsvoorraad
-            <input className="mt-1 w-full rounded-md border border-line bg-slate-950 px-3 py-2 text-ink" inputMode="numeric" min="0" onChange={(event) => setAdjustedSafety(event.target.value)} type="number" value={adjustedSafety} />
+        <div className="grid gap-3 rounded-lg border border-line bg-surfaceSoft p-3 sm:grid-cols-2">
+          <label className="text-sm font-semibold text-ink">Veiligheidsvoorraad
+            <input className="mt-1 w-full rounded-md border border-line bg-surfaceSoft px-3 py-2 text-ink" inputMode="numeric" min="0" onChange={(event) => setAdjustedSafety(event.target.value)} type="number" value={adjustedSafety} />
           </label>
-          <label className="text-sm font-bold text-slate-200">Extra printen
-            <input className="mt-1 w-full rounded-md border border-line bg-slate-950 px-3 py-2 text-ink" inputMode="numeric" min="0" onChange={(event) => setAdjustedQuantity(event.target.value)} type="number" value={adjustedQuantity} />
+          <label className="text-sm font-semibold text-ink">Extra printen
+            <input className="mt-1 w-full rounded-md border border-line bg-surfaceSoft px-3 py-2 text-ink" inputMode="numeric" min="0" onChange={(event) => setAdjustedQuantity(event.target.value)} type="number" value={adjustedQuantity} />
           </label>
           <div className="flex gap-2 sm:col-span-2 sm:justify-end">
-            <button className="rounded-md border border-line px-3 py-2 text-sm font-bold text-slate-300" disabled={busy !== null} onClick={() => setAdjusting(false)} type="button">Annuleren</button>
-            <button className="rounded-md bg-brand px-3 py-2 text-sm font-black text-slate-950" disabled={busy !== null} onClick={adjust} type="button">Wijziging opslaan</button>
+            <button className="rounded-md border border-line px-3 py-2 text-sm font-semibold text-inkSoft" disabled={busy !== null} onClick={() => setAdjusting(false)} type="button">Annuleren</button>
+            <button className="rounded-md bg-brand px-3 py-2 text-sm font-semibold text-onBrand" disabled={busy !== null} onClick={adjust} type="button">Wijziging opslaan</button>
           </div>
         </div>
       ) : null}
       <div className="flex flex-wrap justify-end gap-2">
-        {currentStatus === "nieuw" ? <button className="rounded-md border border-line bg-slate-950/35 px-3 py-2 text-sm text-ink font-bold text-slate-300 disabled:opacity-60" disabled={busy !== null} onClick={() => run("accept")} type="button">{busy === "accept" ? "..." : "Accepteren"}</button> : null}
-        <button className="rounded-md border border-line bg-slate-950/35 px-3 py-2 text-sm font-bold text-slate-300 disabled:opacity-60" disabled={busy !== null} onClick={() => setAdjusting((value) => !value)} type="button">Aanpassen</button>
-        <button className="rounded-md border border-line bg-slate-950/35 px-3 py-2 text-sm text-ink font-bold text-slate-300 disabled:opacity-60" disabled={busy !== null} onClick={() => run("ignore")} type="button">
+        {currentStatus === "nieuw" ? <button className="rounded-md border border-line bg-surfaceSoft px-3 py-2 text-sm text-ink font-semibold text-inkSoft disabled:opacity-60" disabled={busy !== null} onClick={() => run("accept")} type="button">{busy === "accept" ? "..." : "Accepteren"}</button> : null}
+        <button className="rounded-md border border-line bg-surfaceSoft px-3 py-2 text-sm font-semibold text-inkSoft disabled:opacity-60" disabled={busy !== null} onClick={() => setAdjusting((value) => !value)} type="button">Aanpassen</button>
+        <button className="rounded-md border border-line bg-surfaceSoft px-3 py-2 text-sm text-ink font-semibold text-inkSoft disabled:opacity-60" disabled={busy !== null} onClick={() => run("ignore")} type="button">
           {busy === "ignore" ? "..." : "Negeren"}
         </button>
-        {mayCreatePrintJob ? <button className="rounded-md bg-brand px-3 py-2 text-sm font-black text-slate-950 disabled:opacity-60" disabled={busy !== null} onClick={() => run("convert-to-print-job")} type="button">
+        {mayCreatePrintJob ? <button className="rounded-md bg-brand px-3 py-2 text-sm font-semibold text-onBrand disabled:opacity-60" disabled={busy !== null} onClick={() => run("convert-to-print-job")} type="button">
           {busy === "convert-to-print-job" ? "..." : "Printtaak maken"}
         </button> : null}
       </div>
@@ -123,10 +123,10 @@ export function GenerateRecommendationsButton() {
 
   return (
     <div className="flex flex-col items-end gap-2">
-      <button className="rounded-md bg-brand px-4 py-2 text-sm font-black text-slate-950 disabled:opacity-60" disabled={busy} onClick={generate} type="button">
+      <button className="rounded-md bg-brand px-4 py-2 text-sm font-semibold text-onBrand disabled:opacity-60" disabled={busy} onClick={generate} type="button">
         {busy ? "Genereren..." : "Voorraadadvies genereren"}
       </button>
-      {error ? <span className="text-sm font-semibold text-red-300">{error}</span> : null}
+      {error ? <span className="text-sm font-semibold text-red-700">{error}</span> : null}
     </div>
   );
 }

@@ -28,7 +28,7 @@ export default async function OrderDetailPage({ params, searchParams }: { params
       <PageHeader
         title={data?.order.internal_order_number || "Orderdetail"}
         description="Controleer orderregels, voorraadreserveringen en printtaken voor deze order."
-        actions={<a className="rounded-md border border-line bg-slate-950/35 px-4 py-2 text-sm font-bold text-slate-300" href={ordersHref}>Terug naar orders</a>}
+        actions={<a className="rounded-md border border-line bg-surfaceSoft px-4 py-2 text-sm font-semibold text-inkSoft" href={ordersHref}>Terug naar orders</a>}
       />
       {error || !data ? <OrderError message={error || "Geen orderdata beschikbaar"} /> : <OrderContent data={data} />}
     </AppShell>
@@ -88,13 +88,13 @@ function OrderContent({ data }: { data: OrderDetailData }) {
             <div className="rounded-md border border-line bg-panelSoft px-3 py-3 md:col-span-2 xl:col-span-6">
               <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                 <div>
-                  <div className="text-xs font-bold uppercase text-muted">Status en controle</div>
+                  <div className="text-xs font-semibold text-muted">Status en controle</div>
                   <div className="mt-1 flex flex-wrap items-center gap-2">
                     <StatusBadge status={data.accountingSale.status} />
-                    <span className="text-sm text-slate-300">{data.accountingSale.note || "Controleer deze boeking voordat je aangifte voorbereidt."}</span>
+                    <span className="text-sm text-inkSoft">{data.accountingSale.note || "Controleer deze boeking voordat je aangifte voorbereidt."}</span>
                   </div>
                 </div>
-                <a className="rounded-md border border-line bg-slate-950/35 px-4 py-2 text-sm font-bold text-slate-300 hover:bg-white/5" href="/administratie">
+                <a className="rounded-md border border-line bg-surfaceSoft px-4 py-2 text-sm font-semibold text-inkSoft hover:bg-hover" href="/administratie">
                   Naar administratie
                 </a>
               </div>
@@ -156,7 +156,7 @@ function OrderContent({ data }: { data: OrderDetailData }) {
 function InfoRow({ label, value }: { label: string; value: string | React.ReactNode }) {
   return (
     <div className="rounded-md border border-line bg-panelSoft px-3 py-3">
-      <div className="text-xs font-bold uppercase text-muted">{label}</div>
+      <div className="text-xs font-semibold text-muted">{label}</div>
       <div className="mt-1 font-semibold text-ink">{value}</div>
     </div>
   );
@@ -182,7 +182,7 @@ function PrintJobRow({ job, variant }: { job: PrintJob; variant?: ProductVariant
     <div className="rounded-lg border border-line bg-panelSoft p-4">
       <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
         <div>
-          <div className="font-bold text-ink">Printtaak #{job.id}</div>
+          <div className="font-semibold text-ink">Printtaak #{job.id}</div>
           <p className="mt-1 text-sm text-muted">
             {variant?.variant_name || variant?.sku || `Variant ${job.product_variant_id}`} - {job.material || variant?.material || "-"} / {job.color || variant?.color || "-"}
           </p>
@@ -195,7 +195,7 @@ function PrintJobRow({ job, variant }: { job: PrintJob; variant?: ProductVariant
         <SmallStat label="Gelukt" value={job.quantity_succeeded || 0} />
         <SmallStat label="Mislukt" value={job.quantity_failed || 0} />
       </div>
-      <a className="mt-4 inline-flex rounded-md border border-line px-3 py-2 text-sm font-bold text-slate-200 hover:border-brand" href={printJobHref(job.id)}>Open deze taak in Productie</a>
+      <a className="mt-4 inline-flex rounded-md border border-line px-3 py-2 text-sm font-semibold text-ink hover:border-brand" href={printJobHref(job.id)}>Open deze taak in Productie</a>
     </div>
   );
 }
@@ -203,8 +203,8 @@ function PrintJobRow({ job, variant }: { job: PrintJob; variant?: ProductVariant
 function SmallStat({ label, value }: { label: string; value: string | number }) {
   return (
     <div className="rounded-md border border-line bg-panelSoft px-3 py-3">
-      <div className="text-xs font-bold uppercase text-muted">{label}</div>
-      <div className="mt-1 text-lg font-bold text-ink">{value}</div>
+      <div className="text-xs font-semibold text-muted">{label}</div>
+      <div className="mt-1 text-lg font-semibold text-ink">{value}</div>
     </div>
   );
 }

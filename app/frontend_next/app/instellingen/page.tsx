@@ -15,7 +15,7 @@ function CheckRow({ label, state, detail }: { label: string; state: CheckState; 
   return (
     <div className="flex flex-col gap-2 rounded-xl border border-line bg-panelSoft p-4 sm:flex-row sm:items-center sm:justify-between">
       <div>
-        <div className="text-sm font-black text-ink">{label}</div>
+        <div className="text-sm font-semibold text-ink">{label}</div>
         <div className="mt-1 text-sm text-muted">{detail}</div>
       </div>
       <StatusBadge status={status} />
@@ -29,8 +29,8 @@ function evidenceDate(value?: string | null) {
 }
 
 function BlockerList({ blockers, success }: { blockers: string[]; success: string }) {
-  if (!blockers.length) return <div className="rounded-xl border border-emerald-400/25 bg-emerald-950/20 p-4 text-sm font-bold text-emerald-100">{success}</div>;
-  return <div className="space-y-3">{blockers.map((blocker) => <div className="rounded-xl border border-amber-400/25 bg-amber-950/20 p-4 text-sm font-bold text-amber-100" key={blocker}>{blocker}</div>)}</div>;
+  if (!blockers.length) return <div className="rounded-xl border border-emerald-400/25 bg-emerald-50 p-4 text-sm font-semibold text-emerald-800">{success}</div>;
+  return <div className="space-y-3">{blockers.map((blocker) => <div className="rounded-xl border border-amber-400/25 bg-amber-50 p-4 text-sm font-semibold text-amber-800" key={blocker}>{blocker}</div>)}</div>;
 }
 
 export default async function SettingsPage() {
@@ -41,7 +41,7 @@ export default async function SettingsPage() {
       <PageHeader
         title="Instellingen"
         description="Bekijk apart wat klaar is voor intern gebruik, verkoopkanalen en latere internettoegang."
-        actions={<div className="flex flex-wrap gap-2"><a className="rounded-md border border-line px-3 py-2 text-sm font-bold" href="/account/beveiliging">Account</a><a className="rounded-md border border-line px-3 py-2 text-sm font-bold" href="/instellingen/gebruikers">Gebruikers</a></div>}
+        actions={<div className="flex flex-wrap gap-2"><a className="rounded-md border border-line px-3 py-2 text-sm font-semibold" href="/account/beveiliging">Account</a><a className="rounded-md border border-line px-3 py-2 text-sm font-semibold" href="/instellingen/gebruikers">Gebruikers</a></div>}
       />
       <div className="space-y-6">
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -149,7 +149,7 @@ export default async function SettingsPage() {
           <SectionCard title="Volgende controles" description="Praktische volgorde vanaf de huidige situatie.">
             <div className="space-y-3">
               {readiness.next_checks.map((check) => (
-                <div className="rounded-xl border border-line bg-panelSoft p-4 text-sm font-semibold text-slate-200" key={check}>
+                <div className="rounded-xl border border-line bg-panelSoft p-4 text-sm font-semibold text-ink" key={check}>
                   {check}
                 </div>
               ))}
@@ -169,7 +169,7 @@ export default async function SettingsPage() {
               "Publicatievelden klaarzetten",
               "Toegang tot verkoopkanalen later toevoegen",
             ].map((item) => (
-              <div className="rounded-xl border border-line bg-panelSoft p-4 text-sm font-bold text-slate-200" key={item}>
+              <div className="rounded-xl border border-line bg-panelSoft p-4 text-sm font-semibold text-ink" key={item}>
                 {item}
               </div>
             ))}

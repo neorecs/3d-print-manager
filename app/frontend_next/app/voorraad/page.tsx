@@ -25,7 +25,7 @@ export default async function InventoryPage() {
       <PageHeader
         title="Productvoorraad"
         description="Beheer geprinte producten die klaar liggen voor verkoop, verzending of reservering."
-        actions={<a className="rounded-xl border border-line px-4 py-2 text-sm font-black text-slate-200 hover:bg-white/5" href="/catalogus">Naar catalogus</a>}
+        actions={<a className="rounded-xl border border-line px-4 py-2 text-sm font-semibold text-ink hover:bg-hover" href="/catalogus">Naar catalogus</a>}
       />
       {error || !data ? <InventoryError message={error || "Geen voorraaddata beschikbaar"} /> : <InventoryContent data={data} />}
     </AppShell>
@@ -44,7 +44,7 @@ function InventoryContent({ data }: { data: InventoryData }) {
 
   return (
     <div className="space-y-6">
-      <CollapsibleHelp><p>Productvoorraad bestaat uit producten die al geprint zijn. Vrije voorraad is wat op voorraad ligt min reserveringen voor orders. Minimumvoorraad en alle bewegingen blijven traceerbaar. Filamentrollen beheer je apart onder <a className="font-bold text-brand" href="/filament">Filament</a>.</p></CollapsibleHelp>
+      <CollapsibleHelp><p>Productvoorraad bestaat uit producten die al geprint zijn. Vrije voorraad is wat op voorraad ligt min reserveringen voor orders. Minimumvoorraad en alle bewegingen blijven traceerbaar. Filamentrollen beheer je apart onder <a className="font-semibold text-brand" href="/filament">Filament</a>.</p></CollapsibleHelp>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
         <MetricCard label="Voorraadregels" value={data.inventory.length} note="productvarianten" />
@@ -84,7 +84,7 @@ function InventoryContent({ data }: { data: InventoryData }) {
                       <td data-label="Materiaal">{item.material || variant?.material || "-"}</td>
                       <td className="text-right" data-label="Op voorraad">{item.quantity_on_hand}</td>
                       <td className="text-right" data-label="Gereserveerd">{item.quantity_reserved}</td>
-                      <td className="text-right font-bold" data-label="Vrij">{free(item)}</td>
+                      <td className="text-right font-semibold" data-label="Vrij">{free(item)}</td>
                       <td data-label="Status"><StatusBadge status={low ? "lage voorraad" : "voldoende"} /></td>
                       <td data-label="Locatie">{item.location || "-"}</td>
                     </tr>
@@ -145,7 +145,7 @@ function MovementSource({ item }: { item: InventoryData["movements"][number] }) 
 function Step({ title, text }: { title: string; text: string }) {
   return (
     <div className="rounded-xl border border-line border-l-4 border-l-brand bg-panelSoft px-4 py-4">
-      <div className="font-black text-ink">{title}</div>
+      <div className="font-semibold text-ink">{title}</div>
       <p className="mt-2 text-sm leading-6 text-muted">{text}</p>
     </div>
   );

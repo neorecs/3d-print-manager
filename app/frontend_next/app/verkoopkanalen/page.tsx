@@ -57,7 +57,7 @@ function SalesChannelsContent({ data }: { data: SalesChannelsData }) {
                     <td>{formatConnectorMode(status.mode)}</td>
                     <td><StatusBadge status={status.ready_for_live ? "live klaar" : "configuratie nodig"} /></td>
                     <td>{status.missing_credentials.length ? status.missing_credentials.map(formatCredentialName).join(", ") : "-"}</td>
-                    <td><Link className="font-bold text-brand hover:text-white" href={`/verkoopkanalen/${status.platform_id}`}>Openen</Link></td>
+                    <td><Link className="font-semibold text-brand hover:text-ink" href={`/verkoopkanalen/${status.platform_id}`}>Openen</Link></td>
                   </tr>
                 ))}
               </tbody>
@@ -74,7 +74,7 @@ function SalesChannelsContent({ data }: { data: SalesChannelsData }) {
               return (
                 <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-line bg-panelSoft px-4 py-3" key={`${publication.id}-${publication.publication_status}`}>
                   <div>
-                    <a className="font-bold text-ink hover:text-brand" href={`/catalogus/${publication.product_id}`}>{product?.internal_title || product?.name || `Product ${publication.product_id}`}</a>
+                    <a className="font-semibold text-ink hover:text-brand" href={`/catalogus/${publication.product_id}`}>{product?.internal_title || product?.name || `Product ${publication.product_id}`}</a>
                     <div className="mt-1 text-sm text-muted">{publication.last_error || publication.platform_title || "Geen foutmelding"}</div>
                   </div>
                   <StatusBadge status={publication.publication_status} />
@@ -88,13 +88,13 @@ function SalesChannelsContent({ data }: { data: SalesChannelsData }) {
       <SectionCard title="Instellingen verkoopkanalen" description="Open alleen het onderdeel dat je wilt toevoegen of wijzigen.">
         <div className="space-y-3">
           <details className="rounded-lg border border-line bg-panelSoft p-4">
-            <summary className="cursor-pointer list-none font-bold text-ink">Doellanden en talen beheren</summary>
+            <summary className="cursor-pointer list-none font-semibold text-ink">Doellanden en talen beheren</summary>
             <div className="mt-4 border-t border-line pt-4">
               <SalesMarketsManager markets={data.markets} />
             </div>
           </details>
           <details className="rounded-lg border border-line bg-panelSoft p-4">
-            <summary className="cursor-pointer list-none font-bold text-ink">Verkoopkanalen toevoegen of wijzigen</summary>
+            <summary className="cursor-pointer list-none font-semibold text-ink">Verkoopkanalen toevoegen of wijzigen</summary>
             <div className="mt-4 border-t border-line pt-4">
               <SalesChannelsManager platforms={data.platforms} />
             </div>

@@ -45,12 +45,12 @@ export function ChangePasswordForm() {
   return (
     <form className="mt-8 space-y-5" onSubmit={handleSubmit}>
       <div>
-        <label className="text-xs font-black uppercase tracking-[.14em] text-muted" htmlFor="currentPassword">
+        <label className="text-xs font-semibold text-muted" htmlFor="currentPassword">
           Tijdelijk wachtwoord
         </label>
         <input
           autoComplete="current-password"
-          className="mt-2 w-full rounded-xl border border-line bg-[#111b2d] px-4 py-3 text-sm font-semibold text-white outline-none transition focus:border-brand"
+          className="mt-2 w-full rounded-xl border border-line bg-panel px-4 py-3 text-sm font-semibold text-ink outline-none transition focus:border-brand"
           id="currentPassword"
           onChange={(event) => setCurrentPassword(event.target.value)}
           required
@@ -59,12 +59,12 @@ export function ChangePasswordForm() {
         />
       </div>
       <div>
-        <label className="text-xs font-black uppercase tracking-[.14em] text-muted" htmlFor="newPassword">
+        <label className="text-xs font-semibold text-muted" htmlFor="newPassword">
           Nieuw wachtwoord
         </label>
         <input
           autoComplete="new-password"
-          className="mt-2 w-full rounded-xl border border-line bg-[#111b2d] px-4 py-3 text-sm font-semibold text-white outline-none transition focus:border-brand"
+          className="mt-2 w-full rounded-xl border border-line bg-panel px-4 py-3 text-sm font-semibold text-ink outline-none transition focus:border-brand"
           id="newPassword"
           minLength={12}
           onChange={(event) => setNewPassword(event.target.value)}
@@ -74,12 +74,12 @@ export function ChangePasswordForm() {
         />
       </div>
       <div>
-        <label className="text-xs font-black uppercase tracking-[.14em] text-muted" htmlFor="repeatPassword">
+        <label className="text-xs font-semibold text-muted" htmlFor="repeatPassword">
           Herhaal nieuw wachtwoord
         </label>
         <input
           autoComplete="new-password"
-          className="mt-2 w-full rounded-xl border border-line bg-[#111b2d] px-4 py-3 text-sm font-semibold text-white outline-none transition focus:border-brand"
+          className="mt-2 w-full rounded-xl border border-line bg-panel px-4 py-3 text-sm font-semibold text-ink outline-none transition focus:border-brand"
           id="repeatPassword"
           minLength={12}
           onChange={(event) => setRepeatPassword(event.target.value)}
@@ -88,9 +88,9 @@ export function ChangePasswordForm() {
           value={repeatPassword}
         />
       </div>
-      {error ? <div className="rounded-xl border border-red-400/30 bg-red-500/10 px-4 py-3 text-sm font-bold text-red-100">{error}</div> : null}
+      {error ? <div className="rounded-xl border border-red-400/30 bg-red-500/10 px-4 py-3 text-sm font-semibold text-red-800">{error}</div> : null}
       <button
-        className="w-full rounded-xl bg-brand px-4 py-3 text-sm font-black text-slate-950 shadow-card transition hover:bg-teal-300 disabled:cursor-not-allowed disabled:opacity-60"
+        className="w-full rounded-xl bg-brand px-4 py-3 text-sm font-semibold text-onBrand shadow-card transition hover:bg-teal-300 disabled:cursor-not-allowed disabled:opacity-60"
         disabled={isSubmitting}
         type="submit"
       >

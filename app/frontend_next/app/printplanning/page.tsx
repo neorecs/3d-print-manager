@@ -26,7 +26,7 @@ export default async function PrintPlanningPage({ searchParams }: { searchParams
       <PageHeader
         title="Productie"
         description="Plan printtaken, groepeer batches en verwerk printresultaten zonder Bambu Studio te vervangen."
-        actions={<a className="rounded-xl border border-line px-4 py-2 text-sm font-black text-slate-200 hover:bg-white/5" href="/orders">Naar orders</a>}
+        actions={<a className="rounded-xl border border-line px-4 py-2 text-sm font-semibold text-ink hover:bg-hover" href="/orders">Naar orders</a>}
       />
       {error || !data ? <PrintPlanningError message={error || "Geen printplanningdata beschikbaar"} /> : <PrintPlanningContent data={data} focusedJobId={focusedJobId} />}
     </AppShell>
@@ -83,7 +83,7 @@ function PrintPlanningContent({ data, focusedJobId }: { data: PrintPlanningData;
 function WorkflowStep({ title, text }: { title: string; text: string }) {
   return (
     <div className="rounded-xl border border-line border-l-4 border-l-brand bg-panelSoft px-4 py-4">
-      <div className="font-black text-ink">{title}</div>
+      <div className="font-semibold text-ink">{title}</div>
       <p className="mt-2 text-sm leading-6 text-muted">{text}</p>
     </div>
   );

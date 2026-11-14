@@ -23,7 +23,7 @@ export default async function FilamentPage() {
       <PageHeader
         title="Filament"
         description="Beheer rollen, resterend gewicht, minimumvoorraad en materiaalkosten voor printplanning en marge."
-        actions={<a className="rounded-xl border border-line px-4 py-2 text-sm font-black text-slate-200 hover:bg-white/5" href="/printplanning">Naar printplanning</a>}
+        actions={<a className="rounded-xl border border-line px-4 py-2 text-sm font-semibold text-ink hover:bg-hover" href="/printplanning">Naar printplanning</a>}
       />
       {error || !data ? <FilamentError message={error || "Geen filamentdata beschikbaar"} /> : <FilamentContent data={data} />}
     </AppShell>

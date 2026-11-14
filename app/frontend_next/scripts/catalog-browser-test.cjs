@@ -249,6 +249,13 @@ async function main() {
     assert.ok(overviewRequests.some((query) => query.includes("page=1") && query.includes("page_size=20") && query.includes("view=actief")));
     assert.ok(overviewRequests.some((query) => query.includes("view=archief")));
     assert.deepEqual(errors, []);
+    // Desktop screenshots for visual review (uploaded as a CI artifact; no assertions).
+    await page.setViewportSize({ width: 1440, height: 900 });
+    for (const [name, route] of [["desktop-dashboard", "/"], ["desktop-orders", "/orders"], ["desktop-catalog", "/catalogus"], ["desktop-settings", "/instellingen"], ["desktop-channels", "/verkoopkanalen"]]) {
+      await page.goto(`${base}${route}`);
+      await page.waitForLoadState("networkidle");
+      await page.screenshot({ path: path.join(screenshots, `${name}.png`), fullPage: true });
+    }
     console.log("Browser checks passed: core workflow, daily-work hierarchy, truthful measurements, stock advice and separated live-readiness decisions.");
     console.log(`Screenshots: ${screenshots}`);
   } finally {

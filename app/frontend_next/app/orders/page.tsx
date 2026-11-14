@@ -63,7 +63,7 @@ function OrdersContent({ data, selectedStatus }: { data: OrdersData; selectedSta
         <div className="flex flex-wrap gap-2">
           {filters.map(([value, label]) => (
             <Link
-              className={`rounded-full border px-3 py-2 text-sm font-black ${selectedStatus === value ? "border-brand bg-brand text-slate-950" : "border-line bg-panelSoft text-slate-200 hover:border-brand/60"}`}
+              className={`rounded-full border px-3 py-2 text-sm font-semibold ${selectedStatus === value ? "border-brand bg-brand text-onBrand" : "border-line bg-panelSoft text-ink hover:border-brand/60"}`}
               href={ordersListHref(value)}
               key={value}
             >
@@ -91,7 +91,7 @@ function OrdersContent({ data, selectedStatus }: { data: OrdersData; selectedSta
           <EmptyState title="Geen orders in dit filter" description="Kies een ander filter of importeer nieuwe orders." />
         )}
         {pageCount > 1 ? (
-          <div className="mt-5 flex items-center justify-between border-t border-line pt-4 text-sm font-bold">
+          <div className="mt-5 flex items-center justify-between border-t border-line pt-4 text-sm font-semibold">
             <Link className={`rounded-md border border-line px-3 py-2 ${page === 1 ? "pointer-events-none opacity-40" : "hover:border-brand"}`} href={ordersListHref(selectedStatus, page - 1)}>Vorige</Link>
             <span className="text-muted">Pagina {page} van {pageCount}</span>
             <Link className={`rounded-md border border-line px-3 py-2 ${page === pageCount ? "pointer-events-none opacity-40" : "hover:border-brand"}`} href={ordersListHref(selectedStatus, page + 1)}>Volgende</Link>
@@ -150,15 +150,15 @@ function OrderCard({ order, items, platform, printJobs, returnTo }: { order: Ord
   const productSummary = items.map((item) => item.sku || `Regel ${item.id}`).slice(0, 2).join(", ") || "Geen regels";
 
   return (
-    <article className="rounded-2xl border border-line bg-panelSoft p-4 shadow-card">
+    <article className="rounded-xl border border-line bg-panelSoft p-4 shadow-card">
       <div className="grid gap-4 xl:grid-cols-[1.1fr_.9fr]">
         <div>
           <div className="flex flex-wrap items-center gap-2">
-            <a className="text-xl font-black text-ink hover:text-brand" href={orderDetailHref(order.id, returnTo)}>{order.internal_order_number}</a>
+            <a className="text-xl font-semibold text-ink hover:text-brand" href={orderDetailHref(order.id, returnTo)}>{order.internal_order_number}</a>
             <StatusBadge status={order.status} />
           </div>
           <p className="mt-2 text-sm text-muted">{order.customer_name || "Geen klantnaam"} - {platform ? platform.name : `Platform ${order.platform_id}`}</p>
-          <p className="mt-2 text-sm font-semibold text-slate-300">{productSummary}</p>
+          <p className="mt-2 text-sm font-semibold text-inkSoft">{productSummary}</p>
         </div>
         <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
           <Small label="Aantal" value={ordered} />
@@ -180,9 +180,9 @@ function OrderCard({ order, items, platform, printJobs, returnTo }: { order: Ord
 
 function Small({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="rounded-xl border border-line bg-slate-950/25 p-3">
-      <div className="text-[11px] font-black uppercase tracking-[.12em] text-muted">{label}</div>
-      <div className="mt-1 truncate font-black text-ink" title={String(value)}>{value}</div>
+    <div className="rounded-xl border border-line bg-surfaceSoft p-3">
+      <div className="text-[11px] font-semibold text-muted">{label}</div>
+      <div className="mt-1 truncate font-semibold text-ink" title={String(value)}>{value}</div>
     </div>
   );
 }

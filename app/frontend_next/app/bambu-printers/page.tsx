@@ -28,7 +28,7 @@ export default async function BambuPrintersPage() {
       <PageHeader
         title="Printers"
         description="Laatst gemeten printerstatus, voortgang en temperatuur. Ontbrekende metingen blijven herkenbaar als onbekend."
-        actions={<a className="rounded-md border border-line px-4 py-2 text-sm font-bold text-slate-200 hover:border-brand" href="/bambu-printers/beheer">Printers beheren</a>}
+        actions={<a className="rounded-md border border-line px-4 py-2 text-sm font-semibold text-ink hover:border-brand" href="/bambu-printers/beheer">Printers beheren</a>}
       />
       <PrintersContent data={data} />
     </AppShell>
@@ -71,10 +71,10 @@ function PrinterCard({ printer }: { printer: BambuPrinter }) {
   const statusTone = statusClass(state, printer.last_status);
 
   return (
-    <article className={`rounded-2xl border bg-panelSoft p-5 shadow-card ${statusTone.border}`}>
+    <article className={`rounded-xl border bg-panelSoft p-5 shadow-card ${statusTone.border}`}>
       <div className="flex items-start justify-between gap-3">
         <div>
-          <div className="text-xl font-black text-ink">{printer.name}</div>
+          <div className="text-xl font-semibold text-ink">{printer.name}</div>
           <div className="mt-1 text-sm font-semibold text-muted">{printer.model || "Onbekend model"} - {printer.location || "geen locatie"}</div>
         </div>
         <StatusBadge status={state} />
@@ -82,10 +82,10 @@ function PrinterCard({ printer }: { printer: BambuPrinter }) {
 
       <div className="mt-5">
         <div className="mb-2 flex justify-between text-sm">
-          <span className="font-bold text-slate-200">{taskLabel(printer)}</span>
+          <span className="font-semibold text-ink">{taskLabel(printer)}</span>
           <span className="text-muted">{progressLabel(printer)}</span>
         </div>
-        <div className="h-3 overflow-hidden rounded-full bg-slate-800">
+        <div className="h-3 overflow-hidden rounded-full bg-track">
           <div className={`h-full rounded-full ${statusTone.fill}`} style={{ width: `${progress ?? 0}%` }} />
         </div>
         <div className="mt-2 text-sm text-muted">{remainingTimeLabel(printer)}</div>
@@ -101,8 +101,8 @@ function PrinterCard({ printer }: { printer: BambuPrinter }) {
       </div>
 
       <div className="mt-5 flex justify-between gap-3">
-        <span className="text-xs font-bold uppercase text-muted">{printer.host}:{printer.mqtt_port}</span>
-        <a className="rounded-md border border-line px-3 py-2 text-sm font-black text-slate-200 hover:border-brand" href={`/bambu-printers/beheer#printer-${printer.id}`}>
+        <span className="text-xs font-semibold text-muted">{printer.host}:{printer.mqtt_port}</span>
+        <a className="rounded-md border border-line px-3 py-2 text-sm font-semibold text-ink hover:border-brand" href={`/bambu-printers/beheer#printer-${printer.id}`}>
           Beheren
         </a>
       </div>
@@ -122,19 +122,19 @@ function statusClass(state: string, lastStatus?: string | null) {
     return { border: "border-sky-400/30", fill: "bg-sky-400" };
   }
   if (value.includes("offline")) {
-    return { border: "border-slate-500/30", fill: "bg-slate-500" };
+    return { border: "border-line", fill: "bg-slate-500" };
   }
   if (value.includes("onbekend") || value.includes("unknown") || value.includes("inactief")) {
-    return { border: "border-slate-500/30", fill: "bg-slate-500" };
+    return { border: "border-line", fill: "bg-slate-500" };
   }
   return { border: "border-emerald-400/30", fill: "bg-emerald-400" };
 }
 
 function Small({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="rounded-xl border border-line bg-slate-950/25 p-3">
-      <div className="text-[11px] font-black uppercase tracking-[.12em] text-muted">{label}</div>
-      <div className="mt-1 font-black text-ink">{value}</div>
+    <div className="rounded-xl border border-line bg-surfaceSoft p-3">
+      <div className="text-[11px] font-semibold text-muted">{label}</div>
+      <div className="mt-1 font-semibold text-ink">{value}</div>
     </div>
   );
 }

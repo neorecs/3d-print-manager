@@ -48,13 +48,13 @@ export function BambuStudioOpenAction({ product, variants, printers, fixedVarian
   }
 
   if (!product.print_file_path) {
-    return <span className="text-xs font-bold text-amber-200">Geen printbestand</span>;
+    return <span className="text-xs font-semibold text-amber-800">Geen printbestand</span>;
   }
 
   return (
     <div className={`relative ${compact ? "w-full" : "min-w-[16rem]"}`}>
       <button
-        className="w-full rounded-md bg-brand px-3 py-2 text-sm font-black text-slate-950 hover:bg-brand/90 disabled:opacity-50"
+        className="w-full rounded-md bg-brand px-3 py-2 text-sm font-semibold text-onBrand hover:bg-brand/90 disabled:opacity-50"
         disabled={busy}
         onClick={() => setOpen((value) => !value)}
         type="button"
@@ -62,16 +62,16 @@ export function BambuStudioOpenAction({ product, variants, printers, fixedVarian
         Open in Bambu Studio
       </button>
       {open ? (
-        <div className="absolute right-0 top-full z-50 mt-2 w-[min(26rem,calc(100vw-3rem))] space-y-3 rounded-lg border border-line bg-slate-950 p-3 shadow-card">
+        <div className="absolute right-0 top-full z-50 mt-2 w-[min(26rem,calc(100vw-3rem))] space-y-3 rounded-lg border border-line bg-surfaceSoft p-3 shadow-card">
           {isSlicedFile && fixedVariantId ? (
-            <div className="text-xs font-bold text-slate-300">
+            <div className="text-xs font-semibold text-inkSoft">
               {initialVariant?.variant_name || initialVariant?.sku || `Variant ${fixedVariantId}`}
               {initialVariant?.material || initialVariant?.color ? ` - ${initialVariant.material || "-"} / ${initialVariant.color || "-"}` : ""}
             </div>
           ) : isSlicedFile ? (
             <label className="block space-y-1">
-              <span className="text-xs font-bold text-slate-300">Variant</span>
-              <select className="w-full rounded-md border border-line bg-slate-950 px-3 py-2 text-sm text-ink" onChange={(event) => setVariantId(event.target.value)} value={variantId}>
+              <span className="text-xs font-semibold text-inkSoft">Variant</span>
+              <select className="w-full rounded-md border border-line bg-surfaceSoft px-3 py-2 text-sm text-ink" onChange={(event) => setVariantId(event.target.value)} value={variantId}>
                 <option value="">Zonder variantadvies</option>
                 {activeVariants.map((variant) => (
                   <option key={variant.id} value={variant.id}>{variant.variant_name || variant.sku || `Variant ${variant.id}`} - {variant.material || "-"} / {variant.color || "-"}</option>
@@ -80,20 +80,20 @@ export function BambuStudioOpenAction({ product, variants, printers, fixedVarian
             </label>
           ) : null}
           {isSlicedFile ? <label className="block space-y-1">
-            <span className="text-xs font-bold text-slate-300">Voorkeursprinter</span>
-            <select className="w-full rounded-md border border-line bg-slate-950 px-3 py-2 text-sm text-ink" onChange={(event) => setPrinterId(event.target.value)} value={printerId}>
+            <span className="text-xs font-semibold text-inkSoft">Voorkeursprinter</span>
+            <select className="w-full rounded-md border border-line bg-surfaceSoft px-3 py-2 text-sm text-ink" onChange={(event) => setPrinterId(event.target.value)} value={printerId}>
               <option value="">Kiezen in Bambu Studio</option>
               {activePrinters.map((printer) => <option key={printer.id} value={printer.id}>{printer.name} - {printer.model || "model onbekend"}</option>)}
             </select>
           </label> : null}
           <p className="text-xs leading-5 text-muted">{isSlicedFile ? "De app adviseert automatisch een compatibele printer en AMS-rol. Het originele bestand blijft ongewijzigd." : "Het model opent direct. Kies printer, filament en slice-instellingen in Bambu Studio."}</p>
-          {message ? <div className="rounded-md border border-emerald-400/25 bg-emerald-400/10 p-2 text-xs text-emerald-200">{message}</div> : null}
-          {error ? <div className="rounded-md border border-red-400/25 bg-red-400/10 p-2 text-xs text-red-200">{error}</div> : null}
+          {message ? <div className="rounded-md border border-emerald-400/25 bg-emerald-400/10 p-2 text-xs text-emerald-700">{message}</div> : null}
+          {error ? <div className="rounded-md border border-red-400/25 bg-red-400/10 p-2 text-xs text-red-700">{error}</div> : null}
           <div className="flex gap-2">
-            <button className="flex-1 rounded-md bg-brand px-3 py-2 text-sm font-black text-slate-950 disabled:opacity-50" disabled={busy} onClick={launch} type="button">
+            <button className="flex-1 rounded-md bg-brand px-3 py-2 text-sm font-semibold text-onBrand disabled:opacity-50" disabled={busy} onClick={launch} type="button">
               {busy ? "Bestand aanbieden..." : "Nu openen"}
             </button>
-            <button className="rounded-md border border-line px-3 py-2 text-sm font-bold text-slate-300" onClick={() => setOpen(false)} type="button">Sluiten</button>
+            <button className="rounded-md border border-line px-3 py-2 text-sm font-semibold text-inkSoft" onClick={() => setOpen(false)} type="button">Sluiten</button>
           </div>
         </div>
       ) : null}

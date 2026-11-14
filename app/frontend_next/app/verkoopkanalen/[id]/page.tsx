@@ -26,7 +26,7 @@ export default async function SalesChannelDetailPage({ params }: { params: Promi
       <PageHeader
         title={data?.platform.name || "Verkoopkanaal"}
         description="Bekijk connectorstatus, beheer credentials en controleer gekoppelde publicaties."
-        actions={<Link className="rounded-md border border-line px-3 py-2 text-sm font-bold text-ink hover:border-brand hover:text-brand" href="/verkoopkanalen">Terug naar kanalen</Link>}
+        actions={<Link className="rounded-md border border-line px-3 py-2 text-sm font-semibold text-ink hover:border-brand hover:text-brand" href="/verkoopkanalen">Terug naar kanalen</Link>}
       />
       {error || !data ? <SectionCard title="Kanaal niet bereikbaar"><EmptyState title="Geen data" description={error || "Geen data beschikbaar"} /></SectionCard> : <SalesChannelDetailContent data={data} />}
     </AppShell>
@@ -79,7 +79,7 @@ function SalesChannelDetailContent({ data }: { data: SalesChannelDetailData }) {
                   const product = data.products.find((item) => item.id === publication.product_id);
                   return (
                     <tr key={publication.id}>
-                      <td><Link className="font-bold text-brand hover:text-ink" href={`/catalogus/${publication.product_id}`}>{product?.internal_title || product?.name || `Product ${publication.product_id}`}</Link></td>
+                      <td><Link className="font-semibold text-brand hover:text-ink" href={`/catalogus/${publication.product_id}`}>{product?.internal_title || product?.name || `Product ${publication.product_id}`}</Link></td>
                       <td>{publication.platform_title || "-"}</td>
                       <td><StatusBadge status={publication.publication_status} /></td>
                       <td>{publication.last_synced_at || "-"}</td>
@@ -98,20 +98,20 @@ function SalesChannelDetailContent({ data }: { data: SalesChannelDetailData }) {
 
 function InfoBlock({ title, value }: { title: string; value: string }) {
   return (
-    <div className="rounded-lg border border-line bg-slate-950/25 p-4">
-      <div className="text-xs font-bold uppercase tracking-wide text-muted">{title}</div>
-      <div className="mt-2 font-bold text-ink">{value}</div>
+    <div className="rounded-lg border border-line bg-surfaceSoft p-4">
+      <div className="text-xs font-semibold tracking-wide text-muted">{title}</div>
+      <div className="mt-2 font-semibold text-ink">{value}</div>
     </div>
   );
 }
 
 function ListBlock({ title, values, warning }: { title: string; values: string[]; warning?: boolean }) {
   return (
-    <div className="rounded-lg border border-line bg-slate-950/25 p-4">
-      <div className="text-xs font-bold uppercase tracking-wide text-muted">{title}</div>
+    <div className="rounded-lg border border-line bg-surfaceSoft p-4">
+      <div className="text-xs font-semibold tracking-wide text-muted">{title}</div>
       <div className="mt-3 flex flex-wrap gap-2">
         {values.length ? values.map((value) => (
-          <span className={`rounded-full px-2.5 py-1 text-xs font-bold ring-1 ${warning ? "bg-amber-400/10 text-amber-200 ring-amber-400/25" : "bg-slate-950/35 text-slate-300 ring-line"}`} key={value}>
+          <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ${warning ? "bg-amber-400/10 text-amber-800 ring-amber-400/25" : "bg-surfaceSoft text-inkSoft ring-line"}`} key={value}>
             {value}
           </span>
         )) : <span className="text-sm text-muted">Geen</span>}

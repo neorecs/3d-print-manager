@@ -35,7 +35,7 @@ export default async function DashboardPage() {
       <PageHeader
         title="Printfarm dashboard"
         description="Operationeel overzicht voor printers, orders, voorraad, filament en productieplanning."
-        actions={<a className="rounded-xl bg-brand px-4 py-2 text-sm font-black text-slate-950" href="/">Ververs dashboard</a>}
+        actions={<a className="rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-onBrand" href="/">Ververs dashboard</a>}
       />
       {error || !data ? <DashboardError message={error || "Geen data beschikbaar"} /> : <DashboardContent data={data} />}
     </AppShell>
@@ -120,12 +120,12 @@ function DashboardContent({ data }: { data: DashboardData }) {
               <SoftPanel>
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <div className="break-words text-lg font-black text-ink">{printer.name}</div>
+                    <div className="break-words text-lg font-semibold text-ink">{printer.name}</div>
                     <div className="mt-1 break-words text-sm text-muted">{taskLabel(printer)}</div>
                   </div>
                   <StatusBadge status={printer.printer_state || "onbekend"} />
                 </div>
-                <div className="mt-4 h-2.5 overflow-hidden rounded-full bg-slate-800">
+                <div className="mt-4 h-2.5 overflow-hidden rounded-full bg-track">
                   <div className="h-full rounded-full bg-brand" style={{ width: `${progressValue(printer) ?? 0}%` }} />
                 </div>
                 <div className="mt-3 flex flex-wrap justify-between gap-2 text-sm text-muted">
