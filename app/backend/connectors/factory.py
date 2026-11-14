@@ -4,10 +4,22 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from core.credentials import decrypt_credential, encrypt_credential
-from connectors.base import PlatformConnector
+from connectors.base import ConnectorResult, PlatformConnector
 from connectors.etsy.connector import EtsyConnector
 from connectors.shopify.connector import ShopifyConnector
 from models import Platform, PlatformCredential
+
+
+class AssistedConnector(PlatformConnector):
+    """Channels in 'hulpmodus': the app prepares the listing, the seller places it by hand."""
+
+    platform_type = "hulpmodus"
+
+    def publish_product(self, payload: dict) -> ConnectorResult:
+        return ConnectorResult(False, "Dit kanaal werkt in hulpmodus: open het plaatsingspakket, plaats de advertentie zelf en markeer hem daarna als geplaatst.")
+
+    def sync_product(self, payload: dict) -> ConnectorResult:
+        return ConnectorResult(False, "Dit kanaal werkt in hulpmodus: pas de advertentie zelf aan op het kanaal.")
 
 
 CONNECTOR_BY_TYPE = {
@@ -75,7 +87,11 @@ def _token_saver(db: Session, platform_id: int):
 
 
 def get_platform_connector(db: Session, platform: Platform) -> PlatformConnector:
-    connector_class = CONNECTOR_BY_TYPE.get((platform.type or "").lower(), PlatformConnector)
+    from publishing.channel_profiles import is_assisted
+
+    platform_type = (platform.type or "").lower()
+    default_class = AssistedConnector if is_assisted(platform_type) else PlatformConnector
+    connector_class = CONNECTOR_BY_TYPE.get(platform_type, default_class)
     connector = connector_class(load_platform_credentials(db, platform), live_mode=connector_live_mode())
     if hasattr(connector_class, "token_saver"):
         connector.token_saver = _token_saver(db, platform.id)

@@ -2,6 +2,7 @@ import re
 from datetime import datetime, timezone
 
 from fastapi import HTTPException
+from publishing.channel_profiles import channel_profile, listing_issues
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -44,7 +45,16 @@ def mark_product_publications_sync_needed(db: Session, product_id: int) -> None:
         publication.publication_status = PUBLICATION_SYNC_NEEDED
 
 
+def _reject_assisted_channel(db: Session, publication: ProductPlatformPublication) -> None:
+    from publishing.channel_profiles import is_assisted
+
+    platform = get_required(db, Platform, publication.platform_id)
+    if is_assisted(platform.type):
+        raise HTTPException(status_code=409, detail="Dit kanaal werkt in hulpmodus: open het plaatsingspakket, plaats de advertentie zelf en markeer hem daarna als geplaatst.")
+
+
 def publish_publication(db: Session, publication: ProductPlatformPublication) -> dict:
+    _reject_assisted_channel(db, publication)
     validation = validate_publication_record(db, publication)
     if not validation["ready"]:
         publication.publication_status = PUBLICATION_ERROR
@@ -60,6 +70,7 @@ def publish_publication(db: Session, publication: ProductPlatformPublication) ->
 
 
 def sync_publication(db: Session, publication: ProductPlatformPublication) -> dict:
+    _reject_assisted_channel(db, publication)
     validation = validate_publication_record(db, publication)
     if not validation["ready"]:
         publication.publication_status = PUBLICATION_ERROR
@@ -258,17 +269,16 @@ def validate_publication_record(db: Session, publication: ProductPlatformPublica
 
     tags = split_platform_tags(publication.platform_tags)
     platform_type = (platform.type or platform.name or "").lower()
-    if platform_type == "etsy":
-        if publication.platform_title and len(publication.platform_title) > 140:
-            errors.append(f"{platform.name}: Etsy-titel mag maximaal 140 tekens zijn.")
-        if len(tags) > 13:
-            errors.append(f"{platform.name}: Etsy ondersteunt maximaal 13 tags.")
-        long_tags = [tag for tag in tags if len(tag) > 20]
-        if long_tags:
-            errors.append(f"{platform.name}: Etsy-tags mogen maximaal 20 tekens zijn: {', '.join(long_tags)}.")
-        if not publication.platform_shipping_profile_id:
-            errors.append(f"{platform.name}: Etsy verzendprofiel ontbreekt.")
-    elif platform_type == "shopify":
+    profile = channel_profile(platform_type)
+    original_photos = sum(1 for item in media if not getattr(item, "ai_edited", False))
+    errors.extend(listing_issues(profile, platform.name, publication.platform_title, tags, len(media), original_photos))
+    if profile.requires_shipping_profile and not publication.platform_shipping_profile_id:
+        errors.append(f"{platform.name}: {profile.label} verzendprofiel ontbreekt.")
+    if profile.requires_ean:
+        missing_ean = [variant.sku or str(variant.id) for variant in variants if not (variant.ean or "").strip()]
+        if missing_ean:
+            errors.append(f"{platform.name}: {profile.label} vraagt een EAN-code per variant; ontbreekt bij {', '.join(missing_ean)}.")
+    if platform_type == "shopify":
         if not product.product_type:
             warnings.append(f"{platform.name}: Shopify producttype ontbreekt.")
         if not product.seo_title or not product.seo_description:

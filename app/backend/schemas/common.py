@@ -200,6 +200,7 @@ class ProductVariantCreate(BaseModel):
     product_id: int
     variant_name: str
     sku: str
+    ean: str | None = None
     color: str | None = None
     material: str | None = None
     size: str | None = None

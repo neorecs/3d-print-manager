@@ -65,6 +65,28 @@ async function apiGet<T>(path: string): Promise<T> {
   return response.json() as Promise<T>;
 }
 
+export type ListingPackage = {
+  publication_id: number;
+  platform: { id: number; name: string; type: string };
+  profile: { key: string; label: string; mode: string; title_max?: number | null; photos_max?: number | null; notes: string[] };
+  title: string;
+  description: string;
+  tags: string[];
+  category?: string | null;
+  price?: number | null;
+  currency: string;
+  variants: { sku: string; name: string; color?: string | null; material?: string | null; price?: number | null }[];
+  photos: { id: number; url: string; alt_text?: string | null; ai_edited: boolean }[];
+  status: string;
+  placed_manually: boolean;
+  external_url?: string | null;
+  validation: { ready: boolean; errors: string[]; warnings: string[] };
+};
+
+export async function getListingPackage(publicationId: number): Promise<ListingPackage> {
+  return apiGet<ListingPackage>(`/product-publications/${publicationId}/listing-package`);
+}
+
 export async function getDashboardData(): Promise<DashboardData> {
   const data = await apiGet<{
     metrics: DashboardData["metrics"];
