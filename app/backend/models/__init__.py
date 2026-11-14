@@ -2,6 +2,7 @@ from models.accounting import AccountingDocument, AccountingFiscalSetting, Accou
 from models.analytics import AIUsageLog, StockRecommendation, TrendSnapshot
 from models.auth import AuditLog, User
 from models.bambu import BambuPrinter
+from models.bridge import BridgeCommand, PrinterBridge
 from models.costs import CostSetting, OrderProfitCalculation
 from models.inventory import FilamentSpool, InventoryMovement, ProductInventory
 from models.notifications import Notification
@@ -24,6 +25,8 @@ __all__ = [
     "FilamentSpool",
     "AIUsageLog",
     "BambuPrinter",
+    "BridgeCommand",
+    "PrinterBridge",
     "AuditLog",
     "AccountingDocument",
     "AccountingFiscalSetting",

@@ -14,6 +14,8 @@ const publicPaths = [
   "/api/bambu-studio/files",
   // Order webhooks from Etsy and Shopify; the backend checks their signature.
   "/api/webhooks",
+  // The Bambu bridge agent; the backend checks its bridge token.
+  "/api/bridge-agent",
   "/downloads",
 ];
 

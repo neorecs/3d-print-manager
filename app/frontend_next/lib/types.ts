@@ -157,6 +157,7 @@ export type BambuPrinter = {
   mqtt_port: number;
   has_access_code: boolean;
   connection_mode: string;
+  bridge_id?: number | null;
   location?: string | null;
   active: boolean;
   last_status?: string | null;

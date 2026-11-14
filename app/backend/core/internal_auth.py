@@ -14,11 +14,13 @@ from models import User
 
 
 WEBHOOK_PREFIX = "/webhooks/"
+BRIDGE_AGENT_PREFIX = "/bridge-agent/"
 PUBLIC_BACKEND_PATHS = {"/health", "/auth/login", "/auth/bootstrap-admin", "/auth/bootstrap-status"}
 ADMIN_ONLY_PREFIXES = (
     "/auth/users",
     "/auth/audit-logs",
     "/platform-credentials",
+    "/bridges",
     "/accounting/fiscal-settings",
     "/credentials/generate-key",
     "/seed",
@@ -37,6 +39,9 @@ async def enforce_backend_access(request: Request, call_next):
 
     # Webhooks carry their own platform signature instead of a user session.
     if request.method == "POST" and request.url.path.startswith(WEBHOOK_PREFIX):
+        return await call_next(request)
+    # The bridge agent authenticates with its own bridge token (checked in the route).
+    if request.url.path.startswith(BRIDGE_AGENT_PREFIX):
         return await call_next(request)
 
     if request.url.path in PUBLIC_BACKEND_PATHS or (request.method == "GET" and _is_signed_file_bridge(request.url.path)):

@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import DateTime, Float, Integer, String, Text
+from sqlalchemy import DateTime, Float, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from database import Base
@@ -18,6 +18,8 @@ class BambuPrinter(TimestampMixin, Base):
     mqtt_port: Mapped[int] = mapped_column(Integer, default=8883)
     access_code_encrypted: Mapped[str | None] = mapped_column(String(2048), nullable=True)
     connection_mode: Mapped[str] = mapped_column(String(50), default="lan")
+    # Set when connection_mode == "bridge": the agent in the printer's own network.
+    bridge_id: Mapped[int | None] = mapped_column(ForeignKey("printer_bridges.id", ondelete="SET NULL"), nullable=True)
     location: Mapped[str | None] = mapped_column(String(255), nullable=True)
     active: Mapped[bool] = mapped_column(default=True)
     last_status: Mapped[str] = mapped_column(String(50), default="onbekend")

@@ -42,6 +42,7 @@ def public_bambu_printer_dict(printer: BambuPrinter) -> dict:
         "mqtt_port": printer.mqtt_port,
         "has_access_code": bool(printer.access_code_encrypted),
         "connection_mode": printer.connection_mode,
+        "bridge_id": printer.bridge_id,
         "location": printer.location,
         "active": printer.active,
         "last_status": printer.last_status,
@@ -67,6 +68,21 @@ def test_bambu_lan_connection(db: Session, printer: BambuPrinter, timeout_second
         db.refresh(printer)
         return public_bambu_printer_dict(printer)
 
+    if _uses_bridge(printer):
+        from models import PrinterBridge
+        from services.bridge_service import bridge_online
+
+        bridge = db.get(PrinterBridge, printer.bridge_id) if printer.bridge_id else None
+        if bridge_online(bridge):
+            printer.last_status = "bereikbaar"
+            printer.status_message = f"Bridge '{bridge.name}' is online."
+        else:
+            printer.last_status = "niet_bereikbaar"
+            printer.status_message = "De bridge is offline of nog niet gekoppeld. Controleer of de bridge-agent draait."
+        db.commit()
+        db.refresh(printer)
+        return public_bambu_printer_dict(printer)
+
     try:
         with socket.create_connection((printer.host, int(printer.mqtt_port or 8883)), timeout=timeout_seconds):
             printer.last_status = "bereikbaar"
@@ -81,7 +97,20 @@ def test_bambu_lan_connection(db: Session, printer: BambuPrinter, timeout_second
     return public_bambu_printer_dict(printer)
 
 
+def _uses_bridge(printer: BambuPrinter) -> bool:
+    return (printer.connection_mode or "").lower() == "bridge"
+
+
 def refresh_bambu_mqtt_status(db: Session, printer: BambuPrinter, timeout_seconds: float = 8.0) -> dict:
+    if _uses_bridge(printer):
+        # The bridge sends live status anyway; ask for a full report and show what we have.
+        from services.bridge_service import bridge_status_note, queue_command
+
+        if printer.bridge_id is not None:
+            queue_command(db, printer, "pushall")
+        result = public_bambu_printer_dict(printer)
+        result["bridge_note"] = bridge_status_note(db, printer)
+        return result
     if not printer.serial_number:
         raise HTTPException(
             status_code=400,
@@ -177,6 +206,18 @@ def preflight_bambu_print_start(
         refresh_bambu_mqtt_status(db, printer, timeout_seconds=8.0)
 
     checks = _bambu_print_preflight_checks(printer, local_upload_path)
+    if _uses_bridge(printer):
+        from models import PrinterBridge
+        from services.bridge_service import bridge_online
+
+        bridge = db.get(PrinterBridge, printer.bridge_id) if printer.bridge_id else None
+        online = bridge_online(bridge)
+        checks.append({
+            "name": "Bridge online",
+            "ok": online,
+            "message": f"Bridge '{bridge.name}' is online." if online else "De bridge voor deze printer is offline. Een print op afstand start alleen als de bridge verbonden is.",
+            "level": "error",
+        })
     ok = all(check["ok"] for check in checks if check["level"] == "error")
     return {
         "ok": ok,
@@ -231,6 +272,9 @@ def start_bambu_remote_print(db: Session, printer: BambuPrinter, payload) -> dic
             detail=f"Bevestiging ontbreekt. Typ exact '{PRINT_START_CONFIRMATION}' voordat de app een print mag starten.",
         )
 
+    if _uses_bridge(printer):
+        return _queue_bridge_print(db, printer, payload)
+
     uploaded_file_path = _upload_local_file_to_bambu_printer(printer, payload.local_upload_path)
 
     access_code = decrypt_credential(printer.access_code_encrypted or "")
@@ -273,6 +317,34 @@ def start_bambu_remote_print(db: Session, printer: BambuPrinter, payload) -> dic
         "message": printer.status_message,
         "printer": public_bambu_printer_dict(printer),
         "mqtt_topic": f"device/{serial}/request",
+    }
+
+
+def _queue_bridge_print(db: Session, printer: BambuPrinter, payload) -> dict:
+    from services.bridge_service import queue_command
+
+    command = queue_command(db, printer, "print", {
+        "local_upload_path": payload.local_upload_path,
+        "remote_filename": _bambu_remote_print_filename(Path(payload.local_upload_path)),
+        "plate": payload.plate.strip() or "Metadata/plate_1.gcode",
+        "use_ams": bool(payload.use_ams),
+        "timelapse": bool(payload.timelapse),
+        "flow_cali": bool(payload.flow_cali),
+        "bed_leveling": bool(payload.bed_leveling),
+        "layer_inspect": bool(payload.layer_inspect),
+        "vibration_cali": bool(payload.vibration_cali),
+    })
+    printer.last_status = "printstart_in_wachtrij"
+    printer.status_message = "Printstart staat klaar voor de bridge. De bridge controleert vlak voor de start nog of de printer vrij is."
+    db.commit()
+    db.refresh(printer)
+    record_audit_log(db, None, "bambu.print_queued_bridge", "bambu_printer", str(printer.id), f"Printstart via bridge in wachtrij (opdracht {command.id}).")
+    return {
+        "ok": True,
+        "request_id": str(command.id),
+        "message": printer.status_message,
+        "printer": public_bambu_printer_dict(printer),
+        "mqtt_topic": None,
     }
 
 
