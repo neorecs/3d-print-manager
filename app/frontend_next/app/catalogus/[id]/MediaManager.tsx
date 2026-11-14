@@ -4,6 +4,13 @@ import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { ProductMedia } from "@/lib/types";
 
+const AI_PRESETS = [
+  { key: "witte_achtergrond", label: "Witte achtergrond" },
+  { key: "lichte_studio", label: "Lichte studio" },
+  { key: "woonkamer", label: "In de woonkamer" },
+  { key: "buiten", label: "Buiten" },
+];
+
 const PUBLIC_API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:38080";
 
 function mediaUrl(path?: string | null) {
@@ -23,6 +30,8 @@ export function MediaManager({ productId, media }: { productId: number; media: P
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [altText, setAltText] = useState("");
+  const [aiPreset, setAiPreset] = useState<Record<number, string>>({});
+  const [aiBusyId, setAiBusyId] = useState<number | null>(null);
   const [sortOrder, setSortOrder] = useState("0");
   const [primary, setPrimary] = useState(media.length === 0);
   const [drafts, setDrafts] = useState<Record<number, { alt_text: string; sort_order: string; is_primary: boolean }>>(() =>
@@ -161,6 +170,28 @@ export function MediaManager({ productId, media }: { productId: number; media: P
     }
   }
 
+
+  async function editWithAI(item: ProductMedia) {
+    setAiBusyId(item.id);
+    setError(null);
+    setMessage(null);
+    try {
+      const response = await fetch(`/api/products/${productId}/media/${item.id}/ai-edit`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ preset: aiPreset[item.id] || AI_PRESETS[0].key }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.detail || "AI-bewerking mislukt.");
+      setMessage("AI-versie toegevoegd als nieuwe foto. Het origineel blijft staan.");
+      router.refresh();
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "AI-bewerking mislukt.");
+    } finally {
+      setAiBusyId(null);
+    }
+  }
+
   return (
     <div className="space-y-5">
       {message ? <div className="rounded-md border border-emerald-400/25 bg-emerald-400/10 px-3 py-2 text-sm font-semibold text-emerald-700">{message}</div> : null}
@@ -220,7 +251,10 @@ export function MediaManager({ productId, media }: { productId: number; media: P
                 </div>
                 <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
                   <div className="font-semibold text-ink">Foto {item.sort_order ?? item.id}</div>
-                  {item.is_primary ? <span className="rounded-full bg-emerald-400/10 px-2.5 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200">Hoofdfoto</span> : null}
+                  <div className="flex gap-2">
+                    {item.ai_edited ? <span className="rounded-full bg-violet-500/10 px-2.5 py-1 text-xs font-semibold text-violet-700 ring-1 ring-violet-200">AI-bewerkt</span> : null}
+                    {item.is_primary ? <span className="rounded-full bg-emerald-400/10 px-2.5 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200">Hoofdfoto</span> : null}
+                  </div>
                 </div>
                 <div className="mt-3 grid gap-3">
                   <TextField label="Alt-tekst" value={draft.alt_text} onChange={(value) => updateDraft(item.id, "alt_text", value)} />
@@ -230,6 +264,26 @@ export function MediaManager({ productId, media }: { productId: number; media: P
                     Hoofdfoto
                   </label>
                 </div>
+                {!item.ai_edited ? (
+                  <div className="mt-3 flex flex-wrap items-center gap-2 rounded-md border border-line bg-surfaceSoft p-2">
+                    <select
+                      aria-label="AI-stijl"
+                      className="min-w-0 flex-1 rounded-md border border-line bg-panel px-2 py-2 text-sm text-ink"
+                      onChange={(event) => setAiPreset((current) => ({ ...current, [item.id]: event.target.value }))}
+                      value={aiPreset[item.id] || AI_PRESETS[0].key}
+                    >
+                      {AI_PRESETS.map((preset) => <option key={preset.key} value={preset.key}>{preset.label}</option>)}
+                    </select>
+                    <button
+                      className="rounded-md border border-brand px-3 py-2 text-sm font-semibold text-brand disabled:opacity-60"
+                      disabled={aiBusyId !== null}
+                      onClick={() => editWithAI(item)}
+                      type="button"
+                    >
+                      {aiBusyId === item.id ? "AI bezig (±30 s)..." : "Bewerk met AI"}
+                    </button>
+                  </div>
+                ) : null}
                 <div className="mt-3 flex flex-wrap justify-end gap-2">
                   <button
                     className="rounded-md border border-red-400/25 bg-surfaceSoft px-3 py-2 text-sm text-ink font-semibold text-red-700"

@@ -12,6 +12,10 @@ class Settings(BaseSettings):
     openai_api_base_url: str = "https://api.openai.com/v1"
     ai_product_max_output_tokens: int = 2500
     ai_daily_request_limit: int = 20
+    # Photo editing has its own, lower limit: images cost far more than text.
+    openai_image_model: str = "gpt-image-2.6-sunburst"
+    openai_image_quality: str = "medium"
+    ai_daily_image_limit: int = 10
     upload_image_max_bytes: int = 15 * 1024 * 1024
     upload_accounting_max_bytes: int = 25 * 1024 * 1024
     upload_print_file_max_bytes: int = 500 * 1024 * 1024
