@@ -12,6 +12,8 @@ const publicPaths = [
   "/api/auth/change-password",
   "/api/health",
   "/api/bambu-studio/files",
+  // Order webhooks from Etsy and Shopify; the backend checks their signature.
+  "/api/webhooks",
   "/downloads",
 ];
 

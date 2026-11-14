@@ -13,6 +13,7 @@ from database import SessionLocal
 from models import User
 
 
+WEBHOOK_PREFIX = "/webhooks/"
 PUBLIC_BACKEND_PATHS = {"/health", "/auth/login", "/auth/bootstrap-admin", "/auth/bootstrap-status"}
 ADMIN_ONLY_PREFIXES = (
     "/auth/users",
@@ -33,6 +34,10 @@ async def enforce_backend_access(request: Request, call_next):
     supplied_internal_token = request.headers.get("x-backend-internal-token", "")
     if not expected_internal_token or not hmac.compare_digest(supplied_internal_token, expected_internal_token):
         return JSONResponse({"detail": "Backendtoegang geweigerd."}, status_code=401)
+
+    # Webhooks carry their own platform signature instead of a user session.
+    if request.method == "POST" and request.url.path.startswith(WEBHOOK_PREFIX):
+        return await call_next(request)
 
     if request.url.path in PUBLIC_BACKEND_PATHS or (request.method == "GET" and _is_signed_file_bridge(request.url.path)):
         return await call_next(request)
