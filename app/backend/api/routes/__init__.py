@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from api.routes import accounting, ai, auth, bambu, channels, health, inventory, orders, overview, planning, platforms, products, system, uploads, webhooks
+from api.routes import accounting, ai, auth, bambu, channels, health, inventory, orders, overview, planning, platforms, products, system, uploads, webhooks, bridges
 from api.routes.orders import process_order_inventory
 from api.routes.planning import (
     complete_print_job,
@@ -29,6 +29,7 @@ router.include_router(inventory.router)
 router.include_router(planning.router)
 router.include_router(channels.router)
 router.include_router(webhooks.router)
+router.include_router(bridges.router)
 
 
 __all__ = [

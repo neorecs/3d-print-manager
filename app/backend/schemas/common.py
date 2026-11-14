@@ -79,6 +79,7 @@ class BambuPrinterCreate(BaseModel):
     mqtt_port: int = 8883
     access_code: str | None = None
     connection_mode: str = "lan"
+    bridge_id: int | None = None
     location: str | None = None
     active: bool = True
 

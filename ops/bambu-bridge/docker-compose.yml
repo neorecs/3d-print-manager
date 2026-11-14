@@ -1,0 +1,9 @@
+# Run this on a computer in the network of the remote printers.
+#   BRIDGE_APP_URL=https://jouw-domein BRIDGE_TOKEN=pmb_... docker compose up -d --build
+services:
+  bambu-bridge:
+    build: .
+    restart: unless-stopped
+    environment:
+      BRIDGE_APP_URL: ${BRIDGE_APP_URL:?Vul BRIDGE_APP_URL in}
+      BRIDGE_TOKEN: ${BRIDGE_TOKEN:?Vul BRIDGE_TOKEN in}

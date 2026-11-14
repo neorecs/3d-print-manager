@@ -3,6 +3,7 @@
 import { ChangeEvent, FormEvent, useEffect, useState } from "react";
 import { StatusBadge } from "@/components/StatusBadge";
 import type { BambuPrinter } from "@/lib/types";
+import { BridgeManager, type PrinterBridge } from "./BridgeManager";
 
 type PrinterDraft = {
   name: string;
@@ -12,6 +13,7 @@ type PrinterDraft = {
   mqtt_port: string;
   access_code: string;
   connection_mode: string;
+  bridge_id: string;
   location: string;
   active: boolean;
 };
@@ -51,6 +53,7 @@ function emptyDraft(): PrinterDraft {
     mqtt_port: "8883",
     access_code: "",
     connection_mode: "lan",
+    bridge_id: "",
     location: "",
     active: true,
   };
@@ -79,6 +82,7 @@ function draftFromPrinter(printer: BambuPrinter): PrinterDraft {
     mqtt_port: String(printer.mqtt_port || 8883),
     access_code: "",
     connection_mode: printer.connection_mode || "lan",
+    bridge_id: printer.bridge_id ? String(printer.bridge_id) : "",
     location: printer.location || "",
     active: printer.active !== false,
   };
@@ -111,6 +115,7 @@ function toPayload(draft: PrinterDraft) {
     host: draft.host.trim(),
     mqtt_port: numberOrDefault(draft.mqtt_port, 8883),
     connection_mode: draft.connection_mode || "lan",
+    bridge_id: draft.connection_mode === "bridge" && draft.bridge_id ? Number(draft.bridge_id) : null,
     location: draft.location || null,
     active: draft.active,
   };
@@ -127,6 +132,32 @@ export function BambuPrinterManager({ printers }: { printers: BambuPrinter[] }) 
   const [busyKey, setBusyKey] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [bridges, setBridges] = useState<PrinterBridge[]>([]);
+
+  async function loadBridges() {
+    const response = await fetch("/api/bridges", { cache: "no-store" });
+    if (response.ok) setBridges(await response.json());
+  }
+
+  useEffect(() => {
+    loadBridges().catch(() => undefined);
+  }, []);
+
+  async function bridgeAction(id: number, action: "pause" | "resume" | "stop") {
+    if (action === "stop" && !window.confirm("Print echt stoppen? Dit kan niet ongedaan worden gemaakt.")) return;
+    setBusyKey(`action-${id}`);
+    setError(null);
+    try {
+      const response = await fetch(`/api/bambu/printers/${id}/bridge-action`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action }) });
+      const data = await response.json().catch(() => null);
+      if (!response.ok) throw new Error(data?.detail || "Opdracht mislukt");
+      setMessage("Opdracht staat klaar voor de bridge en wordt binnen enkele seconden uitgevoerd.");
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Opdracht mislukt");
+    } finally {
+      setBusyKey(null);
+    }
+  }
 
   async function loadPrinters() {
     const response = await fetch("/api/bambu/printers", { cache: "no-store" });
@@ -233,12 +264,14 @@ export function BambuPrinterManager({ printers }: { printers: BambuPrinter[] }) 
       {message ? <div className="rounded-md border border-emerald-400/25 bg-emerald-400/10 px-3 py-2 text-sm font-semibold text-emerald-700">{message}</div> : null}
       {error ? <div className="rounded-md border border-red-400/25 bg-red-400/10 px-3 py-2 text-sm font-semibold text-red-700">{error}</div> : null}
 
+      <BridgeManager bridges={bridges} onChange={() => { loadBridges().catch(() => undefined); }} />
+
       <form className="rounded-lg border border-line bg-surfaceSoft p-4" onSubmit={createPrinter}>
         <h3 className="font-semibold text-ink">Bambu-printer toevoegen</h3>
         <p className="mt-1 text-sm text-muted">
           Gebruik het lokale IP-adres van de printer. De access code wordt versleuteld opgeslagen en niet teruggetoond. De site gebruikt LAN-bediening voor status en handmatige printstart; Bambu Studio blijft daarnaast gewoon bruikbaar.
         </p>
-        <PrinterFields draft={newDraft} onChange={updateNew} />
+        <PrinterFields bridges={bridges} draft={newDraft} onChange={updateNew} />
         <div className="mt-4 flex justify-end">
           <button className="rounded-md bg-brand px-4 py-2 text-sm font-semibold text-onBrand disabled:opacity-60" disabled={busyKey === "new"} type="submit">
             {busyKey === "new" ? "Aanmaken..." : "Printer aanmaken"}
@@ -275,7 +308,7 @@ export function BambuPrinterManager({ printers }: { printers: BambuPrinter[] }) 
                 </div>
               </summary>
               <div className="mt-4 border-t border-line pt-4">
-                <PrinterFields draft={draft} onChange={(field, value) => updateDraft(printer.id, field, value)} />
+                <PrinterFields bridges={bridges} draft={draft} onChange={(field, value) => updateDraft(printer.id, field, value)} />
                 <div className="mt-4 flex flex-wrap justify-end gap-3">
                   <button className="rounded-md border border-line bg-surfaceSoft px-4 py-2 text-sm font-semibold text-inkSoft hover:bg-hover disabled:opacity-60" disabled={busyKey !== null} onClick={() => testConnection(printer.id)} type="button">
                     {busyKey === `test-${printer.id}` ? "Testen..." : "Verbinding testen"}
@@ -283,6 +316,11 @@ export function BambuPrinterManager({ printers }: { printers: BambuPrinter[] }) 
                   <button className="rounded-md border border-line bg-surfaceSoft px-4 py-2 text-sm font-semibold text-inkSoft hover:bg-hover disabled:opacity-60" disabled={busyKey !== null} onClick={() => refreshStatus(printer.id)} type="button">
                     {busyKey === `status-${printer.id}` ? "Ophalen..." : "Status ophalen"}
                   </button>
+                  {printer.connection_mode === "bridge" ? (["pause", "resume", "stop"] as const).map((action) => (
+                    <button className="rounded-md border border-line bg-surfaceSoft px-4 py-2 text-sm font-semibold text-inkSoft hover:bg-hover disabled:opacity-60" disabled={busyKey !== null} key={action} onClick={() => bridgeAction(printer.id, action)} type="button">
+                      {{ pause: "Pauzeren", resume: "Hervatten", stop: "Stoppen" }[action]}
+                    </button>
+                  )) : null}
                   <button className="rounded-md bg-brand px-4 py-2 text-sm font-semibold text-onBrand disabled:opacity-60" disabled={busyKey !== null} onClick={() => savePrinter(printer.id)} type="button">
                     {busyKey === `save-${printer.id}` ? "Opslaan..." : "Printer opslaan"}
                   </button>
@@ -496,9 +534,27 @@ function Option({ label, checked, onChange }: { label: string; checked: boolean;
   );
 }
 
-function PrinterFields({ draft, onChange }: { draft: PrinterDraft; onChange: (field: keyof PrinterDraft, value: string | boolean) => void }) {
+function PrinterFields({ draft, onChange, bridges }: { draft: PrinterDraft; onChange: (field: keyof PrinterDraft, value: string | boolean) => void; bridges: PrinterBridge[] }) {
+  const activeBridges = bridges.filter((bridge) => !bridge.revoked);
   return (
     <div className="mt-4 grid gap-4 md:grid-cols-2">
+      <label className="space-y-2">
+        <span className="text-sm font-semibold text-inkSoft">Verbinding</span>
+        <select className="w-full rounded-md border border-line bg-surfaceSoft px-3 py-2 text-sm text-ink" onChange={(event) => onChange("connection_mode", event.target.value)} value={draft.connection_mode}>
+          <option value="lan">Zelfde netwerk (LAN)</option>
+          <option value="bridge">Andere locatie (via bridge)</option>
+        </select>
+      </label>
+      {draft.connection_mode === "bridge" ? (
+        <label className="space-y-2">
+          <span className="text-sm font-semibold text-inkSoft">Bridge</span>
+          <select className="w-full rounded-md border border-line bg-surfaceSoft px-3 py-2 text-sm text-ink" onChange={(event) => onChange("bridge_id", event.target.value)} value={draft.bridge_id}>
+            <option value="">Kies een bridge</option>
+            {activeBridges.map((bridge) => <option key={bridge.id} value={bridge.id}>{bridge.name}{bridge.online ? "" : " (offline)"}</option>)}
+          </select>
+          {activeBridges.length === 0 ? <span className="block text-xs text-muted">Maak eerst hierboven een bridge aan.</span> : null}
+        </label>
+      ) : <div className="hidden md:block" />}
       <TextField label="Naam" value={draft.name} onChange={(value) => onChange("name", value)} placeholder="Bijv. X1C links" />
       <TextField label="Model" value={draft.model} onChange={(value) => onChange("model", value)} placeholder="X1C, P1S, A1 mini" />
       <TextField label="IP-adres / host" value={draft.host} onChange={(value) => onChange("host", value)} placeholder="Bijv. 10.5.1.42" />

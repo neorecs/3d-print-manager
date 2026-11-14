@@ -1,7 +1,21 @@
 from fastapi import APIRouter
 from api.routes_shared import *
+from models import PrinterBridge
 
 router = APIRouter()
+
+
+def _check_connection(db: Session, data: dict) -> None:
+    mode = (data.get("connection_mode") or "lan").lower()
+    if mode not in {"lan", "bridge"}:
+        raise HTTPException(status_code=400, detail="Kies verbinding 'lan' of 'bridge'.")
+    data["connection_mode"] = mode
+    if mode != "bridge":
+        data["bridge_id"] = None
+        return
+    bridge = db.get(PrinterBridge, data.get("bridge_id")) if data.get("bridge_id") else None
+    if bridge is None or bridge.revoked:
+        raise HTTPException(status_code=400, detail="Kies een actieve bridge voor een printer buiten je eigen netwerk.")
 
 @router.get("/bambu/printers")
 def list_bambu_printers(db: Session = Depends(get_db)):
@@ -13,6 +27,7 @@ def list_bambu_printers(db: Session = Depends(get_db)):
 def create_bambu_printer(payload: BambuPrinterCreate, db: Session = Depends(get_db)):
     data = payload.model_dump()
     access_code = data.pop("access_code", None)
+    _check_connection(db, data)
     item = BambuPrinter(**data)
     if access_code:
         item.access_code_encrypted = encrypt_credential(access_code)
@@ -27,6 +42,7 @@ def update_bambu_printer(item_id: int, payload: BambuPrinterCreate, db: Session 
     item = get_or_404(db, BambuPrinter, item_id)
     data = payload.model_dump()
     access_code = data.pop("access_code", None)
+    _check_connection(db, data)
     for key, value in data.items():
         setattr(item, key, value)
     if access_code:
