@@ -233,6 +233,18 @@ def dashboard_overview(db: Session) -> dict:
         func.count(func.distinct(case((FilamentSpool.active.is_(True), FilamentSpool.color)))),
     )).one()
     sync_needed = int(db.scalar(select(func.count(ProductPlatformPublication.id)).where(ProductPlatformPublication.publication_status == PUBLICATION_SYNC_NEEDED)) or 0)
+    sold_out_products = (
+        select(ProductInventory.product_id)
+        .group_by(ProductInventory.product_id)
+        .having(func.sum(ProductInventory.quantity_on_hand - ProductInventory.quantity_reserved) <= 0)
+    )
+    assisted_out_of_stock = int(db.scalar(
+        select(func.count(ProductPlatformPublication.id)).where(
+            ProductPlatformPublication.placed_manually.is_(True),
+            ProductPlatformPublication.publication_status == PUBLICATION_PUBLISHED,
+            ProductPlatformPublication.product_id.in_(sold_out_products),
+        )
+    ) or 0)
     top_products = db.execute(
         select(Product.id, Product.internal_title, Product.name, func.sum(OrderItem.quantity_ordered).label("sold"))
         .join(OrderItem, OrderItem.product_id == Product.id)
@@ -268,6 +280,7 @@ def dashboard_overview(db: Session) -> dict:
             "low_filament": int(filament_metrics[1]),
             "active_filament_colors": int(filament_metrics[2]),
             "sync_needed": sync_needed,
+            "assisted_out_of_stock": assisted_out_of_stock,
         },
         "monthly_revenue": monthly_revenue,
         "printers": [public_bambu_printer_dict(item) for item in printers],

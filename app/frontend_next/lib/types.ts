@@ -379,6 +379,7 @@ export type DashboardData = {
     low_filament: number;
     active_filament_colors: number;
     sync_needed: number;
+    assisted_out_of_stock?: number;
   };
   monthlyRevenue: number[];
   printers: BambuPrinter[];

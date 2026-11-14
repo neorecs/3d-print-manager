@@ -37,6 +37,8 @@ class ProductMedia(TimestampMixin, Base):
     alt_text: Mapped[str | None] = mapped_column(String(255))
     sort_order: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     is_primary: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    ai_edited: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    source_media_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
     product: Mapped[Product] = relationship(back_populates="media")
 
@@ -48,6 +50,7 @@ class ProductVariant(TimestampMixin, Base):
     product_id: Mapped[int] = mapped_column(ForeignKey("products.id"), nullable=False)
     variant_name: Mapped[str] = mapped_column(String(180), nullable=False)
     sku: Mapped[str] = mapped_column(String(120), unique=True, nullable=False)
+    ean: Mapped[str | None] = mapped_column(String(14), nullable=True)
     color: Mapped[str | None] = mapped_column(String(80))
     material: Mapped[str | None] = mapped_column(String(80))
     size: Mapped[str | None] = mapped_column(String(80))
@@ -113,6 +116,8 @@ class ProductPlatformPublication(TimestampMixin, Base):
     platform_shipping_profile_id: Mapped[str | None] = mapped_column(String(120))
     last_synced_at: Mapped[str | None] = mapped_column(String(80))
     last_error: Mapped[str | None] = mapped_column(Text)
+    external_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    placed_manually: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
 
 class ProductPublicationMedia(TimestampMixin, Base):

@@ -8,6 +8,7 @@ import { StatusBadge } from "@/components/StatusBadge";
 import { formatCurrency, getOrdersData } from "@/lib/api";
 import { orderDetailHref, ordersListHref } from "@/lib/navigation";
 import type { Order, OrderItem, OrdersData, Platform, PrintJob } from "@/lib/types";
+import { ManualOrderForm } from "./ManualOrderForm";
 import { ShopifyImportButton } from "./ShopifyImportButton";
 import Link from "next/link";
 
@@ -101,6 +102,10 @@ function OrdersContent({ data, selectedStatus }: { data: OrdersData; selectedSta
 
       <SectionCard title="Orders ophalen" description="Haal nieuwe orders op uit je ingestelde verkoopkanalen. In de veilige teststand worden geen wijzigingen naar verkoopkanalen gestuurd.">
         <ShopifyImportButton />
+      </SectionCard>
+
+      <SectionCard title="Order uit een kanaal in hulpmodus" description="Verkocht via Marktplaats, Vinted of een ander kanaal zonder orderimport? Leg de order hier vast; voorraad en printplanning lopen daarna gewoon door.">
+        <ManualOrderForm platforms={data.platforms} />
       </SectionCard>
 
       <SectionCard title="Importgeschiedenis" description="Laatste importresultaten per verkoopkanaal.">

@@ -84,9 +84,9 @@ export function RecommendationActions({ recommendationId, status, safetyStock, q
         </div>
       ) : null}
       <div className="flex flex-wrap justify-end gap-2">
-        {currentStatus === "nieuw" ? <button className="rounded-md border border-line bg-surfaceSoft px-3 py-2 text-sm text-ink font-semibold text-inkSoft disabled:opacity-60" disabled={busy !== null} onClick={() => run("accept")} type="button">{busy === "accept" ? "..." : "Accepteren"}</button> : null}
+        {currentStatus === "nieuw" ? <button className="rounded-md border border-line bg-surfaceSoft px-3 py-2 text-sm font-semibold text-inkSoft disabled:opacity-60" disabled={busy !== null} onClick={() => run("accept")} type="button">{busy === "accept" ? "..." : "Accepteren"}</button> : null}
         <button className="rounded-md border border-line bg-surfaceSoft px-3 py-2 text-sm font-semibold text-inkSoft disabled:opacity-60" disabled={busy !== null} onClick={() => setAdjusting((value) => !value)} type="button">Aanpassen</button>
-        <button className="rounded-md border border-line bg-surfaceSoft px-3 py-2 text-sm text-ink font-semibold text-inkSoft disabled:opacity-60" disabled={busy !== null} onClick={() => run("ignore")} type="button">
+        <button className="rounded-md border border-line bg-surfaceSoft px-3 py-2 text-sm font-semibold text-inkSoft disabled:opacity-60" disabled={busy !== null} onClick={() => run("ignore")} type="button">
           {busy === "ignore" ? "..." : "Negeren"}
         </button>
         {mayCreatePrintJob ? <button className="rounded-md bg-brand px-3 py-2 text-sm font-semibold text-onBrand disabled:opacity-60" disabled={busy !== null} onClick={() => run("convert-to-print-job")} type="button">

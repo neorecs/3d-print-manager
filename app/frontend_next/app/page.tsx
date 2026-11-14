@@ -110,6 +110,18 @@ function attentionItems(data: DashboardData): AttentionItem[] {
       icon: <Package aria-hidden="true" className="h-4 w-4" />,
     });
   }
+  if ((metrics.assisted_out_of_stock ?? 0) > 0) {
+    const count = metrics.assisted_out_of_stock ?? 0;
+    items.push({
+      key: "assisted-sold-out",
+      tone: "red",
+      title: `${count} handmatig geplaatste advertentie${count === 1 ? "" : "s"} zonder vrije voorraad`,
+      detail: "Pas de advertentie aan of haal hem offline op het kanaal, zodat je niets verkoopt wat er niet is.",
+      href: "/verkoopkanalen",
+      action: "Bekijken",
+      icon: <AlertCircle aria-hidden="true" className="h-4 w-4" />,
+    });
+  }
   if (metrics.sync_needed > 0) {
     items.push({
       key: "sync",

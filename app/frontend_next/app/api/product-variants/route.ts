@@ -14,3 +14,9 @@ export async function POST(request: NextRequest) {
   const data = await response.json().catch(() => ({ detail: "Backend gaf geen JSON terug" }));
   return NextResponse.json(data, { status: response.status });
 }
+
+export async function GET() {
+  const response = await backendFetch(`${API_BASE_URL}/product-variants`, { cache: "no-store" });
+  const data = await response.json().catch(() => ({ detail: "Backend gaf geen JSON terug" }));
+  return NextResponse.json(data, { status: response.status });
+}

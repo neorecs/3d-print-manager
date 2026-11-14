@@ -3,6 +3,7 @@
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { CHANNEL_TYPES } from "@/lib/channels";
 import type { Platform } from "@/lib/types";
 
 type PlatformDraft = {
@@ -116,7 +117,7 @@ export function SalesChannelsManager({ platforms }: { platforms: Platform[] }) {
               </summary>
               <div className="mt-4 grid gap-4 border-t border-line pt-4 md:grid-cols-2">
                 <TextField label="Naam" value={draft.name} onChange={(value) => updateExisting(platform.id, "name", value)} />
-                <TextField label="Type" value={draft.type} onChange={(value) => updateExisting(platform.id, "type", value)} />
+                <ChannelTypeSelect label="Soort verkoopkanaal" value={draft.type} onChange={(value) => updateExisting(platform.id, "type", value)} />
                 <label className="flex items-center gap-3 rounded-md border border-line bg-surfaceSoft px-3 py-2 text-sm text-ink font-semibold">
                   <input checked={draft.active} onChange={(event) => updateExisting(platform.id, "active", event.target.checked)} type="checkbox" />
                   Actief
@@ -143,7 +144,7 @@ export function SalesChannelsManager({ platforms }: { platforms: Platform[] }) {
         <form className="mt-4 border-t border-line pt-4" onSubmit={createPlatform}>
           <div className="grid gap-4 md:grid-cols-2">
             <TextField label="Naam" value={newDraft.name} onChange={(value) => updateNew("name", value)} placeholder="Bijv. Mijn Shopify" />
-            <TextField label="Soort verkoopkanaal" value={newDraft.type} onChange={(value) => updateNew("type", value)} placeholder="Bijv. Shopify of Etsy" />
+            <ChannelTypeSelect label="Soort verkoopkanaal" value={newDraft.type} onChange={(value) => updateNew("type", value)} />
             <label className="flex items-center gap-3 rounded-md border border-line bg-surfaceSoft px-3 py-2 text-sm text-ink font-semibold">
               <input checked={newDraft.active} onChange={(event) => updateNew("active", event.target.checked)} type="checkbox" />
               Kanaal actief
@@ -171,6 +172,24 @@ function TextField({ label, value, onChange, placeholder }: { label: string; val
     <label className="space-y-2">
       <span className="text-sm font-semibold text-inkSoft">{label}</span>
       <input className="w-full rounded-md border border-line bg-surfaceSoft px-3 py-2 text-sm text-ink outline-none focus:border-brand" onChange={(event) => onChange(event.target.value)} placeholder={placeholder} value={value} />
+    </label>
+  );
+}
+
+
+function ChannelTypeSelect({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
+  const known = CHANNEL_TYPES.some((item) => item.value === value);
+  return (
+    <label className="space-y-2">
+      <span className="text-sm font-semibold text-inkSoft">{label}</span>
+      <select className="min-h-10 w-full rounded-lg border border-line bg-panel px-3 text-sm text-ink outline-none focus:border-brand" onChange={(event) => onChange(event.target.value)} value={value}>
+        {!known && value ? <option value={value}>{value}</option> : null}
+        {CHANNEL_TYPES.map((item) => (
+          <option key={item.value} value={item.value}>
+            {item.label} ({item.mode === "api" ? "koppeling" : "hulpmodus"})
+          </option>
+        ))}
+      </select>
     </label>
   );
 }

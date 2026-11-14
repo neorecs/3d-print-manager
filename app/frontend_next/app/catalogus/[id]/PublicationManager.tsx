@@ -1,5 +1,8 @@
 "use client";
 
+import Link from "next/link";
+import { isAssistedType } from "@/lib/channels";
+
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { StatusBadge } from "@/components/StatusBadge";
@@ -283,18 +286,26 @@ export function PublicationManager({
                   {check ? <CheckResult check={check} /> : null}
                   {publication.last_error ? <p className="mt-3 text-sm font-semibold text-red-700">{publication.last_error}</p> : null}
                   <div className="mt-4 flex flex-wrap justify-end gap-2">
-                    <button className="rounded-md border border-line bg-surfaceSoft px-3 py-2 text-sm text-ink font-semibold text-inkSoft" disabled={savingKey === `check-${publication.id}`} onClick={() => runCheck(publication.id)} type="button">
+                    <button className="rounded-md border border-line bg-surfaceSoft px-3 py-2 text-sm font-semibold text-inkSoft" disabled={savingKey === `check-${publication.id}`} onClick={() => runCheck(publication.id)} type="button">
                       Controleer
                     </button>
-                    <button className="rounded-md border border-line bg-surfaceSoft px-3 py-2 text-sm text-ink font-semibold text-inkSoft" disabled={savingKey === `pause-${publication.id}`} onClick={() => runAction(publication.id, "pause")} type="button">
+                    <button className="rounded-md border border-line bg-surfaceSoft px-3 py-2 text-sm font-semibold text-inkSoft" disabled={savingKey === `pause-${publication.id}`} onClick={() => runAction(publication.id, "pause")} type="button">
                       Pauzeren
                     </button>
-                    <button className="rounded-md border border-line bg-surfaceSoft px-3 py-2 text-sm text-ink font-semibold text-inkSoft" disabled={savingKey === `sync-${publication.id}`} onClick={() => runAction(publication.id, "sync")} type="button">
-                      Sync
-                    </button>
-                    <button className="rounded-md border border-line bg-surfaceSoft px-3 py-2 text-sm text-ink font-semibold text-inkSoft" disabled={savingKey === `publish-${publication.id}`} onClick={() => runAction(publication.id, "publish")} type="button">
-                      Publiceren
-                    </button>
+                    {isAssistedType(platforms.find((platform) => platform.id === publication.platform_id)?.type) ? (
+                      <Link className="rounded-md border border-line bg-surfaceSoft px-3 py-2 text-sm font-semibold text-inkSoft" href={`/verkoopkanalen/plaatsen/${publication.id}`}>
+                        Plaatsingspakket
+                      </Link>
+                    ) : (
+                      <>
+                        <button className="rounded-md border border-line bg-surfaceSoft px-3 py-2 text-sm font-semibold text-inkSoft" disabled={savingKey === `sync-${publication.id}`} onClick={() => runAction(publication.id, "sync")} type="button">
+                          Sync
+                        </button>
+                        <button className="rounded-md border border-line bg-surfaceSoft px-3 py-2 text-sm font-semibold text-inkSoft" disabled={savingKey === `publish-${publication.id}`} onClick={() => runAction(publication.id, "publish")} type="button">
+                          Publiceren
+                        </button>
+                      </>
+                    )}
                     <button className="rounded-md bg-brand px-3 py-2 text-sm font-semibold text-onBrand disabled:cursor-not-allowed disabled:opacity-60" disabled={savingKey === String(publication.id)} onClick={() => savePublication(publication.id)} type="button">
                       {savingKey === String(publication.id) ? "Opslaan..." : "Opslaan"}
                     </button>
