@@ -43,6 +43,25 @@ Je kunt ook beide kanalen tegelijk instellen.
 | `APP_PUBLIC_URL` | `http://10.5.1.150:38502` | Adres van de app; wordt gebruikt voor de link in de melding. |
 | `WORKER_INTERVAL_SECONDS` | `300` | Tijd tussen twee rondes (minimaal 60). |
 | `WORKER_AUTO_PROCESS_ORDERS` | `false` | Op `true`: nieuwe orders worden meteen verwerkt (voorraad reserveren, printtaken maken, conceptboeking). |
-| `WORKER_SYNC_INVENTORY` | `false` | Op `true`: na elke ronde de voorraad naar Shopify sturen. |
+| `WORKER_SYNC_INVENTORY` | `false` | Op `true`: na elke ronde de voorraad naar Shopify en bol sturen. |
+| `WORKER_WEBHOOK_POLL_SECONDS` | `15` | Hoe vaak de worker tussen twee rondes kijkt of een webhook om een import vroeg. |
 
 Ook zonder worker kun je orders met de hand ophalen via **Orders → Orders ophalen**. Beide gebruiken dezelfde import, die onthoudt tot waar de vorige import kwam.
+
+## Sneller: webhooks (optioneel)
+
+Zonder webhook komt een bestelling binnen `WORKER_INTERVAL_SECONDS` binnen. Met een webhook
+meldt Etsy of Shopify zelf dat er een order is, en haalt de worker dat kanaal binnen ongeveer
+15 seconden op. De webhook schrijft zelf geen orders; hij zet alleen een importverzoek klaar.
+Polling blijft daarnaast gewoon draaien, dus een gemiste webhook kost niets.
+
+Het webhook-adres staat per kanaal op **Verkoopkanalen → kanaal → Credentials**, bijvoorbeeld
+`https://<jouw-domein>/api/webhooks/shopify/3`. Dat adres moet vanaf internet bereikbaar zijn,
+bijvoorbeeld via een reverse proxy of Cloudflare Tunnel die alleen `/api/webhooks/` doorlaat.
+
+- **Shopify**: maak in je app een webhook voor `orders/create` (en eventueel `orders/cancelled`)
+  naar dat adres. Vul bij het kanaal als *Webhook-geheim* het client secret van de app in.
+- **Etsy**: maak in het Developer Portal een webhook voor `order.paid` (en eventueel
+  `order.canceled`). Vul het signing secret (`whsec_…`) in als *Webhook-geheim*.
+
+Een verzoek met een onjuiste handtekening, of voor een kanaal zonder webhook-geheim, wordt geweigerd.

@@ -25,6 +25,7 @@ from services.notification_service import notify, notify_new_order, retry_failed
 from services.order_import_runner import import_platform_orders
 from services.order_processing import process_order
 from services.platform_service import sync_platform_inventory_payload
+from services.webhook_service import claim_requested_imports, has_requested_imports
 
 logger = logging.getLogger("worker")
 IMPORTABLE_PLATFORM_TYPES = ("etsy", "shopify", "bol")
@@ -35,12 +36,14 @@ def _flag(name: str, default: str = "false") -> bool:
     return os.getenv(name, default).strip().lower() in {"1", "true", "yes", "on"}
 
 
-def run_once(db: Session) -> dict:
+def run_once(db: Session, platform_ids: list[int] | None = None) -> dict:
+    """One round. With platform_ids (from webhooks) only those channels are imported."""
     report = {"imported_platforms": 0, "new_orders": 0, "notifications": 0, "errors": []}
     if connector_live_mode():
-        platforms = db.scalars(
-            select(Platform).where(Platform.active.is_(True), Platform.type.in_(IMPORTABLE_PLATFORM_TYPES)).order_by(Platform.id)
-        ).all()
+        query = select(Platform).where(Platform.active.is_(True), Platform.type.in_(IMPORTABLE_PLATFORM_TYPES))
+        if platform_ids is not None:
+            query = query.where(Platform.id.in_(platform_ids))
+        platforms = db.scalars(query.order_by(Platform.id)).all()
         for platform in platforms:
             report["imported_platforms"] += 1
             try:
@@ -82,6 +85,28 @@ def run_once(db: Session) -> dict:
     return report
 
 
+def wait_for_next_round(interval: int, poll_seconds: int, sleep=time.sleep) -> list[int] | None:
+    """Sleep until the next full round, waking early when a webhook asked for an import.
+
+    Returns the channels to import (webhook) or None for a regular full round.
+    """
+    waited = 0
+    while waited < interval:
+        step = min(poll_seconds, interval - waited)
+        sleep(step)
+        waited += step
+        with SessionLocal() as db:
+            try:
+                if has_requested_imports(db):
+                    platform_ids = claim_requested_imports(db)
+                    db.commit()
+                    return platform_ids
+            except Exception:  # noqa: BLE001 - a hiccup must not stop the worker
+                db.rollback()
+                logger.exception("Checking webhook requests failed")
+    return None
+
+
 def _write_heartbeat() -> None:
     status_dir = os.getenv("WORKER_STATUS_DIR")
     if not status_dir:
@@ -115,17 +140,23 @@ def main() -> None:
         if lock is None:
             logger.info("Another worker is active; waiting.")
             time.sleep(interval)
+    poll_seconds = max(int(os.getenv("WORKER_WEBHOOK_POLL_SECONDS", "15")), 5)
+    platform_ids: list[int] | None = None
     try:
         while True:
             with SessionLocal() as db:
                 try:
-                    report = run_once(db)
-                    logger.info("Round done: %s", report)
+                    if platform_ids is None:
+                        # A full round covers every channel, so pending webhook requests are done too.
+                        claim_requested_imports(db)
+                        db.commit()
+                    report = run_once(db, platform_ids)
+                    logger.info("Round done (%s): %s", "webhook" if platform_ids else "full", report)
                 except Exception:  # noqa: BLE001 - keep the worker alive
                     logger.exception("Worker round failed")
             if args.once:
                 return
-            time.sleep(interval)
+            platform_ids = wait_for_next_round(interval, poll_seconds)
     finally:
         lock.close()
 

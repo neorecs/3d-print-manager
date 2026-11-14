@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { StatusBadge } from "@/components/StatusBadge";
 import type { Platform, PlatformConnectorStatus, PlatformCredential } from "@/lib/types";
@@ -33,12 +33,14 @@ const platformFields: Record<string, CredentialField[]> = {
     { key: "shop_id", label: "Winkelnummer", description: "Het numerieke shop-ID van jouw Etsy-winkel.", placeholder: "Bijvoorbeeld 12345678" },
     { key: "taxonomy_id", label: "Standaardcategorie", description: "Etsy categorie-ID voor nieuwe publicaties.", placeholder: "Numerieke Etsy categorie-ID" },
     { key: "readiness_state_id", label: "Verwerkingsprofiel", description: "Etsy processing profile voor fysieke producten.", placeholder: "Numeriek verwerkingsprofiel-ID" },
+    { key: "webhook_secret", label: "Webhook-geheim", description: "Optioneel: het signing secret (whsec_…) van je Etsy-webhook voor order.paid. Dan komen bestellingen binnen seconden binnen.", placeholder: "whsec_…", secret: true, optional: true },
     { key: "variation_property_id", label: "Variatie-eigenschap", description: "Alleen nodig als Etsy-varianten een taxonomy property gebruiken.", placeholder: "Numerieke property-ID", optional: true },
   ],
   shopify: [
     { key: "shop_domain", label: "Winkeladres", description: "Het permanente myshopify.com-adres van de winkel.", placeholder: "jouw-winkel.myshopify.com" },
     { key: "access_token", label: "Admin API-token", description: "Het Shopify Admin API access token.", placeholder: "Plak hier het Admin API-token", secret: true },
     { key: "location_id", label: "Voorraadlocatie", description: "Shopify location-ID voor voorraadsynchronisatie.", placeholder: "Numeriek location-ID", optional: true },
+    { key: "webhook_secret", label: "Webhook-geheim", description: "Optioneel: het client secret van je Shopify-app, waarmee webhooks voor orders/create worden ondertekend.", placeholder: "Plak hier het client secret", secret: true, optional: true },
   ],
 };
 
@@ -70,6 +72,11 @@ export function PlatformCredentialsManager({ platform, status, credentials }: Pr
   const [error, setError] = useState<string | null>(null);
 
   const isEtsy = platform.type.toLowerCase() === "etsy";
+  const supportsWebhook = ["etsy", "shopify"].includes(platform.type.toLowerCase());
+  const [webhookUrl, setWebhookUrl] = useState("");
+  useEffect(() => {
+    setWebhookUrl(`${window.location.origin}/api/webhooks/${platform.type.toLowerCase()}/${platform.id}`);
+  }, [platform.id, platform.type]);
   const etsyConnected = credentials.some((item) => item.key_name === "refresh_token" && item.has_value);
 
   async function connectEtsy() {
@@ -150,6 +157,16 @@ export function PlatformCredentialsManager({ platform, status, credentials }: Pr
           <button className="rounded-md bg-brand px-4 py-2 text-sm font-semibold text-onBrand disabled:opacity-60" disabled={busyKey !== null} onClick={connectEtsy} type="button">
             {busyKey === "etsy-oauth" ? "Doorsturen..." : etsyConnected ? "Opnieuw verbinden" : "Verbinden met Etsy"}
           </button>
+        </div>
+      ) : null}
+
+      {supportsWebhook ? (
+        <div className="rounded-md border border-line bg-surfaceSoft p-4">
+          <span className="font-semibold text-ink">Directe ordermeldingen (webhook)</span>
+          <p className="mt-2 text-sm text-muted">
+            Optioneel. Stel in {isEtsy ? "het Etsy Developer Portal een webhook voor order.paid" : "je Shopify-app een webhook voor orders/create"} in met dit adres en vul hieronder het webhook-geheim in. Het adres moet vanaf internet bereikbaar zijn (bijvoorbeeld via je reverse proxy of Cloudflare Tunnel). Zonder webhook haalt de achtergrondtaak de orders gewoon elke paar minuten op.
+          </p>
+          <code className="mt-3 block break-all rounded-md border border-line bg-panel px-3 py-2 text-xs text-inkSoft">{webhookUrl || "…"}</code>
         </div>
       ) : null}
 
