@@ -6,6 +6,7 @@ import { SectionCard } from "@/components/SectionCard";
 import { formatMinutes, getProductDetailData } from "@/lib/api";
 import type { ProductDetailData } from "@/lib/types";
 import { salesBasicsMissing } from "@/lib/catalogView";
+import { AIStudio } from "./AIStudio";
 import { InventoryManager } from "./InventoryManager";
 import { MediaManager } from "./MediaManager";
 import { PublicationManager } from "./PublicationManager";
@@ -18,7 +19,7 @@ import { CheckCircle2, Circle } from "lucide-react";
 const tabs = [
   ["overzicht", "Overzicht"], ["informatie", "Productinformatie"], ["printbestand", "Printbestand"],
   ["varianten", "Varianten"], ["voorraad", "Voorraad"], ["fotos", "Foto's"],
-  ["verkoopkanalen", "Verkoopkanalen"], ["vertalingen", "Vertalingen"],
+  ["verkoopkanalen", "Verkoopkanalen"], ["ai-studio", "AI-studio"], ["vertalingen", "Vertalingen"],
 ] as const;
 
 export default async function ProductDetailPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ tab?: string }> }) {
@@ -108,6 +109,7 @@ function DetailContent({ data, activeTab }: { data: ProductDetailData; activeTab
       {activeTab === "voorraad" ? <SectionCard title="Voorraad" description="Beheer voorraad, reserveringen, minimum en opslaglocatie per variant."><InventoryManager product={data.product} variants={data.variants} inventory={data.inventory} /></SectionCard> : null}
       {activeTab === "fotos" && !data.loadErrors.media ? <SectionCard title="Foto's" description="Upload productfoto's, kies een hoofdfoto, bepaal de volgorde en vul alt-tekst in."><MediaManager productId={data.product.id} media={data.media} /></SectionCard> : null}
       {activeTab === "verkoopkanalen" && !data.loadErrors.publications ? <SectionCard title="Verkoopkanalen" description="Beheer afwijkende titel, omschrijving, categorie, tags, prijs en publicatiestatus per kanaal."><PublicationManager product={data.product} platforms={data.platforms} publications={data.publications} /></SectionCard> : null}
+      {activeTab === "ai-studio" ? <SectionCard title="AI-studio" description="Advertentieteksten per verkoopkanaal, op basis van je productgegevens en foto's. Foto's bewerken doe je bij Foto's."><AIStudio product={data.product} platforms={data.platforms} publications={data.loadErrors.publications ? [] : data.publications} /></SectionCard> : null}
       {activeTab === "vertalingen" && !data.loadErrors.translations ? <SectionCard title="Vertalingen" description="Beheer taalversies voor Duitsland, België en latere markten."><TranslationManager product={data.product} translations={data.translations} /></SectionCard> : null}
     </div>
   );

@@ -64,6 +64,8 @@ export type ProductMedia = {
   alt_text?: string | null;
   sort_order?: number | null;
   is_primary?: boolean | null;
+  ai_edited?: boolean | null;
+  source_media_id?: number | null;
 };
 
 export type ProductTag = {
