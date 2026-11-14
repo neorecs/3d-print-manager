@@ -181,6 +181,7 @@ def handle_sync(db: Session, bridge: PrinterBridge, body: dict, client_ip: str |
                 command.finished_at = now
             else:
                 command.status = "wachtrij"
+    db.flush()
 
     commands = db.scalars(
         select(BridgeCommand)
