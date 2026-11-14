@@ -87,3 +87,13 @@ def listing_issues(profile: ChannelProfile, channel_name: str, title: str | None
     if profile.requires_original_photo and original_photo_count == 0 and photo_count > 0:
         errors.append(f"{channel_name}: {profile.label} vraagt minstens één onbewerkte foto van het echte product.")
     return errors
+
+
+def valid_gtin(code: str | None) -> bool:
+    """EAN-8/12/13/14 with a correct GS1 check digit."""
+    digits = (code or "").strip()
+    if not digits.isdigit() or len(digits) not in {8, 12, 13, 14}:
+        return False
+    body, check = digits[:-1], int(digits[-1])
+    total = sum(int(digit) * (3 if index % 2 == 0 else 1) for index, digit in enumerate(reversed(body)))
+    return (10 - total % 10) % 10 == check

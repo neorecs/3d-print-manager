@@ -12,7 +12,7 @@ export function ShopifyImportButton() {
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  async function importOrders(platform: "shopify" | "etsy") {
+  async function importOrders(platform: "shopify" | "etsy" | "bol") {
     setBusy(platform);
     setMessage(null);
     setError(null);
@@ -26,7 +26,7 @@ export function ShopifyImportButton() {
       const parts = [`${data.created || 0} nieuw`, `${data.updated || 0} bijgewerkt`, `${data.skipped || 0} overgeslagen`];
       const errorText = data.errors?.length ? ` Fouten: ${data.errors.map((item: { message: string }) => item.message).join("; ")}` : "";
       const warningText = data.warnings?.length ? ` Controle nodig: ${data.warnings.join("; ")}` : "";
-      setMessage(`${platform === "shopify" ? "Shopify" : "Etsy"} import klaar: ${parts.join(", ")}.${errorText}${warningText}`);
+      setMessage(`${platform === "shopify" ? "Shopify" : platform === "bol" ? "bol" : "Etsy"} import klaar: ${parts.join(", ")}.${errorText}${warningText}`);
       router.refresh();
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Orderimport is mislukt");
@@ -48,6 +48,9 @@ export function ShopifyImportButton() {
           </button>
           <button className="rounded-md border border-line bg-surfaceSoft px-4 py-2 text-sm font-semibold text-inkSoft disabled:opacity-60" disabled={Boolean(busy)} onClick={() => importOrders("etsy")} type="button">
             {busy === "etsy" ? "Etsy importeren..." : "Etsy orders importeren"}
+          </button>
+          <button className="rounded-md border border-line bg-surfaceSoft px-4 py-2 text-sm font-semibold text-inkSoft disabled:opacity-60" disabled={Boolean(busy)} onClick={() => importOrders("bol")} type="button">
+            {busy === "bol" ? "bol importeren..." : "bol orders importeren"}
           </button>
         </div>
       </div>

@@ -11,7 +11,7 @@ from domain.statuses import (
     ORDER_SHIPPED,
 )
 from inventory.service import link_order_item_by_sku
-from models import Order, OrderItem, Platform
+from models import Order, OrderItem, Platform, ProductVariant
 from services.order_fulfillment import cancel_order, ship_order
 
 
@@ -65,7 +65,7 @@ def upsert_imported_order(db: Session, platform: Platform, payload: dict) -> dic
         if not item:
             item = OrderItem(order_id=order.id, external_order_item_id=str(external_item_id), quantity_ordered=0)
             db.add(item)
-        item.sku = item_payload.get("sku")
+        item.sku = item_payload.get("sku") or _sku_for_ean(db, item_payload.get("ean"))
         item.quantity_ordered = int(item_payload.get("quantity_ordered") or 0)
         item.unit_sale_price = item_payload.get("unit_sale_price")
         item.inventory_status = item.inventory_status or INVENTORY_NONE
@@ -89,6 +89,13 @@ def upsert_imported_order(db: Session, platform: Platform, payload: dict) -> dic
     if missing_items and external_status not in CANCELLED_EXTERNAL_STATUSES:
         warnings.append("Een eerder geimporteerde orderregel ontbreekt in de platformrespons; controleer deze order handmatig.")
     return {"action": action, "order": to_dict(order), "warnings": warnings}
+
+
+def _sku_for_ean(db: Session, ean: str | None) -> str | None:
+    """Channels such as bol identify products by EAN; map that to our own SKU."""
+    if not ean:
+        return None
+    return db.scalar(select(ProductVariant.sku).where(ProductVariant.ean == str(ean).strip()))
 
 
 def cancel_imported_order(db: Session, order: Order) -> list[str]:

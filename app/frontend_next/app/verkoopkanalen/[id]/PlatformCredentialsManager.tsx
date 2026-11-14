@@ -21,6 +21,11 @@ type CredentialField = {
 };
 
 const platformFields: Record<string, CredentialField[]> = {
+  bol: [
+    { key: "client_id", label: "Client ID", description: "Uit het bol verkoopdashboard: Instellingen → API-instellingen.", placeholder: "Plak hier de Client ID", secret: true },
+    { key: "client_secret", label: "Client secret", description: "Hoort bij de Client ID; wordt versleuteld opgeslagen.", placeholder: "Plak hier het Client secret", secret: true },
+    { key: "delivery_code", label: "Levertijd", description: "bol-levertijdcode voor nieuwe aanbiedingen, bijvoorbeeld 1-2d of 3-5d.", placeholder: "3-5d", optional: true },
+  ],
   etsy: [
     { key: "api_key", label: "API-key", description: "De Etsy App API Key keystring uit het Developer Portal.", placeholder: "Plak hier de Etsy API-key", secret: true },
     { key: "shared_secret", label: "App-geheim", description: "Het Shared Secret dat bij de Etsy API-key hoort.", placeholder: "Plak hier het Etsy Shared Secret", secret: true },

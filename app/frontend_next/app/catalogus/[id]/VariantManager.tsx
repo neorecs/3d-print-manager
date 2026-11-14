@@ -7,6 +7,7 @@ import type { Product, ProductVariant } from "@/lib/types";
 type VariantDraft = {
   variant_name: string;
   sku: string;
+  ean: string;
   color: string;
   material: string;
   size: string;
@@ -39,6 +40,7 @@ function emptyDraft(product: Product): VariantDraft {
   return {
     variant_name: "",
     sku: "",
+    ean: "",
     color: "",
     material: "PLA",
     size: "",
@@ -61,6 +63,7 @@ function draftFromVariant(variant: ProductVariant): VariantDraft {
   return {
     variant_name: variant.variant_name || "",
     sku: variant.sku || "",
+    ean: variant.ean || "",
     color: variant.color || "",
     material: variant.material || "",
     size: variant.size || "",
@@ -92,6 +95,7 @@ function toPayload(productId: number, draft: VariantDraft) {
     product_id: productId,
     variant_name: draft.variant_name || "Standaard",
     sku: draft.sku,
+    ean: draft.ean.trim() || null,
     color: draft.color || null,
     material: draft.material || null,
     size: draft.size || null,
@@ -277,6 +281,7 @@ function VariantFields({
     <div className="grid gap-4 md:grid-cols-2">
       <TextField label="Variantnaam" value={draft.variant_name} onChange={(value) => onChange("variant_name", value)} placeholder="Bijv. Rood PLA" />
       <TextField label="SKU" value={draft.sku} onChange={(value) => onChange("sku", value)} placeholder={fallbackSku || "Automatisch voorstel"} />
+      <TextField label="EAN (nodig voor bol)" value={draft.ean} onChange={(value) => onChange("ean", value)} placeholder="13 cijfers" />
       <TextField label="Kleur" value={draft.color} onChange={(value) => onChange("color", value)} placeholder="Bijv. Rood" />
       <TextField label="Materiaal" value={draft.material} onChange={(value) => onChange("material", value)} placeholder="Bijv. PLA" />
       <TextField label="Maat" value={draft.size} onChange={(value) => onChange("size", value)} placeholder="Bijv. M, 10 cm, standaard" />

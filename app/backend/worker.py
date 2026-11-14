@@ -27,7 +27,7 @@ from services.order_processing import process_order
 from services.platform_service import sync_platform_inventory_payload
 
 logger = logging.getLogger("worker")
-IMPORTABLE_PLATFORM_TYPES = ("etsy", "shopify")
+IMPORTABLE_PLATFORM_TYPES = ("etsy", "shopify", "bol")
 ADVISORY_LOCK_ID = 727001
 
 
@@ -68,7 +68,7 @@ def run_once(db: Session) -> dict:
                     except HTTPException as exc:
                         logger.info("Order %s not processed automatically: %s", order.id, exc.detail)
                 report["notifications"] += len(notify_new_order(db, order))
-            if _flag("WORKER_SYNC_INVENTORY") and (platform.type or "").lower() == "shopify":
+            if _flag("WORKER_SYNC_INVENTORY") and (platform.type or "").lower() in {"shopify", "bol"}:
                 try:
                     sync_platform_inventory_payload(db, platform)
                     db.commit()

@@ -38,6 +38,7 @@ export type ProductVariant = {
   product_id: number;
   variant_name?: string | null;
   sku?: string | null;
+  ean?: string | null;
   color?: string | null;
   material?: string | null;
   size?: string | null;

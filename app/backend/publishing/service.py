@@ -2,7 +2,7 @@ import re
 from datetime import datetime, timezone
 
 from fastapi import HTTPException
-from publishing.channel_profiles import channel_profile, listing_issues
+from publishing.channel_profiles import channel_profile, listing_issues, valid_gtin
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -278,6 +278,9 @@ def validate_publication_record(db: Session, publication: ProductPlatformPublica
         missing_ean = [variant.sku or str(variant.id) for variant in variants if not (variant.ean or "").strip()]
         if missing_ean:
             errors.append(f"{platform.name}: {profile.label} vraagt een EAN-code per variant; ontbreekt bij {', '.join(missing_ean)}.")
+        invalid_ean = [variant.sku or str(variant.id) for variant in variants if (variant.ean or "").strip() and not valid_gtin(variant.ean)]
+        if invalid_ean:
+            errors.append(f"{platform.name}: ongeldige EAN-code (controlecijfer klopt niet) bij {', '.join(invalid_ean)}.")
     if platform_type == "shopify":
         if not product.product_type:
             warnings.append(f"{platform.name}: Shopify producttype ontbreekt.")

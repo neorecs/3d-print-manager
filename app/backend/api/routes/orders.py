@@ -131,6 +131,15 @@ def import_etsy_orders(
     return _import_orders_for_type(db, "etsy", since, limit)
 
 
+@router.post("/orders/import/bol")
+def import_bol_orders(
+    since: str | None = Query(None),
+    limit: int = Query(25, ge=1, le=100),
+    db: Session = Depends(get_db),
+):
+    return _import_orders_for_type(db, "bol", since, limit)
+
+
 @router.post("/orders/import/shopify")
 def import_shopify_orders(
     since: str | None = Query(None),
