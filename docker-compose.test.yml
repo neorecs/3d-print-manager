@@ -21,6 +21,9 @@ services:
       CREDENTIAL_ENCRYPTION_KEY: 4pmcM6TeV2L8D4WWuQV3XGjxM2aJ3qS4Ph3CEmE-hzA=
       AUTH_SECRET: "test-auth-secret-at-least-32-characters-long"
       BACKEND_INTERNAL_TOKEN: "test-internal-token-at-least-32-characters"
+      BRIDGE_AGENT_PATH: /bridge-agent/bridge.py
+    volumes:
+      - ./ops/bambu-bridge:/bridge-agent:ro
     command: ["python", "-m", "unittest", "discover", "-s", "tests", "-v"]
 
   postgres_integration:

@@ -21,7 +21,14 @@ from services import bridge_service
 from services.bambu_printers import refresh_bambu_mqtt_status, start_bambu_remote_print
 from services.bridge_service import authenticate_bridge, bridge_online, command_file, create_bridge, handle_sync, queue_command
 
-AGENT_PATH = Path(__file__).resolve().parents[3] / "ops" / "bambu-bridge" / "bridge.py"
+def _agent_path() -> Path:
+    if os.getenv("BRIDGE_AGENT_PATH"):
+        return Path(os.environ["BRIDGE_AGENT_PATH"])
+    parents = Path(__file__).resolve().parents
+    return parents[3] / "ops" / "bambu-bridge" / "bridge.py" if len(parents) > 3 else Path("/nonexistent")
+
+
+AGENT_PATH = _agent_path()
 
 
 def load_agent():
@@ -153,6 +160,7 @@ class BridgeServiceTests(BackendTestCase):
         self.assertIn("printers", asyncio.run(bridge_agent_sync(FakeRequest(self.token, {}), self.db)))
 
 
+@unittest.skipUnless(AGENT_PATH.is_file(), "bridge agent source not available in this container")
 class BridgeAgentTests(unittest.TestCase):
     def setUp(self) -> None:
         self.agent = load_agent()
