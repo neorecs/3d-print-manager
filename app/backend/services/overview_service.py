@@ -241,6 +241,13 @@ def dashboard_overview(db: Session) -> dict:
         .limit(5)
     ).all()
     printers = db.scalars(select(BambuPrinter).order_by(BambuPrinter.id)).all()
+    recent_open_orders = db.execute(
+        select(Order.id, Order.internal_order_number, Order.status, Order.total_amount, Order.currency, Order.order_date, Platform.name)
+        .outerjoin(Platform, Platform.id == Order.platform_id)
+        .where(~Order.status.in_((ORDER_SHIPPED, ORDER_CANCELLED, "afgerond")))
+        .order_by(Order.id.desc())
+        .limit(6)
+    ).all()
 
     return {
         "metrics": {
@@ -278,6 +285,18 @@ def dashboard_overview(db: Session) -> dict:
             for row in low_inventory_rows
         ],
         "open_print_jobs": list_rows(open_jobs),
+        "recent_orders": [
+            {
+                "id": row[0],
+                "internal_order_number": row[1],
+                "status": row[2],
+                "total_amount": float(row[3]) if row[3] is not None else None,
+                "currency": row[4] or "EUR",
+                "order_date": row[5].isoformat() if row[5] else None,
+                "platform": row[6],
+            }
+            for row in recent_open_orders
+        ],
     }
 
 

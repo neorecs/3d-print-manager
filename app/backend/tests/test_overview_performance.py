@@ -87,5 +87,7 @@ class OverviewPerformanceTests(BackendTestCase):
         self.assertLessEqual(len(result["low_inventory"]), 5)
         self.assertLessEqual(len(result["open_print_jobs"]), 5)
         self.assertEqual(result["metrics"]["orders_total"], self.ORDER_COUNT)
-        self.assertLessEqual(statements, 10)
+        # Fixed number of aggregate queries, independent of data volume (recent orders and
+        # sold-out manual listings each add one).
+        self.assertLessEqual(statements, 12)
         self.assertLess(elapsed, 2.0)
